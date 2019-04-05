@@ -1,0 +1,70 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color
+94,1,82,São Tiago/D João,Entre S Tiago e D João,3,http://www.horariosdofunchal.pt/carreirasPNG/8200.png,1072BA,FFFFFF
+15,1,12,Jamboto (via Hospital),Centro - Jamboto (via Hospital),3,http://www.horariosdofunchal.pt/carreirasPNG/1200.png,663695,FFFFFF
+16,1,13,Jamboto (via Viveiros),Centro - Jamboto (via Viveiros),3,http://www.horariosdofunchal.pt/carreirasPNG/1300.png,663695,FFFFFF
+20,1,15B,Galeão (Escola),Centro - Galeão (Escola),3,http://www.horariosdofunchal.pt/carreirasPNG/15B00.png,F37032,FFFFFF
+21,1,16,Pinheiro das Voltas (via CAM do Pilar),Centro - Pinheiro das Voltas (via CAM do Pilar),3,http://www.horariosdofunchal.pt/carreirasPNG/1600.png,663695,FFFFFF
+50,1,40,Quinta da Rocha,Centro - Quinta da Rocha,3,http://www.horariosdofunchal.pt/carreirasPNG/4000.png,EC008C,FFFFFF
+51,1,42,Alegria,Centro - Alegria,3,http://www.horariosdofunchal.pt/carreirasPNG/4200.png,F37032,FFFFFF
+72,1,02,Ponta da Cruz (Linha Verde),Centro - Ponta da Cruz (Linha Verde),3,http://www.horariosdofunchal.pt/carreirasPNG/0200.png,8CC641,FFFFFF
+62,1,90,CAM Trapiche/C Velho/LMB Aguiares,Entre CAM Trapiche e C Velho e LMB Aguiares,3,http://www.horariosdofunchal.pt/carreirasPNG/9000.png,906532,FFFFFF
+22,1,17,Lombo Segundo,Centro - Lombo Segundo,3,http://www.horariosdofunchal.pt/carreirasPNG/1700.png,F37032,FFFFFF
+24,1,19,Levada da Corujeira ,Centro - Levada da Corujeira,3,http://www.horariosdofunchal.pt/carreirasPNG/1900.png,F37032,FFFFFF
+29,1,22,Babosas,Centro - Babosas,3,http://www.horariosdofunchal.pt/carreirasPNG/2200.png,F37032,FFFFFF
+35,1,28,D. João,Centro - D João,3,http://www.horariosdofunchal.pt/carreirasPNG/2800.png,F37032,FFFFFF
+42,1,34,Canto do Muro,Centro - Canto do Muro,3,http://www.horariosdofunchal.pt/carreirasPNG/3400.png,EC008C,FFFFFF
+67,1,61,Lombada/Praça Autonomia,Lombada/Praça Autonomia - Madrugada,3,http://www.horariosdofunchal.pt/carreirasPNG/6100.png,8D8B00,FFFFFF
+77,1,43,Praia Formosa/Romeiras (via STO António),Entre Praia Formosa e Romeiras (via STO António),3,http://www.horariosdofunchal.pt/carreirasPNG/4300.png,663695,FFFFFF
+73,1,3,Lombada - Pizo (via São Martinho),Centro (Rua Dias Leite) - Lombada - Pizo (via São Martinho),3,http://www.horariosdofunchal.pt/carreirasPNG/300.png,663695,FFFFFF
+74,1,04,Amparo (Linha Verde),Centro - Amparo (Linha Verde),3,http://www.horariosdofunchal.pt/carreirasPNG/0400.png,8CC641,FFFFFF
+75,1,15,Álamos (via Achada),Centro - Álamos (via Achada),3,http://www.horariosdofunchal.pt/carreirasPNG/1500.png,F37032,FFFFFF
+8,1,7,Travessa do Pomar,Centro - Travessa do Pomar,3,http://www.horariosdofunchal.pt/carreirasPNG/700.png,EC008C,FFFFFF
+53,1,44,Nazaré (via Virtudes),Centro - Nazaré (via Virtudes),3,http://www.horariosdofunchal.pt/carreirasPNG/4400.png,D62138,FFFFFF
+54,1,45,Nazaré (via Barreiros),Centro - Nazaré (via Barreiros),3,http://www.horariosdofunchal.pt/carreirasPNG/4500.png,D62138,FFFFFF
+66,1,60,Praça Autonomia/Fundoa,Praça da Autonomia/Fundoa - Madrugada,3,http://www.horariosdofunchal.pt/carreirasPNG/6000.png,8D8B00,FFFFFF
+9,1,8,STA Quitéria (via Barreiros),Centro - STA Quitéria (via Barreiros),3,http://www.horariosdofunchal.pt/carreirasPNG/800.png,663695,FFFFFF
+10,1,8A,STA Quitéria (via MadeiraShopping),Centro - STA Quitéria (via MadeiraShopping),3,http://www.horariosdofunchal.pt/carreirasPNG/8A00.png,663695,FFFFFF
+13,1,10A,Chamorra (Barreira),Centro - Chamorra (Barreira),3,http://www.horariosdofunchal.pt/carreirasPNG/10A00.png,663695,FFFFFF
+14,1,11,Trapiche,Centro - Trapiche,3,http://www.horariosdofunchal.pt/carreirasPNG/1100.png,663695,FFFFFF
+17,1,14,Álamos,Centro - Álamos,3,http://www.horariosdofunchal.pt/carreirasPNG/1400.png,663695,FFFFFF
+27,1,21,Monte (via Largo da Fonte),Centro - Monte (via Largo da Fonte),3,http://www.horariosdofunchal.pt/carreirasPNG/2100.png,F37032,FFFFFF
+36,1,29,Curral dos Romeiros,Centro - Curral dos Romeiros,3,http://www.horariosdofunchal.pt/carreirasPNG/2900.png,EC008C,FFFFFF
+45,1,36,Palheiro Ferreiro (via Ribeiro da Quinta),Centro - Palheiro Ferreiro (via Ribeiro da Quinta),3,http://www.horariosdofunchal.pt/carreirasPNG/3600.png,EC008C,FFFFFF
+46,1,36A,Palheiro Ferreiro,Centro - Palheiro Ferreiro,3,http://www.horariosdofunchal.pt/carreirasPNG/36A00.png,EC008C,FFFFFF
+11,1,9,Courelas,Centro - Courelas,3,http://www.horariosdofunchal.pt/carreirasPNG/900.png,663695,FFFFFF
+12,1,10,Chamorra,Centro - Chamorra,3,http://www.horariosdofunchal.pt/carreirasPNG/1000.png,663695,FFFFFF
+25,1,20,Monte (via Corujeira de Dentro),Centro - Monte (via Corujeira de Dentro),3,http://www.horariosdofunchal.pt/carreirasPNG/2000.png,F37032,FFFFFF
+33,1,26,Levada de STA Luzia (via Pena),Centro - Levada de STA Luzia (via Pena),3,http://www.horariosdofunchal.pt/carreirasPNG/2600.png,F37032,FFFFFF
+41,1,33,Balancal (via Bairro STA Maria),Centro - Balancal (via Bairro STA Maria),3,http://www.horariosdofunchal.pt/carreirasPNG/3300.png,EC008C,FFFFFF
+47,1,37,Pinheirinho (Via Palheiro Ferreiro),Centro - Pinheirinho (via Palheiro Ferreiro),3,http://www.horariosdofunchal.pt/carreirasPNG/3700.png,EC008C,FFFFFF
+48,1,38,Cancela,Centro - Cancela,3,http://www.horariosdofunchal.pt/carreirasPNG/3800.png,EC008C,FFFFFF
+49,1,39,Montanha,Centro - Montanha,3,http://www.horariosdofunchal.pt/carreirasPNG/3900.png,EC008C,FFFFFF
+55,1,46,Ribeira Grande,Centro - Ribeira Grande,3,http://www.horariosdofunchal.pt/carreirasPNG/4600.png,663695,FFFFFF
+56,1,47,São João Latrão,Centro - São João Latrão,3,http://www.horariosdofunchal.pt/carreirasPNG/4700.png,EC008C,FFFFFF
+59,1,49,Fundoa ,Centro - Fundoa (via Universidade),3,http://www.horariosdofunchal.pt/carreirasPNG/4900.png,F37032,FFFFFF
+57,1,48,Nazaré/Monte,Entre Nazaré e Monte ,3,http://www.horariosdofunchal.pt/carreirasPNG/4800.png,00A886,FFFFFF
+87,5,56,Santana,Funchal - Santana,3,http://www.horariosdofunchal.pt/carreirasPNG/santana.png,0066B3,FFFFFF
+89,5,77,Santo da Serra,Funchal - Santo da Serra,3,http://www.horariosdofunchal.pt/carreirasPNG/7700.png,ED1C24,FFFFFF
+81,5,112,Rochão de Cima,Funchal - Rochão de Cima,3,http://www.horariosdofunchal.pt/carreirasPNG/11200.png,ED1C24,FFFFFF
+82,5,113,Camacha / Sta Cruz  (via Gaula),Camacha/Santa Cruz (via Gaula),3,http://www.horariosdofunchal.pt/carreirasPNG/11300.png,ED1C24,FFFFFF
+84,5,129,Camacha,Funchal - Camacha,3,http://www.horariosdofunchal.pt/carreirasPNG/12900.png,ED1C24,FFFFFF
+83,5,114,Nogueira,Funchal - Nogueira,3,http://www.horariosdofunchal.pt/carreirasPNG/11400.png,ED1C24,FFFFFF
+61,1,92,Três Paus,Centro - Três Paus ,3,http://www.horariosdofunchal.pt/carreirasPNG/9200.png,663695,FFFFFF
+60,1,50,Viana/Lombo da Quinta (via Madeira Shopping),Entre Viana e Lombo da Quinta (via Madeira Shopping),3,http://www.horariosdofunchal.pt/carreirasPNG/5000.png,00AEEF,FFFFFF
+90,5,81,Curral das Freiras,Funchal - Curral das Freiras,3,http://www.horariosdofunchal.pt/carreirasPNG/8100.png,F79239,FFFFFF
+86,5,138,São Jorge,Funchal - São Jorge,3,http://www.horariosdofunchal.pt/carreirasPNG/santana.png,0066B3,FFFFFF
+30,1,23,Livramento (via Til),Centro - Livramento (via Til),3,http://www.horariosdofunchal.pt/carreirasPNG/2300.png,F37032,FFFFFF
+34,1,27,Caminho de Ferro,Centro - Caminho de Ferro,3,http://www.horariosdofunchal.pt/carreirasPNG/2700.png,F37032,FFFFFF
+38,1,31,Jardim Botânico,Centro - Jardim Botânico,3,http://www.horariosdofunchal.pt/carreirasPNG/3100.png,EC008C,FFFFFF
+39,1,31A,Teleférico Jardim Botânico,Centro - Teleférico Jardim Botânico,3,http://www.horariosdofunchal.pt/carreirasPNG/31A00.png,EC008C,FFFFFF
+40,1,32,Rochinha,Centro - Rochinha,3,http://www.horariosdofunchal.pt/carreirasPNG/3200.png,EC008C,FFFFFF
+79,5,110,Boqueirão (via Caniço),Funchal - Boqueirão (via Caniço),3,http://www.horariosdofunchal.pt/carreirasPNG/11000.png,ED1C24,FFFFFF
+80,5,111,Achadinha (via Ribeirinha),Funchal - Achadinha (via Ribeirinha),3,http://www.horariosdofunchal.pt/carreirasPNG/11100.png,ED1C24,FFFFFF
+78,5,103,Arco São Jorge,Funchal - Arco de São Jorge,3,http://www.horariosdofunchal.pt/carreirasPNG/santana.png,0066B3,FFFFFF
+91,5,85,Boqueirão (via Palheiro Ferreiro),Funchal - Boqueirão (via Palheiro Ferreiro),3,http://www.horariosdofunchal.pt/carreirasPNG/8500.png,ED1C24,FFFFFF
+64,1,93,Galeão/São Roque,Entre Galeão e São Roque,3,http://www.horariosdofunchal.pt/carreirasPNG/9300.png,906532,FFFFFF
+65,1,94,Choupana/Caminho do Terço,Entre Choupana e Caminho do Terço,3,http://www.horariosdofunchal.pt/carreirasPNG/9400.png,906532,FFFFFF
+95,1,83,Forum Madeira/São Martinho,Entre Forum Madeira e S Martinho,3,http://www.horariosdofunchal.pt/carreirasPNG/8300.png,1072BA,FFFFFF
+68,1,62,Cancela/Praça Autonomia,Cancela/Praça Autonomia - Madrugada,3,http://www.horariosdofunchal.pt/carreirasPNG/6200.png,8D8B00,FFFFFF
+71,1,01,Ponta da Laranjeira (Linha Verde),Centro - Ponta da Laranjeira (Linha Verde),3,http://www.horariosdofunchal.pt/carreirasPNG/0100.png,8CC641,FFFFFF
+76,1,24,Papagaio Verde,Centro - Papagaio Verde,3,http://www.horariosdofunchal.pt/carreirasPNG/2400.png,D62138,FFFFFF
