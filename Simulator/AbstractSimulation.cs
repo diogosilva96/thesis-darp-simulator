@@ -21,10 +21,10 @@ namespace Simulator
                     
                     for (int i = 0; i < Events.Count ;i++)
                     {
-                            Console.WriteLine(Events[i].ToString());
                             Handle(Events[i]);
                             Append(Events[i]);
-                            Events.Sort();
+                            SortEvents();
+
 
                     }
                     PrintMetrics();
@@ -36,6 +36,10 @@ namespace Simulator
 
         public abstract void Append(Event evt);
 
+        public void SortEvents()
+        {
+            Events = Events.OrderBy(evt => evt.Time).ThenBy(evt => evt.Category).ToList();
+        }
         public void AddEvent(Event evt)
         {
             if (evt != null)

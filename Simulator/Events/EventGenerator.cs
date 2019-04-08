@@ -39,9 +39,6 @@ namespace Simulator.Events
                     leaveTime = time + ind+1;
                     var customerLeaveVehicleEvent =
                         eventFactory.CreateEvent(3, leaveTime, vehicle, null, customer);
-                    var t = TimeSpan.FromSeconds(leaveTime);
-                    Console.WriteLine("Evt added leave: vehicle" + vehicle.Id + "customer " + customer.Id + ", " + leaveTime + " - " +
-                                      t.ToString());
                     events.Add(customerLeaveVehicleEvent);
                 }
 
@@ -74,9 +71,7 @@ namespace Simulator.Events
                         var enterTime = time + i;
                         var customerEnterVehicleEvent =
                             eventFactory.CreateEvent(2, enterTime, vehicle, null, customer);
-                        var t = TimeSpan.FromSeconds(enterTime);
-                        Console.WriteLine("Evt added enter: vehicle " + vehicle.Id + "customer "+customer.Id+"," + enterTime + " - " +
-                                          t.ToString());
+            
                         events.Add(customerEnterVehicleEvent);
                     }
                 }

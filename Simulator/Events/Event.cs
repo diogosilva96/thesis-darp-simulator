@@ -2,7 +2,7 @@
 
 namespace Simulator.Events
 {
-    public abstract class Event : IComparable<Event>
+    public abstract class Event
     {
         public int Time { get; internal set; }
         public int Category { get; internal set; }
@@ -20,10 +20,6 @@ namespace Simulator.Events
         }
 
         public abstract string GetMessage();
-        public int CompareTo(Event evt)
-        {
-            return Time.CompareTo(evt.Time);
-        }
 
         public abstract void Treat();
 

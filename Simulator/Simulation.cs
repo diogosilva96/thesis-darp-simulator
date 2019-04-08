@@ -45,9 +45,8 @@ namespace Simulator
             _stopsGraph = stopsGraph;
             VehicleFleet = new List<Vehicle>();
             _startTimes = new List<int>();
-            GenerateVehicleFleet(4);
-
-            Events.Sort();
+            GenerateVehicleFleet(5);
+            SortEvents();
             _totalEventsHandled = 0;
         }
 
@@ -98,7 +97,8 @@ namespace Simulator
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
                 toPrintList.Add("Current " + vehicle.Router.Trip);
                 var t = TimeSpan.FromSeconds(_startTimes[i]);
-                toPrintList.Add("Service start time:"+t.ToString());
+                toPrintList.Add("Service start time:" + t.ToString());
+                //adicionar service end time?
                 toPrintList.Add("number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
                 {
@@ -193,7 +193,6 @@ namespace Simulator
                 AddEvent(customerLeaveEvents);
 
             }
-            Events.Sort();
         }
             
         
