@@ -24,17 +24,17 @@ namespace Simulator.Events
         }
         public override string GetMessage()
         {
-            string date_string = "[" + DateTime.Now.ToString() + "] ";
+            string dateString = "[" + DateTime.Now.ToString() + "] ";
             string message = "";
             if (Customer != null && Vehicle != null)
             {
-                message = date_string+this.ToString() + Customer.ToString();
+                message = dateString+this.ToString() + Customer.ToString();
 
                     if (Category == 2)
                     {
                         if (Vehicle.IsFull)
                         {
-                            message = date_string+this.ToString() + Vehicle.ToString() +"is full,"+Customer.ToString() + " was not served at time"+Time+".";
+                            message = dateString+this.ToString() + Vehicle.ToString() +"is full,"+Customer.ToString() + " was not served at time"+Time+".";
                         }
                         else
                         {

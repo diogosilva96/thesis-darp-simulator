@@ -100,12 +100,12 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (Router.CurrentStop == Router.Trip.Stops[0])
                 {
-                    _consoleLogger.Log(this.ToString() + "trip " + this.Router.Trip.Id + " started at "+t.ToString()+".");
+                    _consoleLogger.Log(this.ToString() + "Trip " + this.Router.Trip.Id + " started at "+t.ToString()+".");
                 }
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+t.ToString()+".");
                 if (Router.NextStop == null)
                 {
-                    _consoleLogger.Log(this.ToString()+"trip " + this.Router.Trip.Id + " finished at "+t.ToString()+".");
+                    _consoleLogger.Log(this.ToString()+"Trip " + this.Router.Trip.Id + " finished at "+t.ToString()+".");
                     
                 }
                 return true;

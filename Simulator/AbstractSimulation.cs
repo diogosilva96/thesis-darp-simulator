@@ -11,8 +11,8 @@ namespace Simulator
     public abstract class AbstractSimulation
     {
         public List<Event> Events;
-        public List<Vehicle> VehicleFleet;
 
+        public List<Vehicle> VehicleFleet;
 
         public void Simulate()
         {
@@ -21,9 +21,11 @@ namespace Simulator
                     
                     for (int i = 0; i < Events.Count ;i++)
                     {
-                        //Events.Sort();
-                        Handle(Events[i]);
-                        Append(Events[i]);
+                            Console.WriteLine(Events[i].ToString());
+                            Handle(Events[i]);
+                            Append(Events[i]);
+                            Events.Sort();
+
                     }
                     PrintMetrics();
             }
