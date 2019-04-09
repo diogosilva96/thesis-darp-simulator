@@ -7,6 +7,7 @@ using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 
+
 namespace Simulator
 {
     public class Simulation:AbstractSimulation
@@ -45,7 +46,7 @@ namespace Simulator
             _stopsGraph = stopsGraph;
             VehicleFleet = new List<Vehicle>();
             _startTimes = new List<int>();
-            GenerateVehicleFleet(5);
+            GenerateVehicleFleet(2);
             SortEvents();
             _totalEventsHandled = 0;
         }
@@ -71,7 +72,6 @@ namespace Simulator
 
             for (int ind = 0; ind < VehicleFleet.Count; ind++)
             {
-                //var events = eg.GenerateRouteEvents(VehicleFleet[ind], _startTimes[ind]);
                 var events = eg.GenerateRouteEvents(VehicleFleet[ind], _startTimes[ind]);
                 AddEvent(events);
             }

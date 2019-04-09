@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.OrTools" Version="7.0.6546" />
     <PackageReference Include="MathNet.Numerics" Version="4.7.0" />
   </ItemGroup>
 
