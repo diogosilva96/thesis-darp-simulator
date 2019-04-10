@@ -39,7 +39,7 @@ namespace Simulator.Events
                         else
                         {
                             message = message + " entered "+Vehicle.ToString() + " at " +
-                                              Customer.PickUpStop + " with destination to "+Customer.DropOffStop+" at " + Time + ".";
+                                              Customer.PickupDelivery[0] + " with destination to "+Customer.PickupDelivery[1]+" at " + Time + ".";
 
                         }
                     }
@@ -48,7 +48,7 @@ namespace Simulator.Events
                     {
                         message =  message + " left vehicle " + Vehicle.ToString() +
                                           " at " +
-                                          Customer.DropOffStop + " with origin stop as "+Customer.PickUpStop+" at " + Time + ".";
+                                          Customer.PickupDelivery[1]+ " with origin stop as "+Customer.PickupDelivery[0]+" at " + Time + ".";
                     }          
             }
 

@@ -29,6 +29,8 @@ namespace Simulator
 
         private int _totalEventsHandled;
 
+        private EventGenerator _eventGenerator;
+
         public Simulation(List<Trip> trips, DirectedGraph<Stop,double> stopsGraph)
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
@@ -41,6 +43,7 @@ namespace Simulator
 
             IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath,@"sim.txt"));
             _fileLogger = new Logger.Logger(fileRecorder);
+            _eventGenerator = new EventGenerator();
             Trips = trips;
             Events = new List<Event>();
             _stopsGraph = stopsGraph;
@@ -68,11 +71,10 @@ namespace Simulator
                 VehicleFleet.Add(v);
             }
 
-            EventGenerator eg = new EventGenerator();
 
             for (int ind = 0; ind < VehicleFleet.Count; ind++)
             {
-                var events = eg.GenerateRouteEvents(VehicleFleet[ind], _startTimes[ind]);
+                var events = _eventGenerator.GenerateRouteEvents(VehicleFleet[ind], _startTimes[ind]);
                 AddEvent(events);
             }
         
@@ -102,7 +104,7 @@ namespace Simulator
                 toPrintList.Add("number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
                 {
-                    toPrintList.Add(cust+"pickup:"+cust.PickUpStop+"dropoff:"+cust.DropOffStop);
+                    toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"dropoff:"+cust.PickupDelivery[1]);
                 }
                 toPrintList.Add("Metrics:");
                 toPrintList.Add( "Total number of requests:" + vehicle.TotalRequests);
@@ -135,10 +137,8 @@ namespace Simulator
         {
             if (evt.Category == 0 && evt is VehicleStopEvent vseEvt)
             {
-                    Console.WriteLine("Append current evt time:"+evt.Time);
-                    EventGenerator eg = new EventGenerator();
                     var baseTime = evt.Time;
-                    List<Event> customerLeaveEvents = eg.GenerateCustomerLeaveVehicleEvents(vseEvt.Vehicle,vseEvt.Stop, baseTime);
+                    List<Event> customerLeaveEvents = _eventGenerator.GenerateCustomerLeaveVehicleEvents(vseEvt.Vehicle,vseEvt.Stop, baseTime);
                     var lastInsertedLeaveTime = 0;
                     var lastInsertedEnterTime = 0;
                     if (customerLeaveEvents.Count > 0)
@@ -150,7 +150,7 @@ namespace Simulator
                         lastInsertedLeaveTime = baseTime;
                     }
                     
-                    List<Event> customerEnterEvents = eg.GenerateCustomerEnterVehicleEvents(vseEvt.Vehicle,vseEvt.Stop, lastInsertedLeaveTime, 1);
+                    List<Event> customerEnterEvents = _eventGenerator.GenerateCustomerEnterVehicleEvents(vseEvt.Vehicle,vseEvt.Stop, lastInsertedLeaveTime, 1);
                     if (customerEnterEvents.Count > 0)
                     {
                         lastInsertedEnterTime = customerEnterEvents[customerEnterEvents.Count - 1].Time;
@@ -191,8 +191,15 @@ namespace Simulator
                 }
                 AddEvent(customerEnterEvents);
                 AddEvent(customerLeaveEvents);
-
+                SortEvents();
             }
+
+                var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time+1, Trips[0].Stops[1],Trips[0].Stops[2]); //Mudar
+                if (eventReq != null)
+                {
+                    AddEvent(eventReq);
+                    SortEvents();
+                }
         }
             
         

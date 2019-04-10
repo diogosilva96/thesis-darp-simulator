@@ -33,12 +33,7 @@ namespace Simulator
 
                 ind++;
             }
-            var population = new List<Person>();
-            for (int i = 0; i < 40; i++)
-            {
-                var c = new Customer();
-                population.Add(c);
-            }
+
 
          
             AbstractSimulation sim = new Simulation(tripStopsDataObject.Trips,stopsGraph);

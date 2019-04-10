@@ -23,7 +23,7 @@ namespace Simulator
                     {
                             Handle(Events[i]);
                             Append(Events[i]);
-                            SortEvents();
+                            //SortEvents();
 
 
                     }

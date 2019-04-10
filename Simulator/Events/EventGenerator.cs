@@ -9,10 +9,14 @@ namespace Simulator.Events
 {
     class EventGenerator
     {
-
+        private EventFactory _eventFactory;
         private IDistribution _distribution;
 
 
+        public EventGenerator()
+        {
+            _eventFactory= new EventFactory();
+        }
         public int Lambda
         {
             get => Lambda;
@@ -25,8 +29,6 @@ namespace Simulator.Events
 
             List<Event> events = new List<Event>();
 
-
-            EventFactory eventFactory = new EventFactory();
             var customersToLeaveVehicleAtCurrentStop = vehicle.GetCustomersToLeaveVehicle(stop);
             var leaveTime = 0;
 
@@ -38,7 +40,7 @@ namespace Simulator.Events
                     ind++;
                     leaveTime = time + ind+1;
                     var customerLeaveVehicleEvent =
-                        eventFactory.CreateEvent(3, leaveTime, vehicle, null, customer);
+                        _eventFactory.CreateEvent(3, leaveTime, vehicle, null, customer);
                     events.Add(customerLeaveVehicleEvent);
                 }
 
@@ -60,7 +62,6 @@ namespace Simulator.Events
                 if (sample > 0 && currentStopIndex < vehicle.Router.Trip.Stops.Count - 1
                 ) // generation of customers at each stop
                 {
-                    EventFactory eventFactory = new EventFactory();
                     for (int i = 1; i <= sample; i++)
                     {
                         var rnd = new Random();
@@ -70,7 +71,7 @@ namespace Simulator.Events
                         Customer customer = new Customer(stop, dropOffStop);
                         var enterTime = time + i;
                         var customerEnterVehicleEvent =
-                            eventFactory.CreateEvent(2, enterTime, vehicle, null, customer);
+                            _eventFactory.CreateEvent(2, enterTime, vehicle, null, customer);
             
                         events.Add(customerEnterVehicleEvent);
                     }
@@ -80,6 +81,19 @@ namespace Simulator.Events
             return events;
         }
 
+        public Event GenerateCustomerRequestEvent(int time,Stop pickup, Stop dropoff)
+        {
+            Random rnd = new Random();
+            var prob = rnd.NextDouble();
+            Event evt = null;
+            if (prob <= 0.01)
+            {
+                Customer customer = new Customer(pickup, dropoff);
+                evt = _eventFactory.CreateEvent(4, time, null, null, customer);
+            }
+
+            return evt;
+        }
         public List<Event> GenerateRouteEvents(Vehicle vehicle, int startTime)
         {
             Lambda = 1;
@@ -87,7 +101,6 @@ namespace Simulator.Events
             var time = 0;
             if (vehicle.Router.Trip != null)
             {
-                var eventFactory = new EventFactory();
 
                 foreach (var stop in vehicle.Router.Trip.Stops)
                 {
@@ -103,13 +116,13 @@ namespace Simulator.Events
                         time = Convert.ToInt32(time + travelTime * 2);
                     }
 
-                    var evtArrive = eventFactory.CreateEvent(0, time, vehicle, stop, null);
+                    var evtArrive = _eventFactory.CreateEvent(0, time, vehicle, stop, null);
                     events.Add(evtArrive);
                     var waitTime = 2;
                     time = time + waitTime;
                     if (!(vehicle.Router.Trip.Stops.IndexOf(stop) == vehicle.Router.Trip.Stops.Count - 1))
                     {
-                        var evtDepart = eventFactory.CreateEvent(1, time, vehicle, stop, null);
+                        var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                         events.Add(evtDepart);
                     }
 

@@ -38,6 +38,10 @@ namespace Simulator.Events
                         //Customer left vehicle i at stop y
                         evt = new CustomerVehicleEvent(category, time, customer, vehicle);
                     break;
+                case 4:
+                    //Customer service request
+                    evt = new CustomerRequestEvent(category,time,customer);
+                    break;
             }
 
             return evt;

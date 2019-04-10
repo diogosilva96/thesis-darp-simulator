@@ -12,39 +12,33 @@ namespace Simulator.Objects
 {
     public class Customer:Person
     {
-        public Stop PickUpStop { get; set; }
-        public Stop DropOffStop { get; set; }
 
-        public int ServiceTime => DropOffTime - PickUpTime;
+        public int ServiceTime => RealTimeWindow[1]-RealTimeWindow[0];
 
         private Logger.Logger _consoleLogger;
 
-        public int PickUpTime { get; internal set; }
+        public Stop[] PickupDelivery;
 
-        public int DropOffTime { get; internal set; }
+        public int[] RealTimeWindow;
+
+        //public int[] DesiredTimeWindow;
 
         private bool _isInVehicle;
 
         
         public Customer(Stop pickUpStop,Stop dropOffStop)
         {
-            PickUpStop = pickUpStop;
-            DropOffStop = dropOffStop;
+
+            PickupDelivery = new Stop[] {pickUpStop,dropOffStop};
             Init();
         }
 
-        public Customer()
-        {
-            PickUpStop = null;
-            DropOffStop = null;
-            Init();
-           
-        }
 
         private void Init()
         {
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);
+            RealTimeWindow = new int[2];
             _isInVehicle = false;
         }
         public override string ToString()
@@ -62,14 +56,14 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (customerAdded)
                 {
-                    _consoleLogger.Log(v.State +this.ToString()+"ENTERED at " + PickUpStop +
+                    _consoleLogger.Log(v.State +this.ToString()+"ENTERED at " + PickupDelivery[0] +
                                        " at " + t.ToString()+ ".");
-                    PickUpTime = time;
+                    RealTimeWindow[0] = time;
                     _isInVehicle = true;
                 }
                 else
                 {
-                    _consoleLogger.Log(v.State+this.ToString() + "was not serviced at "+PickUpStop+" at "+t.ToString()+", because vehicle is full!");
+                    _consoleLogger.Log(v.State+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is full!");
                     _isInVehicle = false;
                 }
 
@@ -87,9 +81,9 @@ namespace Simulator.Objects
                 if (customerLeft)
                 {
                     TimeSpan t = TimeSpan.FromSeconds(time);
-                    _consoleLogger.Log(v.State+this.ToString() + "LEFT at " + DropOffStop +
+                    _consoleLogger.Log(v.State+this.ToString() + "LEFT at " + PickupDelivery[1] +
                                        "at " + t.ToString() + ".");
-                    DropOffTime = time;
+                    RealTimeWindow[1] = time;
                     _isInVehicle = false;
                 }
 

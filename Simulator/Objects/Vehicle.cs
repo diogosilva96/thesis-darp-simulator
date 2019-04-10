@@ -67,7 +67,7 @@ namespace Simulator.Objects
             List<Customer> customers = new List<Customer>();
             foreach (var customer in Customers)
             {
-                if (customer.DropOffStop == dropOffStop && !customers.Contains(customer))
+                if (customer.PickupDelivery[1] == dropOffStop && !customers.Contains(customer))
                 {
                     customers.Add(customer);
                 }
