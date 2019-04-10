@@ -14,7 +14,6 @@ namespace Simulator
     {
 
 
-        public DirectedGraph<Stop,double> StopsGraph { get; internal set; }
 
 
         private Logger.Logger _consoleLogger;
@@ -104,7 +103,7 @@ namespace Simulator
                 toPrintList.Add("number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
                 {
-                    toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"dropoff:"+cust.PickupDelivery[1]);
+                    toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"delivery:"+cust.PickupDelivery[1]);
                 }
                 toPrintList.Add("Metrics:");
                 toPrintList.Add( "Total number of requests:" + vehicle.TotalRequests);
@@ -194,7 +193,15 @@ namespace Simulator
                 SortEvents();
             }
 
-                var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time+1, Trips[0].Stops[1],Trips[0].Stops[2]); //Mudar
+                Random rnd = new Random();
+                var pickup = Trips[0].Stops[rnd.Next(0, Trips[0].Stops.Count)];
+                var delivery = pickup;
+                while (pickup == delivery)
+                {
+                    delivery = Trips[0].Stops[rnd.Next(0, Trips[0].Stops.Count)];
+                }
+                
+                var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time+1,pickup ,delivery); //Mudar
                 if (eventReq != null)
                 {
                     AddEvent(eventReq);

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
 using MathNet.Numerics.Properties;
 using Simulator.Objects;
 using Google.OrTools;
+using GraphLibrary;
 
 
 namespace Simulator
@@ -13,6 +15,12 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
+            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph();
+            DirectedGraph<Stop, double> dGraph = stopsNetworkGraph.StopsGraph;
+            MatrixBuilder matrixBuilder = new MatrixBuilder();
+            var distanceMatrix = matrixBuilder.BuildDistanceMatrix(dGraph);
+
+
             TripStopsDataObject tripStopsDataObject = new TripStopsDataObject();
             var Trips = tripStopsDataObject.Trips;
             DirectedGraph<Stop, double> stopsGraph = new DirectedGraph<Stop, double>();
@@ -33,6 +41,7 @@ namespace Simulator
 
                 ind++;
             }
+
 
 
          

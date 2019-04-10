@@ -26,10 +26,10 @@ namespace Simulator.Objects
         private bool _isInVehicle;
 
         
-        public Customer(Stop pickUpStop,Stop dropOffStop)
+        public Customer(Stop pickUpStop,Stop deliveryStop)
         {
 
-            PickupDelivery = new Stop[] {pickUpStop,dropOffStop};
+            PickupDelivery = new Stop[] {pickUpStop,deliveryStop};
             Init();
         }
 
