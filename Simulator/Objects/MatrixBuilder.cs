@@ -13,11 +13,11 @@ namespace Simulator.Objects
             return "[" + this.GetType().Name + "] ";
         }
 
-        public int[,] BuildDistanceMatrix(DirectedGraph<Stop,double> dGraph)
+        public long[,] BuildDistanceMatrix(DirectedGraph<Stop,double> dGraph)
         {
             var i = 0;
             var j = 0;
-            int[,] distanceMatrix = new int[dGraph.VerticesNumber(), dGraph.VerticesNumber()];
+            long[,] distanceMatrix = new long[dGraph.VerticesNumber(), dGraph.VerticesNumber()];
             DistanceCalculator dcalc = new DistanceCalculator();
             Console.WriteLine(this.ToString()+"Generating distance matrix...");
             foreach (var stopO in dGraph.GetVertexSet())
@@ -43,7 +43,7 @@ namespace Simulator.Objects
                 i++;
             }
 
-            Console.WriteLine(this.ToString()+"Distance matrix successfully generated matrix size:" + distanceMatrix.Length);
+            Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
  
             return distanceMatrix;
         }

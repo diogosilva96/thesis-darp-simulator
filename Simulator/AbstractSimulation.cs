@@ -40,26 +40,31 @@ namespace Simulator
         {
             Events = Events.OrderBy(evt => evt.Time).ThenBy(evt => evt.Category).ToList();
         }
-        public void AddEvent(Event evt)
+        public bool AddEvent(Event evt)
         {
             if (evt != null)
             {
                 Events.Add(evt);
+                return true;
             }
             else
             {
-                throw new ArgumentNullException();
+                return false;
             }
         }
 
-        public void AddEvent(IEnumerable<Event> eventSet)
+        public bool AddEvent(IEnumerable<Event> eventSet)
         {
             if (eventSet == null)
-                throw new ArgumentNullException();
+            {
+                return false;
+            }
+
             foreach (var evt in eventSet)
             {
-               Events.Add(evt);                
+               Events.Add(evt);
             }
+            return true;
         }
         public abstract void PrintMetrics();
     }

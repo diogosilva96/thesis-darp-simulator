@@ -13,10 +13,13 @@ namespace GraphLibrary.Objects
         public List<Trip> Trips { get; internal set; }
         public List<Stop> Stops { get; internal set; }
 
+        public List<Route> Routes { get; internal set; }
+
         public TripStopsDataObject()
         {
             Trips = new List<Trip>();
             Stops = new List<Stop>();
+            Routes = new List<Route>();
             Init();
         }
 
@@ -25,12 +28,6 @@ namespace GraphLibrary.Objects
             return "["+GetType().Name+"] ";
         }
 
-        private List<string[]>
-            _stopsData
-        {
-            get;
-            set;
-        } // list with string arr (stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon)
 
         public List<string[]> TripsStopData { get; internal set; } //list with string arr (trip_id,stop_id)
 
@@ -38,11 +35,23 @@ namespace GraphLibrary.Objects
         {
 
             List<string[]> _stopTimesData = null;
-            
-            LoadTrips();
-            _stopsData = GenerateStopsData();
-            LoadStops();
-            _stopTimesData = GenerateStopTimesDataList();
+            var stopsPath = Path.Combine(Environment.CurrentDirectory, @"files\stops.txt"); //files from google transit (GTFS file)
+            var routesPath = Path.Combine(Environment.CurrentDirectory, @"files\routes.txt"); //files from google transit (GTFS file)
+            var stopTimesPath =
+                Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
+            string tripsPath = Path.Combine(Environment.CurrentDirectory, @"files\trips.txt");
+            var routesData = GenerateListData(routesPath);
+            LoadRoutes(routesData);
+            var tripsData = GenerateListData(tripsPath);
+            LoadTrips(tripsData);
+            var stopsData = GenerateListData(stopsPath);
+            LoadStops(stopsData);
+            var stopTimesDataList = GenerateListData(stopTimesPath);
+            _stopTimesData = new List<string[]>();
+            foreach (var singleData in stopTimesDataList)
+            {
+                _stopTimesData.Add(singleData);
+            }
 
             if (_stopTimesData != null)
             {
@@ -51,9 +60,9 @@ namespace GraphLibrary.Objects
                 if (!File.Exists(tripsStopTuplePath)
                 ) //if the file doesn't exists, generate the dictionary required to sort the stops in ascending order then export to txt, then reads from the txt the next time the program is executed (to save computational time)
                 {
-                    var _tripIdList = GenerateTripIdList();
-                    var _tripsStopTupleDictionary = GenerateTripStopTuplesDictionary(_tripIdList, _stopTimesData);
-                    ExportTripStopsToTxt(_tripsStopTupleDictionary,tripsStopTuplePath);
+                    var tripIdList = GenerateTripIdList();
+                    var tripsStopTupleDictionary = GenerateTripStopTuplesDictionary(tripIdList, _stopTimesData);
+                    ExportTripStopsToTxt(tripsStopTupleDictionary,tripsStopTuplePath);
                 }
                 FileDataReader fdr = new FileDataReader();
                 TripsStopData = fdr.ImportData(tripsStopTuplePath, ',');
@@ -68,27 +77,45 @@ namespace GraphLibrary.Objects
         }
         public Stop FindStop(int sId)
         {
-            Stop stop = null;
-            bool stopFound = false;
-            foreach (var _stop in Stops)
+            Stop Stop = null;
+            foreach (var stop in Stops)
             {
-                if (_stop.Id == sId)
+                if (stop.Id == sId)
                 {
-                    stop = _stop;
-                    stopFound = true;
+                    Stop = stop;
+                    break;
                 }
 
-                if (stopFound) break;
             }
 
-            return stop;
+            return Stop;
         }
 
-        public void LoadStops()
+        public void LoadRoutes(List<string[]> routesData)
+        {
+            Console.WriteLine(this + "Loading Routes...");
+            var watch = Stopwatch.StartNew();
+            foreach (var routeData in routesData)
+            {
+                Route route = new Route(int.Parse(routeData[0]),routeData[2],routeData[3],routeData[4], int.Parse(routeData[1]));
+                if (!Routes.Contains(route))
+                {
+                    Routes.Add(route);
+                }
+            }
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            var seconds = elapsedMs * 0.001;
+            Console.WriteLine(this.ToString() + Routes.Count + " routes were successfully loaded in " + seconds +
+                              " seconds.");
+
+        }
+
+        public void LoadStops(List<string[]> stopsData)
         {
             Console.WriteLine(this + "Loading Stops...");
             var watch = Stopwatch.StartNew();
-            foreach (var stopData in _stopsData)
+            foreach (var stopData in stopsData)
             {
                 var auxLat = stopData[4].Split(".");
                 var auxLon = stopData[5].Split(".");
@@ -114,27 +141,19 @@ namespace GraphLibrary.Objects
                 var count = 0;
                 Console.WriteLine(this + "Inserting Stops into trips...");
                 var watch = Stopwatch.StartNew();
-                int tripId = 0;
-                foreach (var trip in Trips)
-                {
                     foreach (var tripStopData in TripsStopData)
                     {
-                        if (trip.Id == int.Parse(tripStopData[0]))
+                        var tr = Trips.Find(t => t.Id == int.Parse(tripStopData[0]));
+                        if (tr != null)
                         {
-                            var stopId = int.Parse(tripStopData[1]);
-                            Stop stop = FindStop(stopId);
+                                var stopId = int.Parse(tripStopData[1]);
+                                Stop stop = FindStop(stopId);
+
+                                tr.Stops.Add(stop);
                             
-                            trip.Stops.Add(stop);
                         }
 
-                        count++;
-                    }
 
-                    if (count > 200)
-                    {
-                      
-                        break;
-                    }
                 }
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
@@ -143,44 +162,46 @@ namespace GraphLibrary.Objects
                                   " seconds.");
             }
         }
-        public List<string[]> GenerateStopsData()
-        {
 
-            var stops_Path = Path.Combine(Environment.CurrentDirectory, @"files\stops.txt"); //files from google transit (GTFS file)
-            if (!File.Exists(stops_Path))
+        public List<string[]> GenerateListData(string path)
+        {
+            List<string[]> listData = null;  
+            if (!File.Exists(path))
             {
-                Console.WriteLine(this+ "Error! File stops.txt does not exist!");
-                return null;
+                Console.WriteLine(this+" Error! File at "+path+ " does not exist!");
             }
             else
             {
                 FileDataReader fdr = new FileDataReader();
-                _stopsData = fdr.ImportData(stops_Path, ',');
+                listData = fdr.ImportData(path, ',');
             }
 
-            return _stopsData;
+            return listData;
         }
 
-    public void LoadTrips()
+    public void LoadTrips(List<string[]>tripsData)
         {
            
-            string tripsPath = Path.Combine(Environment.CurrentDirectory, @"files\trips.txt");
-            if (!File.Exists(tripsPath))
-            {
-                Console.WriteLine(this + "Error! File trips.txt does not exist!");
-            }
-            else
-            {
-                Console.WriteLine(this + "Loading Trips...");
+      
+            Console.WriteLine(this + "Loading Trips...");
                 var watch = Stopwatch.StartNew();
-                var fdr = new FileDataReader();
-                var _tripsData = fdr.ImportData(tripsPath, ',');
-                foreach (var tripData in _tripsData)
+
+                foreach (var tripData in tripsData)
                 {
+                    int RouteId = int.Parse(tripData[0]);
                     Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
                     if (!Trips.Contains(trip))
                     {
                         Trips.Add(trip);
+                    }
+
+                    var route = Routes.Find(r => r.Id == RouteId);
+                    if (route != null)
+                    {
+                        if (!route.Trips.Contains(trip)) // if the route is an urban route and isn't in trips adds it
+                        {
+                            route.Trips.Add(trip); // adds the trip to the route
+                        }
                     }
                 }
                 watch.Stop();
@@ -188,7 +209,7 @@ namespace GraphLibrary.Objects
                 var seconds = elapsedMs * 0.001;
                 Console.WriteLine(this.ToString() +Trips.Count+" trips were successfully loaded in " + seconds +
                                   " seconds.");
-            }
+
         }
         private void ExportTripStopsToTxt(Dictionary<int, List<Tuple<int, int>>> _tripsStopTupleDictionary,string path)
         {
@@ -208,34 +229,12 @@ namespace GraphLibrary.Objects
             }
         }
 
-        public List<string[]> GenerateStopTimesDataList()
-        {
-            var stop_times_Path =
-                Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
-            if (!File.Exists(stop_times_Path))
-            {
-                Console.WriteLine(this + " Error! File stop_times.txt does not exist!");
-                return null;
-            }
-            else
-            {
-                FileDataReader fdr = new FileDataReader();
-                var _stopTimesData = fdr.ImportData(stop_times_Path, ',');
-                var stopTimesData = new List<string[]>();
-                foreach (var singleData in _stopTimesData)
-                {
-                    stopTimesData.Add(singleData);
-                }
-
-                return stopTimesData;
-            }
-        }
 
         private List<int> GenerateTripIdList()
         {
-            var stop_times_Path =
+            var stopTimesPath =
                 Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
-            if (!File.Exists(stop_times_Path))
+            if (!File.Exists(stopTimesPath))
             {
                 Console.WriteLine(this + " Error! File stop_times.txt does not exist!");
                 return null;
@@ -243,9 +242,9 @@ namespace GraphLibrary.Objects
             else
             {
                 FileDataReader fdr = new FileDataReader();
-                var _stopTimesData = fdr.ImportData(stop_times_Path, ',');
+                var stopTimesData = fdr.ImportData(stopTimesPath, ',');
                 var tripsIdList = new List<int>();
-                foreach (var singleData in _stopTimesData)
+                foreach (var singleData in stopTimesData)
                     if (!tripsIdList.Contains(int.Parse(singleData[0])))
                         tripsIdList.Add(
                             int.Parse(singleData[0])); //adds the trip_id if it doesn't exist yet in trips_id_list

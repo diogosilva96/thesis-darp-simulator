@@ -9,6 +9,7 @@ namespace GraphLibrary.Objects
 
         public List<Stop> Stops { get; set; }
 
+
         public Trip(int id, string headsign)
         {
             Id = id;

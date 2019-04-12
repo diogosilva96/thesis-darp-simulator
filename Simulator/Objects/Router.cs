@@ -35,7 +35,7 @@ namespace Simulator.Objects
 
         public void Init()
         {
-            if (Trip != null && _stopsEnum != null)
+            if (Trip != null && _stopsEnum != null && Trip.Stops.Count >0)
             {
                 _stopsEnum.MoveNext();
                 CurrentStop = _stopsEnum.Current;
@@ -45,7 +45,7 @@ namespace Simulator.Objects
         }
         public void GoToNextStop()
         {
-            if (Trip != null)
+            if (Trip != null && Trip.Stops.Count >0)
             {
                 if (_numStopsIterated < Trip.Stops.Count - 2)
                 {

@@ -12,15 +12,11 @@ namespace Simulator
 {
     public class Simulation:AbstractSimulation
     {
-
-
-
-
         private Logger.Logger _consoleLogger;
 
         private Logger.Logger _fileLogger;
 
-        private List<Trip> Trips { get; }
+        private List<Route> Routes { get; }
 
         private DirectedGraph<Stop, double> _stopsGraph;
 
@@ -30,7 +26,7 @@ namespace Simulator
 
         private EventGenerator _eventGenerator;
 
-        public Simulation(List<Trip> trips, DirectedGraph<Stop,double> stopsGraph)
+        public Simulation(List<Route> routes, DirectedGraph<Stop,double> stopsGraph)
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(consoleRecorder);
@@ -43,12 +39,12 @@ namespace Simulator
             IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath,@"sim.txt"));
             _fileLogger = new Logger.Logger(fileRecorder);
             _eventGenerator = new EventGenerator();
-            Trips = trips;
+            Routes = routes;
             Events = new List<Event>();
             _stopsGraph = stopsGraph;
             VehicleFleet = new List<Vehicle>();
             _startTimes = new List<int>();
-            GenerateVehicleFleet(2);
+            GenerateVehicleFleet(4);
             SortEvents();
             _totalEventsHandled = 0;
         }
@@ -66,10 +62,9 @@ namespace Simulator
                 int serviceStartTime = rand.Next(0,300);
                 _startTimes.Add(serviceStartTime);
                 v.StopsGraph = _stopsGraph;
-                v.Router.Trip = Trips[0];
+                v.Router.Trip = Routes[0].Trips[0];
                 VehicleFleet.Add(v);
             }
-
 
             for (int ind = 0; ind < VehicleFleet.Count; ind++)
             {
@@ -97,6 +92,7 @@ namespace Simulator
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
                 toPrintList.Add("Current " + vehicle.Router.Trip);
+                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.Router.Trip)).ToString());
                 var t = TimeSpan.FromSeconds(_startTimes[i]);
                 toPrintList.Add("Service start time:" + t.ToString());
                 //adicionar service end time?
@@ -188,17 +184,21 @@ namespace Simulator
                         }
                     }
                 }
-                AddEvent(customerEnterEvents);
-                AddEvent(customerLeaveEvents);
-                SortEvents();
+
+                var evtEnterAdded = AddEvent(customerEnterEvents);
+                var evtLeaveAdded = AddEvent(customerLeaveEvents);
+                if (evtLeaveAdded || evtEnterAdded)
+                {
+                    SortEvents();
+                }
             }
 
                 Random rnd = new Random();
-                var pickup = Trips[0].Stops[rnd.Next(0, Trips[0].Stops.Count)];
+                var pickup = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
                 var delivery = pickup;
                 while (pickup == delivery)
                 {
-                    delivery = Trips[0].Stops[rnd.Next(0, Trips[0].Stops.Count)];
+                    delivery = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
                 }
                 
                 var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time+1,pickup ,delivery); //Mudar
