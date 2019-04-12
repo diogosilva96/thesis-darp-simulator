@@ -15,11 +15,19 @@ namespace GraphLibrary.Objects
 
         public List<Route> Routes { get; internal set; }
 
+        public List<Trip> UrbanTrips { get; internal set; }
+
+        public List<Stop> UrbanStops { get; internal set; }
+
+
+
         public TripStopsDataObject()
         {
             Trips = new List<Trip>();
             Stops = new List<Stop>();
             Routes = new List<Route>();
+            UrbanStops = new List<Stop>();
+            UrbanTrips = new List<Trip>();
             Init();
         }
 
@@ -75,6 +83,21 @@ namespace GraphLibrary.Objects
                                   " Error! Failed to generate the data structure because the required files do not exist!");
             }
         }
+
+        public Trip FindTrip(int tId)
+        {
+            Trip Trip = null;
+            foreach (var trip in Trips)
+            {
+                if (trip.Id == tId)
+                {
+                    Trip = trip;
+                    break;
+                }
+            }
+
+            return Trip;
+        }
         public Stop FindStop(int sId)
         {
             Stop Stop = null;
@@ -89,6 +112,36 @@ namespace GraphLibrary.Objects
             }
 
             return Stop;
+        }
+
+        public void GenerateUrbanTripsAndStops()
+        {
+
+            foreach (var route in Routes)
+            {
+                foreach (var trip in route.Trips)
+                {
+                    if (route.UrbanRoute)
+                    {
+                        if (!UrbanTrips.Contains(trip))
+                        {
+                              UrbanTrips.Add(trip);
+
+                        }
+                    }
+
+                foreach (var s in trip.Stops)
+                    {
+                        if (route.UrbanRoute)
+                        {
+                            if (!UrbanStops.Contains(s))
+                            {
+                                UrbanStops.Add(s);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public void LoadRoutes(List<string[]> routesData)
@@ -138,17 +191,17 @@ namespace GraphLibrary.Objects
             
             if (TripsStopData != null)
             {
-                var count = 0;
                 Console.WriteLine(this + "Inserting Stops into trips...");
                 var watch = Stopwatch.StartNew();
-                    foreach (var tripStopData in TripsStopData)
+                foreach (var tripStopData in TripsStopData)
                     {
                         var tr = Trips.Find(t => t.Id == int.Parse(tripStopData[0]));
+                       
+                       
                         if (tr != null)
                         {
                                 var stopId = int.Parse(tripStopData[1]);
                                 Stop stop = FindStop(stopId);
-
                                 tr.Stops.Add(stop);
                             
                         }
@@ -185,7 +238,6 @@ namespace GraphLibrary.Objects
       
             Console.WriteLine(this + "Loading Trips...");
                 var watch = Stopwatch.StartNew();
-
                 foreach (var tripData in tripsData)
                 {
                     int RouteId = int.Parse(tripData[0]);
@@ -198,10 +250,11 @@ namespace GraphLibrary.Objects
                     var route = Routes.Find(r => r.Id == RouteId);
                     if (route != null)
                     {
-                        if (!route.Trips.Contains(trip)) // if the route is an urban route and isn't in trips adds it
+                        if (!route.Trips.Contains(trip)) // if the trip isn't in trips adds it
                         {
                             route.Trips.Add(trip); // adds the trip to the route
                         }
+
                     }
                 }
                 watch.Stop();

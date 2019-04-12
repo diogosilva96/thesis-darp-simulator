@@ -20,8 +20,9 @@ namespace Simulator
             //MatrixBuilder matrixBuilder = new MatrixBuilder();
             //var distanceMatrix = matrixBuilder.BuildDistanceMatrix(dGraph);
             TripStopsDataObject tripStopsDataObject = new TripStopsDataObject();
-            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(tripStopsDataObject);
+            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(tripStopsDataObject,true);
             stopsNetworkGraph.LoadGraph();
+
             //var Trips = tripStopsDataObject.Trips;
             //DirectedGraph<Stop, double> stopsGraph = new DirectedGraph<Stop, double>();
             //stopsGraph.AddVertex(Trips[0].Stops);

@@ -15,7 +15,7 @@ namespace GraphLibrary
         static void Main(string[] args)
         {
             TripStopsDataObject tripStopsDataObject = new TripStopsDataObject();
-            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(tripStopsDataObject);
+            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(tripStopsDataObject,false);
             DirectedGraph<Stop, double> dGraph = stopsNetworkGraph.StopsGraph;
          
             //DijkstraAlgorithm dA = new DijkstraAlgorithm();
