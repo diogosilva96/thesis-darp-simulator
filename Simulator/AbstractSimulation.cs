@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
+using GraphLibrary;
+using GraphLibrary.GraphLibrary;
+using GraphLibrary.Objects;
 using Simulator.Events;
+using Simulator.Logger;
 using Simulator.Objects;
 
 namespace Simulator
@@ -14,8 +19,37 @@ namespace Simulator
 
         public List<Vehicle> VehicleFleet;
 
+        protected Logger.Logger _consoleLogger;
+
+        protected Logger.Logger _fileLogger;
+
+        protected TripStopsDataObject _tsDataObject;
+
+        protected DirectedGraph<Stop, double> _stopsGraph;
+
+        public AbstractSimulation()
+        {
+            IRecorder consoleRecorder = new ConsoleRecorder();
+            _consoleLogger = new Logger.Logger(consoleRecorder);
+            string loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
+            if (!Directory.Exists(loggerPath))
+            {
+                Directory.CreateDirectory(loggerPath);
+            }
+
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"sim.txt"));
+            _fileLogger = new Logger.Logger(fileRecorder);
+            Events = new List<Event>();
+            VehicleFleet = new List<Vehicle>();
+
+            _tsDataObject = new TripStopsDataObject();
+            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(_tsDataObject, true);
+            stopsNetworkGraph.LoadGraph();
+            _stopsGraph = stopsNetworkGraph.StopsGraph;
+        }
         public void Simulate()
         {
+            GenerateVehicleFleet();
             if (Events != null)
             {
                     
@@ -32,6 +66,7 @@ namespace Simulator
             
         }
 
+        public abstract void GenerateVehicleFleet();
         public abstract void Handle(Event evt);
 
         public abstract void Append(Event evt);

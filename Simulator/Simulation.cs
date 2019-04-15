@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using GraphLibrary;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
 using Simulator.Events;
@@ -12,66 +13,44 @@ namespace Simulator
 {
     public class Simulation:AbstractSimulation
     {
-        private Logger.Logger _consoleLogger;
-
-        private Logger.Logger _fileLogger;
-
-        private List<Route> Routes { get; }
-
-        private DirectedGraph<Stop, double> _stopsGraph;
-
-        private List<int> _startTimes;
+        public List<Route> Routes;
+        
 
         private int _totalEventsHandled;
 
         private EventGenerator _eventGenerator;
 
-        public Simulation(List<Route> routes, DirectedGraph<Stop,double> stopsGraph)
+        public Simulation()
         {
-            IRecorder consoleRecorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(consoleRecorder);
-            string loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
-            if (!Directory.Exists(loggerPath))
-            {
-                Directory.CreateDirectory(loggerPath);
-            }
-
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath,@"sim.txt"));
-            _fileLogger = new Logger.Logger(fileRecorder);
-            _eventGenerator = new EventGenerator();
-            Routes = routes;
-            Events = new List<Event>();
-            _stopsGraph = stopsGraph;
-            VehicleFleet = new List<Vehicle>();
-            _startTimes = new List<int>();
-            GenerateVehicleFleet(4);
-            SortEvents();
+            Routes = _tsDataObject.Routes;
+            _eventGenerator = new EventGenerator();   
             _totalEventsHandled = 0;
         }
 
-        public void GenerateVehicleFleet(int numVehicles)
+        public override void GenerateVehicleFleet()
         {
-
             Random rand = new Random();
-
-            for (int i = 0; i < numVehicles; i++)
+            foreach (var route in Routes) // Generates a vehicle for each urban route
             {
-                var speed = rand.Next(30, 51);
-                var capacity = rand.Next(10,26);
-                var v = new Vehicle(speed, capacity);
-                int serviceStartTime = rand.Next(0,300);
-                _startTimes.Add(serviceStartTime);
-                v.StopsGraph = _stopsGraph;
-                v.Router.Trip = Routes[0].Trips[0];
-                VehicleFleet.Add(v);
+                if (route.UrbanRoute)
+                {
+                    var v = new Vehicle(35, 20);
+                    v.StopsGraph = _stopsGraph;
+                    foreach (var routeTrip in route.Trips)
+                    {
+                        v.Router.AddTrip(routeTrip);
+                    }
+
+                    VehicleFleet.Add(v);
+                }
             }
 
-            for (int ind = 0; ind < VehicleFleet.Count; ind++)
+            foreach (var vehicle in VehicleFleet)
             {
-                var events = _eventGenerator.GenerateRouteEvents(VehicleFleet[ind], _startTimes[ind]);
+                var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTime);
                 AddEvent(events);
-            }
-        
+            } 
+            SortEvents();
         }
  
         public override void PrintMetrics()
@@ -91,10 +70,11 @@ namespace Simulator
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Current " + vehicle.Router.Trip);
-                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.Router.Trip)).ToString());
-                var t = TimeSpan.FromSeconds(_startTimes[i]);
-                toPrintList.Add("Service start time:" + t.ToString());
+                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.Router.CurrentTrip)).ToString() + " - "+vehicle.Router.CurrentTrip);
+                var startTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindow[0]);
+                var endTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindow[1]);
+                toPrintList.Add("Service start time:" + startTime.ToString());
+                toPrintList.Add("Service end time:"+endTime.ToString());
                 //adicionar service end time?
                 toPrintList.Add("number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)

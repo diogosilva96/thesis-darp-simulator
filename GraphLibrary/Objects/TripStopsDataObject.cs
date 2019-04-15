@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace GraphLibrary.Objects
@@ -20,7 +21,6 @@ namespace GraphLibrary.Objects
         public List<Stop> UrbanStops { get; internal set; }
 
 
-
         public TripStopsDataObject()
         {
             Trips = new List<Trip>();
@@ -28,7 +28,8 @@ namespace GraphLibrary.Objects
             Routes = new List<Route>();
             UrbanStops = new List<Stop>();
             UrbanTrips = new List<Trip>();
-            Init();
+            
+            Load();
         }
 
         public override string ToString()
@@ -39,7 +40,7 @@ namespace GraphLibrary.Objects
 
         public List<string[]> TripsStopData { get; internal set; } //list with string arr (trip_id,stop_id)
 
-        public void Init()
+        public void Load()
         {
 
             List<string[]> _stopTimesData = null;
@@ -55,64 +56,24 @@ namespace GraphLibrary.Objects
             var stopsData = GenerateListData(stopsPath);
             LoadStops(stopsData);
             var stopTimesDataList = GenerateListData(stopTimesPath);
-            _stopTimesData = new List<string[]>();
-            foreach (var singleData in stopTimesDataList)
-            {
-                _stopTimesData.Add(singleData);
-            }
+          
 
-            if (_stopTimesData != null)
-            {
-                var tripsStopTuplePath =
+
+                var tripStopsPath =
                     Path.Combine(Environment.CurrentDirectory, @"files\trip_stops.txt"); //file generated from stop_times.txt and stop.txt
-                if (!File.Exists(tripsStopTuplePath)
+                if (!File.Exists(tripStopsPath)
                 ) //if the file doesn't exists, generate the dictionary required to sort the stops in ascending order then export to txt, then reads from the txt the next time the program is executed (to save computational time)
                 {
-                    var tripIdList = GenerateTripIdList();
-                    var tripsStopTupleDictionary = GenerateTripStopTuplesDictionary(tripIdList, _stopTimesData);
-                    ExportTripStopsToTxt(tripsStopTupleDictionary,tripsStopTuplePath);
+                  
+                    var tripsStopTupleDictionary = GenerateTripStopTuplesDictionary(stopTimesDataList);
+                    ExportTripStopsToTxt(tripsStopTupleDictionary,tripStopsPath);
                 }
                 FileDataReader fdr = new FileDataReader();
-                TripsStopData = fdr.ImportData(tripsStopTuplePath, ',');
-                LoadTripStops();
-
-            }
-            else
-            {
-                Console.WriteLine(this+
-                                  " Error! Failed to generate the data structure because the required files do not exist!");
-            }
+                TripsStopData = fdr.ImportData(tripStopsPath, ',');
+                LoadTripStops();  
+                LoadTripStartTime(TripsStopData);
         }
 
-        public Trip FindTrip(int tId)
-        {
-            Trip Trip = null;
-            foreach (var trip in Trips)
-            {
-                if (trip.Id == tId)
-                {
-                    Trip = trip;
-                    break;
-                }
-            }
-
-            return Trip;
-        }
-        public Stop FindStop(int sId)
-        {
-            Stop Stop = null;
-            foreach (var stop in Stops)
-            {
-                if (stop.Id == sId)
-                {
-                    Stop = stop;
-                    break;
-                }
-
-            }
-
-            return Stop;
-        }
 
         public void GenerateUrbanTripsAndStops()
         {
@@ -144,6 +105,35 @@ namespace GraphLibrary.Objects
             }
         }
 
+        public void LoadTripStartTime(List<string[]> tripStopTimesData)
+        {
+
+            Console.WriteLine(this + "Loading Trips Start times...");
+            var watch = Stopwatch.StartNew();
+            Dictionary<int,int> tripIdStartTimeDictionary = new Dictionary<int, int>();
+            foreach (var tripStopTime in tripStopTimesData)
+            {
+                var tripId = int.Parse(tripStopTime[0]);
+                
+                if (!tripIdStartTimeDictionary.ContainsKey(tripId))//since the first time it finds the trip it isn't in the dict it will add the trip start time to the dict (it is the start time because the first time it finds it, it is already sorted).
+                {
+                    var tripStartTime = tripStopTime[2]; // start time in hour/minute/second
+                    var startTimeInSeconds = TimeSpan.Parse(tripStartTime).TotalSeconds;
+                    tripIdStartTimeDictionary.Add(tripId,Convert.ToInt32(startTimeInSeconds));
+                }
+            }
+
+            foreach (var dictionary in tripIdStartTimeDictionary)
+            {
+                var trip = Trips.Find(t => t.Id == dictionary.Key); //Adds the start time to the trip
+                trip.StartTime = dictionary.Value;
+            }
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            var seconds = elapsedMs * 0.001;
+            Console.WriteLine(this.ToString() + " trips start times were successfully loaded in " + seconds +
+                              " seconds.");
+        }
         public void LoadRoutes(List<string[]> routesData)
         {
             Console.WriteLine(this + "Loading Routes...");
@@ -196,14 +186,12 @@ namespace GraphLibrary.Objects
                 foreach (var tripStopData in TripsStopData)
                     {
                         var tr = Trips.Find(t => t.Id == int.Parse(tripStopData[0]));
-                       
-                       
+
                         if (tr != null)
                         {
                                 var stopId = int.Parse(tripStopData[1]);
-                                Stop stop = FindStop(stopId);
+                                Stop stop = Stops.Find(s=>s.Id == stopId);
                                 tr.Stops.Add(stop);
-                            
                         }
 
 
@@ -234,20 +222,18 @@ namespace GraphLibrary.Objects
 
     public void LoadTrips(List<string[]>tripsData)
         {
-           
-      
             Console.WriteLine(this + "Loading Trips...");
                 var watch = Stopwatch.StartNew();
                 foreach (var tripData in tripsData)
                 {
-                    int RouteId = int.Parse(tripData[0]);
+                    int routeId = int.Parse(tripData[0]);
                     Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
                     if (!Trips.Contains(trip))
                     {
                         Trips.Add(trip);
                     }
 
-                    var route = Routes.Find(r => r.Id == RouteId);
+                    var route = Routes.Find(r => r.Id == routeId);
                     if (route != null)
                     {
                         if (!route.Trips.Contains(trip)) // if the trip isn't in trips adds it
@@ -264,17 +250,17 @@ namespace GraphLibrary.Objects
                                   " seconds.");
 
         }
-        private void ExportTripStopsToTxt(Dictionary<int, List<Tuple<int, int>>> _tripsStopTupleDictionary,string path)
+        private void ExportTripStopsToTxt(Dictionary<int, List<Tuple<int, string[]>>> tripsStopTupleDictionary,string path)
         {
             using (var file = new StreamWriter(path, true)) //writes the data to a file
             {
-                file.WriteLine("trip_id,stop_id");
-                foreach (var Trip_StopTuple in _tripsStopTupleDictionary)
+                file.WriteLine("trip_id,stop_id,arrival_time");
+                foreach (var tripStopTuple in tripsStopTupleDictionary)
                 {
-                    var tuples = Trip_StopTuple.Value;
+                    var tuples = tripStopTuple.Value;
                     foreach (var tuple in tuples)
                     {
-                        var text = Trip_StopTuple.Key.ToString() + ',' + tuple.Item2;
+                        var text = tripStopTuple.Key.ToString() + ',' + tuple.Item2[0] + ',' + tuple.Item2[1];
                         file.WriteLine(
                             text); // writes the trip_id,stop_id with the stop order already sorted in ascent order 
                     }
@@ -309,28 +295,34 @@ namespace GraphLibrary.Objects
         }
 
 
-        private Dictionary<int, List<Tuple<int, int>>> GenerateTripStopTuplesDictionary(List<int> _tripsList,List<string[]> _stopTimesData)
+        private Dictionary<int, List<Tuple<int, string[]>>> GenerateTripStopTuplesDictionary(List<string[]> stopTimesData)
         {
-            var tripStopTuplesDictionary = new Dictionary<int, List<Tuple<int, int>>>();
-            var stopTupleList = new List<Tuple<int, int>>();
+            var tripsIdList = GenerateTripIdList();
+            var tripStopTuplesDictionary = new Dictionary<int, List<Tuple<int,string[]>>>();
             Console.WriteLine(this + "Generating the required data structure...");
+
             var watch = Stopwatch.StartNew();
+            List<Tuple<int,string[]>> stopTupleList = new List<Tuple<int,string[]>>();
 
-            foreach (var id in _tripsList)
+            foreach (var tripId in tripsIdList)
             {
-                foreach (var dataInfo in _stopTimesData)
-                    if (id == int.Parse(dataInfo[0]))
+                foreach (var dataInfo in stopTimesData)
+                    if (tripId == int.Parse(dataInfo[0]))
                     {
+                       
                         var stopSeq = int.Parse(dataInfo[4]);
-                        var stopId = int.Parse(dataInfo[3]);
-                        stopTupleList.Add(Tuple.Create(stopSeq,
-                            stopId));
-                    }
+                        var stopId = dataInfo[3];
+                        var stopArrivalTime = dataInfo[1];
+                        string[] stopIdArrivalTimeStrings = new string[2];
+                        stopIdArrivalTimeStrings[0] = stopId;
+                        stopIdArrivalTimeStrings[1] = stopArrivalTime;
+                        var tuple = Tuple.Create(stopSeq, stopIdArrivalTimeStrings);
+                        stopTupleList.Add(tuple);
 
-                stopTupleList
-                    .Sort(); //sorts the list in order to get the connecting vertices, sorts by stop_seq (ascending order)
-                tripStopTuplesDictionary.Add(id, stopTupleList);
-                stopTupleList = new List<Tuple<int, int>>();
+                    }
+                stopTupleList.Sort();
+                tripStopTuplesDictionary.Add(tripId, stopTupleList);
+                stopTupleList = new List<Tuple<int, string[]>>();
             }
 
             watch.Stop();

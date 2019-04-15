@@ -54,20 +54,20 @@ namespace Simulator.Events
             List<Event> events = new List<Event>();
             Lambda = lambda;
 
-            if (vehicle.Router.Trip != null)
+            if (vehicle.Router.CurrentTrip != null)
             {
 
                 var sample = ((Poisson) _distribution).Sample();
-                int currentStopIndex = vehicle.Router.Trip.Stops.IndexOf(stop);
-                if (sample > 0 && currentStopIndex < vehicle.Router.Trip.Stops.Count - 1
+                int currentStopIndex = vehicle.Router.CurrentTrip.Stops.IndexOf(stop);
+                if (sample > 0 && currentStopIndex < vehicle.Router.CurrentTrip.Stops.Count - 1
                 ) // generation of customers at each stop
                 {
                     for (int i = 1; i <= sample; i++)
                     {
                         var rnd = new Random();
                         int dropOffStopIndex = rnd.Next(currentStopIndex + 1,
-                            vehicle.Router.Trip.Stops.Count - 1);
-                        Stop dropOffStop = vehicle.Router.Trip.Stops[dropOffStopIndex];
+                            vehicle.Router.CurrentTrip.Stops.Count - 1);
+                        Stop dropOffStop = vehicle.Router.CurrentTrip.Stops[dropOffStopIndex];
                         Customer customer = new Customer(stop, dropOffStop);
                         var enterTime = time + i;
                         var customerEnterVehicleEvent =
@@ -99,12 +99,12 @@ namespace Simulator.Events
             Lambda = 1;
             var events = new List<Event>();
             var time = 0;
-            if (vehicle.Router.Trip != null)
+            if (vehicle.Router.CurrentTrip != null)
             {
 
-                foreach (var stop in vehicle.Router.Trip.Stops)
+                foreach (var stop in vehicle.Router.CurrentTrip.Stops)
                 {
-                    if (stop == vehicle.Router.Trip.Stops[0])
+                    if (stop == vehicle.Router.CurrentTrip.Stops[0])
                     {
                         time = startTime;
                     }
@@ -120,7 +120,7 @@ namespace Simulator.Events
                     events.Add(evtArrive);
                     var waitTime = 2;
                     time = time + waitTime;
-                    if (!(vehicle.Router.Trip.Stops.IndexOf(stop) == vehicle.Router.Trip.Stops.Count - 1))
+                    if (!(vehicle.Router.CurrentTrip.Stops.IndexOf(stop) == vehicle.Router.CurrentTrip.Stops.Count - 1))
                     {
                         var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                         events.Add(evtDepart);

@@ -27,8 +27,6 @@ namespace Simulator.Objects
 
         public int TotalDeniedRequests => (TotalRequests - TotalServicedRequests);
 
-        public int SeatsLeft => (-Customers.Count + Capacity);
-
         public DirectedGraph<Stop,double> StopsGraph { get; set; }
 
         private readonly Logger.Logger _consoleLogger;
@@ -98,15 +96,17 @@ namespace Simulator.Objects
             if (Router.CurrentStop == stop)
             {
                 TimeSpan t = TimeSpan.FromSeconds(time);
-                if (Router.CurrentStop == Router.Trip.Stops[0])
+                if (Router.CurrentStop == Router.CurrentTrip.Stops[0])
                 {
-                    _consoleLogger.Log(this.ToString() + "Trip " + this.Router.Trip.Id + " started at "+t.ToString()+".");
+                    _consoleLogger.Log(this.ToString() + "CurrentTrip " + this.Router.CurrentTrip.Id + " started at "+t.ToString()+".");
+                    this.Router.StartEndTimeWindow[0] = time;
                 }
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+t.ToString()+".");
                 if (Router.NextStop == null)
                 {
-                    _consoleLogger.Log(this.ToString()+"Trip " + this.Router.Trip.Id + " finished at "+t.ToString()+".");
-                    
+                    _consoleLogger.Log(this.ToString()+"CurrentTrip " + this.Router.CurrentTrip.Id + " finished at "+t.ToString()+".");
+                    this.Router.StartEndTimeWindow[1] = time;
+
                 }
                 return true;
             }

@@ -7,6 +7,8 @@ namespace GraphLibrary.Objects
         public int Id { get; }
         public string Headsign { get; }
 
+        public int StartTime { get; set; }
+
         public List<Stop> Stops { get; set; }
 
 
