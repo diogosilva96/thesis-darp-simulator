@@ -10,25 +10,22 @@ namespace GraphLibrary.Objects
     public class
         TripStopsDataObject //Class that contains the data from the vertices (Stops) and trips (which enables to gather vertices for the directed graph)
     {
-
         public List<Trip> Trips { get; internal set; }
         public List<Stop> Stops { get; internal set; }
 
         public List<Route> Routes { get; internal set; }
 
-        public List<Trip> UrbanTrips { get; internal set; }
+        private bool _urbanOnly;
 
-        public List<Stop> UrbanStops { get; internal set; }
+        private List<Stop> routeStops { get; set; }
 
-
-        public TripStopsDataObject()
+        public TripStopsDataObject(bool urbanOnly)
         {
+            _urbanOnly = urbanOnly;
             Trips = new List<Trip>();
             Stops = new List<Stop>();
             Routes = new List<Route>();
-            UrbanStops = new List<Stop>();
-            UrbanTrips = new List<Trip>();
-            
+
             Load();
         }
 
@@ -42,25 +39,24 @@ namespace GraphLibrary.Objects
 
         public void Load()
         {
-
+            Console.WriteLine(this+"Loading all the necessary data...");
+            Console.WriteLine(this + "Urban routes only:" + _urbanOnly);
             List<string[]> _stopTimesData = null;
             var stopsPath = Path.Combine(Environment.CurrentDirectory, @"files\stops.txt"); //files from google transit (GTFS file)
             var routesPath = Path.Combine(Environment.CurrentDirectory, @"files\routes.txt"); //files from google transit (GTFS file)
             var stopTimesPath =
                 Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
             string tripsPath = Path.Combine(Environment.CurrentDirectory, @"files\trips.txt");
+            var tripStopsPath =
+                Path.Combine(Environment.CurrentDirectory, @"files\trip_stops.txt"); //file generated from stop_times.txt and stop.txt
             var routesData = GenerateListData(routesPath);
             LoadRoutes(routesData);
             var tripsData = GenerateListData(tripsPath);
             LoadTrips(tripsData);
             var stopsData = GenerateListData(stopsPath);
-            LoadStops(stopsData);
+            LoadStops(stopsData);;
             var stopTimesDataList = GenerateListData(stopTimesPath);
-          
 
-
-                var tripStopsPath =
-                    Path.Combine(Environment.CurrentDirectory, @"files\trip_stops.txt"); //file generated from stop_times.txt and stop.txt
                 if (!File.Exists(tripStopsPath)
                 ) //if the file doesn't exists, generate the dictionary required to sort the stops in ascending order then export to txt, then reads from the txt the next time the program is executed (to save computational time)
                 {
@@ -70,39 +66,51 @@ namespace GraphLibrary.Objects
                 }
                 FileDataReader fdr = new FileDataReader();
                 TripsStopData = fdr.ImportData(tripStopsPath, ',');
-                LoadTripStops();  
+                LoadStopsIntoTrips();  
                 LoadTripStartTime(TripsStopData);
+                if (_urbanOnly)
+                {
+                    LoadUrbanStops();
+                }
+                //foreach (var route in Routes)
+                //{
+                //    if (route.UrbanRoute)
+                //    {
+                //        Console.WriteLine(route.ToString()+ " total trips:"+route.Trips.Count);
+                //        foreach (var trip in route.Trips)
+                //        {
+                //            var trs = route.Trips.FindAll(tr => tr.Stops.SequenceEqual(trip.Stops) && tr != trip);
+
+                //            Console.WriteLine(trip+" Equal trips:" + trs.Count);
+                     
+
+                //        }
+                //        Console.WriteLine("Route ended");
+                //    }
+                //}
         }
 
 
-        public void GenerateUrbanTripsAndStops()
+        public void LoadUrbanStops()
         {
-
-            foreach (var route in Routes)
+            var urbanStops = new List<Stop>();
+            if (Trips.Count > 0 && Trips != null)
             {
-                foreach (var trip in route.Trips)
+                foreach (var trip in Trips)
                 {
-                    if (route.UrbanRoute)
+                    foreach (var s in trip.Stops)
                     {
-                        if (!UrbanTrips.Contains(trip))
+                        if (!urbanStops.Contains(s))
                         {
-                              UrbanTrips.Add(trip);
-
-                        }
-                    }
-
-                foreach (var s in trip.Stops)
-                    {
-                        if (route.UrbanRoute)
-                        {
-                            if (!UrbanStops.Contains(s))
-                            {
-                                UrbanStops.Add(s);
-                            }
+                            urbanStops.Add(s);
                         }
                     }
                 }
+
+                Stops = urbanStops;
             }
+
+            Console.WriteLine(this.ToString()+urbanStops.Count+" urban stops were successfully loaded.");
         }
 
         public void LoadTripStartTime(List<string[]> tripStopTimesData)
@@ -110,28 +118,28 @@ namespace GraphLibrary.Objects
 
             Console.WriteLine(this + "Loading Trips Start times...");
             var watch = Stopwatch.StartNew();
-            Dictionary<int,int> tripIdStartTimeDictionary = new Dictionary<int, int>();
+            List<int> tripIdList = new List<int>();
             foreach (var tripStopTime in tripStopTimesData)
             {
                 var tripId = int.Parse(tripStopTime[0]);
-                
-                if (!tripIdStartTimeDictionary.ContainsKey(tripId))//since the first time it finds the trip it isn't in the dict it will add the trip start time to the dict (it is the start time because the first time it finds it, it is already sorted).
-                {
-                    var tripStartTime = tripStopTime[2]; // start time in hour/minute/second
-                    var startTimeInSeconds = TimeSpan.Parse(tripStartTime).TotalSeconds;
-                    tripIdStartTimeDictionary.Add(tripId,Convert.ToInt32(startTimeInSeconds));
-                }
-            }
 
-            foreach (var dictionary in tripIdStartTimeDictionary)
-            {
-                var trip = Trips.Find(t => t.Id == dictionary.Key); //Adds the start time to the trip
-                trip.StartTime = dictionary.Value;
+                if (!tripIdList.Contains(tripId))
+                {
+                    tripIdList.Add(tripId);
+                    var trip = Trips.Find(t => t.Id == tripId);
+                    if (trip != null)
+                    {
+                        var tripStartTime = tripStopTime[2]; // start time in hour/minute/second
+                        var startTimeInSeconds = TimeSpan.Parse(tripStartTime).TotalSeconds;
+                        
+                        trip.StartTime = Convert.ToInt32(startTimeInSeconds);
+                    }
+                }
             }
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             var seconds = elapsedMs * 0.001;
-            Console.WriteLine(this.ToString() + " trips start times were successfully loaded in " + seconds +
+            Console.WriteLine(this.ToString() + "Trip start times were successfully loaded in " + seconds +
                               " seconds.");
         }
         public void LoadRoutes(List<string[]> routesData)
@@ -143,7 +151,17 @@ namespace GraphLibrary.Objects
                 Route route = new Route(int.Parse(routeData[0]),routeData[2],routeData[3],routeData[4], int.Parse(routeData[1]));
                 if (!Routes.Contains(route))
                 {
-                    Routes.Add(route);
+                    if (_urbanOnly)
+                    {
+                        if (route.UrbanRoute)
+                        {
+                            Routes.Add(route);
+                        }
+                    }
+                    else
+                    {
+                        Routes.Add(route);
+                    }
                 }
             }
             watch.Stop();
@@ -176,26 +194,36 @@ namespace GraphLibrary.Objects
             Console.WriteLine(this.ToString() + Stops.Count+" stops were successfully loaded in " + seconds +
                               " seconds.");
         }
-        public void LoadTripStops()
+        public void LoadStopsIntoTrips()
         {
             
             if (TripsStopData != null)
             {
-                Console.WriteLine(this + "Inserting Stops into trips...");
+                Console.WriteLine(this + "Inserting Stops into Trips...");
                 var watch = Stopwatch.StartNew();
+                int prevTripId = 0;
+                Trip tr = null;
                 foreach (var tripStopData in TripsStopData)
-                    {
-                        var tr = Trips.Find(t => t.Id == int.Parse(tripStopData[0]));
-
-                        if (tr != null)
+                {
+                        var tripId = int.Parse(tripStopData[0]);
+                        if (prevTripId != tripId)
                         {
-                                var stopId = int.Parse(tripStopData[1]);
-                                Stop stop = Stops.Find(s=>s.Id == stopId);
-                                tr.Stops.Add(stop);
+                             tr = Trips.Find(t => t.Id == tripId);
                         }
+                        prevTripId = tripId;
+                    if (tr != null)
+                        {
 
+                            if (Trips.Contains(tr))
+                            {
+                                var stopId = int.Parse(tripStopData[1]);
+                                Stop stop = Stops.Find(s => s.Id == stopId);
+                                tr.Stops.Add(stop);
+                            }
+                        }        
+                    }                       
 
-                }
+                
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 var seconds = elapsedMs * 0.001;
@@ -228,19 +256,30 @@ namespace GraphLibrary.Objects
                 {
                     int routeId = int.Parse(tripData[0]);
                     Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
-                    if (!Trips.Contains(trip))
-                    {
-                        Trips.Add(trip);
-                    }
+                 
 
                     var route = Routes.Find(r => r.Id == routeId);
                     if (route != null)
                     {
-                        if (!route.Trips.Contains(trip)) // if the trip isn't in trips adds it
+                        if (_urbanOnly)
                         {
-                            route.Trips.Add(trip); // adds the trip to the route
+                            if (route.UrbanRoute)
+                            {
+                                if (!route.Trips.Contains(trip))
+                                {
+                                    Trips.Add(trip);
+                                    route.Trips.Add(trip);
+                                }
+                            }
                         }
-
+                        else
+                        {
+                            if (!route.Trips.Contains(trip))
+                            {
+                                Trips.Add(trip);
+                                route.Trips.Add(trip);
+                            }
+                        }
                     }
                 }
                 watch.Stop();
@@ -250,6 +289,8 @@ namespace GraphLibrary.Objects
                                   " seconds.");
 
         }
+
+  
         private void ExportTripStopsToTxt(Dictionary<int, List<Tuple<int, string[]>>> tripsStopTupleDictionary,string path)
         {
             using (var file = new StreamWriter(path, true)) //writes the data to a file

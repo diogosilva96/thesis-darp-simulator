@@ -99,14 +99,15 @@ namespace Simulator.Objects
                 if (Router.CurrentStop == Router.CurrentTrip.Stops[0])
                 {
                     _consoleLogger.Log(this.ToString() + "CurrentTrip " + this.Router.CurrentTrip.Id + " started at "+t.ToString()+".");
-                    this.Router.StartEndTimeWindow[0] = time;
+                    this.Router.StartTime = time;
                 }
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+t.ToString()+".");
                 if (Router.NextStop == null)
                 {
                     _consoleLogger.Log(this.ToString()+"CurrentTrip " + this.Router.CurrentTrip.Id + " finished at "+t.ToString()+".");
-                    this.Router.StartEndTimeWindow[1] = time;
-
+                    Router.ServicedTrips.Add(Router.CurrentTrip);
+                    this.Router.EndTime = time;
+                    //this.Router.NextTrip();
                 }
                 return true;
             }
@@ -125,7 +126,6 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+t.ToString()+".");  
                 TransverseToNextStop(StopsGraph.GetWeight(Router.CurrentStop, Router.NextStop),time);
-
                 return true;
 
             }
@@ -155,7 +155,6 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(startTime);
                 var timeToTravel = TravelTime(distance);
                 _totalDistanceTraveled = _totalDistanceTraveled + distance;
-                var watch = Stopwatch.StartNew();
                 _consoleLogger.Log(this.ToString() + "started traveling to "+Router.NextStop+" at "+t.ToString()+".");
                 //using (new MinimumSeconds(timeToTravel))
                 //{
@@ -163,16 +162,11 @@ namespace Simulator.Objects
                 //                      " distance:" + distance);
                 //}
 
-                watch.Stop();
-                var elapsedMs = watch.ElapsedMilliseconds;
-                var seconds = elapsedMs * 0.001;
                 Router.GoToNextStop();
                 return true;
             } 
-            else
-            {
-                return false;
-            }
+ return false;
+            
 
         }
 

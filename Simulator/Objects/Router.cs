@@ -11,32 +11,28 @@ namespace Simulator.Objects
         public Stop CurrentStop;
         public Stop NextStop;
 
+        public List<Trip> ServicedTrips;
 
-        public int[] StartEndTimeWindow { get; set; }
+        public int[,] StartEndTimeWindows { get; set; }
 
-        private List<Trip> Trips { get; set; }
+        public int StartTime { get;set; }
+
+        public int EndTime { get; set; }
+
+
+        public List<Trip> Trips { get;internal set; }
 
         public Trip CurrentTrip
         {
-            get {
-                if (_currentTripIndex < Trips.Count)
-                {
-                   return Trips[_currentTripIndex];
-                }
+            get => _currentTrip;
 
-                return null;
-            }
-
-        set
-            {
+            set
+        {
                 _currentTrip = value;
                 _currentTripIndex = Trips.FindIndex(t => t == _currentTrip);
-                _stopsEnum = _currentTrip.Stops.GetEnumerator();
-                Init();
+                ResetStopsIterator();
             }
         }
-
-        private Trip _currentTrip;
 
         private int _currentTripIndex;
 
@@ -44,13 +40,14 @@ namespace Simulator.Objects
 
         private IEnumerator<Stop> _stopsEnum;
 
+        private Trip _currentTrip;
+
         public bool AddTrip(Trip trip)
         {
             if (!Trips.Contains(trip))
             {
                 Trips.Add(trip);
                 Trips = Trips.OrderBy(t => t.StartTime).ToList();
-                CurrentTrip = Trips[0];
                 return true;
             }
 
@@ -59,28 +56,47 @@ namespace Simulator.Objects
         public Router()
         {
             Trips = new List<Trip>();
-            StartEndTimeWindow = new int[2];
-            Init();
+            StartEndTimeWindows = new int[,]{};
+            ServicedTrips = new List<Trip>();
         }
 
         
-        public void Init()
+        public void ResetStopsIterator()
         {
-            if (CurrentTrip != null && _stopsEnum != null && CurrentTrip.Stops.Count >0)
+            if (CurrentTrip != null)
             {
-                _stopsEnum.MoveNext();
-                CurrentStop = _stopsEnum.Current;
-                NextStop = CurrentTrip.Stops[1];
-            }
-            _numStopsIterated = 0;
+                _stopsEnum = CurrentTrip.Stops.GetEnumerator();
+                if (_stopsEnum != null && CurrentTrip.Stops.Count > 0)
+                {
+                    _stopsEnum.MoveNext();
+                    CurrentStop = _stopsEnum.Current;
+                    _numStopsIterated = 0;
+                    NextStop = CurrentTrip.Stops[1];
+                }
+            } 
         }
 
-        public void NextTrip()
+        public bool NextTrip()
         {
-            if (CurrentTrip != null && _currentTripIndex <= Trips.Count-1)
+
+            if (CurrentTrip != null && _currentTripIndex == Trips.Count - 1)
+            {
+                Console.WriteLine(this + " no more trips");
+                return false;
+            }
+            
+            if (CurrentTrip == null)
+            {
+                InitCurrentTrip();
+            }
+            if (CurrentTrip != null && _currentTripIndex + 1 < Trips.Count)
             {
                 CurrentTrip = Trips[_currentTripIndex + 1];
             }
+
+            return true;
+
+
         }
         public void GoToNextStop()
         {
@@ -110,11 +126,20 @@ namespace Simulator.Objects
             }
         }
 
-        public void Reset()
+        public bool InitCurrentTrip()
         {
-            if (_stopsEnum == null || CurrentTrip == null) return;
-            _stopsEnum.Reset();
-            Init();
+            if (Trips.Count > 0)
+            {
+                CurrentTrip = Trips[0];
+                return true;
+            }
+
+            return false;
+        }
+      
+        public override string ToString()
+        {
+            return "["+GetType().Name+"] ";
         }
     }
 }

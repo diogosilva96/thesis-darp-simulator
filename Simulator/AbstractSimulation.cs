@@ -41,9 +41,8 @@ namespace Simulator
             _fileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-
-            _tsDataObject = new TripStopsDataObject();
-            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph(_tsDataObject, true);
+            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph( true);
+            _tsDataObject = stopsNetworkGraph.TripStopDataObject;
             stopsNetworkGraph.LoadGraph();
             _stopsGraph = stopsNetworkGraph.StopsGraph;
         }

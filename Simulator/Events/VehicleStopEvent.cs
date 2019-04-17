@@ -18,12 +18,6 @@ namespace Simulator.Events
             Stop = stop;
         }
 
-        public VehicleStopEvent(int category) : base(category)
-        {
-            Category = category;
-            Vehicle = null;
-            Stop = null;
-        }
 
         public override void Treat()
         {

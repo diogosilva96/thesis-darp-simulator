@@ -29,9 +29,13 @@ namespace Simulator
 
         public override void GenerateVehicleFleet()
         {
-            Random rand = new Random();
+            var c = 0;
             foreach (var route in Routes) // Generates a vehicle for each urban route
             {
+                if (c >= 4)
+                {
+                    break;
+                }
                 if (route.UrbanRoute)
                 {
                     var v = new Vehicle(35, 20);
@@ -42,13 +46,24 @@ namespace Simulator
                     }
 
                     VehicleFleet.Add(v);
+                    c++;
                 }
+
+               
             }
 
             foreach (var vehicle in VehicleFleet)
             {
-                var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTime);
-                AddEvent(events);
+                
+                if (vehicle.Router.NextTrip())
+                {
+                    var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTime);
+                    AddEvent(events);
+                }
+
+                vehicle.Router.InitCurrentTrip();
+
+
             } 
             SortEvents();
         }
@@ -71,17 +86,23 @@ namespace Simulator
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
                 toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.Router.CurrentTrip)).ToString() + " - "+vehicle.Router.CurrentTrip);
-                var startTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindow[0]);
-                var endTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindow[1]);
-                toPrintList.Add("Service start time:" + startTime.ToString());
-                toPrintList.Add("Service end time:"+endTime.ToString());
+                //var startTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindows[0,0]);
+                //var endTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindows[0,1]);
+                //toPrintList.Add("Service start time:" + startTime.ToString());
+                //toPrintList.Add("Service end time:"+endTime.ToString());
                 //adicionar service end time?
-                toPrintList.Add("number of customers inside:"+vehicle.Customers.Count);
+                toPrintList.Add("Number of route trips:"+vehicle.Router.Trips.Count);
+                //foreach (var trip in vehicle.Router.Trips)
+                //{
+                //   toPrintList.Add(trip.ToString());
+                //}
+                toPrintList.Add("Number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
                 {
                     toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"delivery:"+cust.PickupDelivery[1]);
                 }
                 toPrintList.Add("Metrics:");
+                toPrintList.Add("Number of serviced trips:"+vehicle.Router.ServicedTrips.Count);
                 toPrintList.Add( "Total number of requests:" + vehicle.TotalRequests);
                 toPrintList.Add("Total number of serviced requests:" + vehicle.TotalServicedRequests);
                 toPrintList.Add( "Total number of denied requests:" + (vehicle.TotalDeniedRequests));
