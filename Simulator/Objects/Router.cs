@@ -47,7 +47,6 @@ namespace Simulator.Objects
             if (!Trips.Contains(trip))
             {
                 Trips.Add(trip);
-                Trips = Trips.OrderBy(t => t.StartTime).ToList();
                 return true;
             }
 

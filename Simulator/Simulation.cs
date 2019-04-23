@@ -36,20 +36,16 @@ namespace Simulator
                 {
                     break;
                 }
-                if (route.UrbanRoute)
-                {
                     var v = new Vehicle(35, 20);
                     v.StopsGraph = _stopsGraph;
-                    foreach (var routeTrip in route.Trips)
-                    {
-                        v.Router.AddTrip(routeTrip);
-                    }
-
+                    v.Router.AddTrip(route.Trips[0]);
+                    //foreach (var routeTrip in route.Trips)
+                    //{
+                    //    v.Router.AddTrip(routeTrip);
+                    //}
                     VehicleFleet.Add(v);
                     c++;
-                }
-
-               
+                         
             }
 
             foreach (var vehicle in VehicleFleet)
@@ -57,7 +53,8 @@ namespace Simulator
                 
                 if (vehicle.Router.NextTrip())
                 {
-                    var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTime);
+
+                    var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTimes[0]);
                     AddEvent(events);
                 }
 
@@ -116,8 +113,8 @@ namespace Simulator
                     totalServiceTime = totalServiceTime + customer.ServiceTime;
                 }
 
-                var avgServiceTime = totalServiceTime / vehicle.TotalServicedRequests;
-                toPrintList.Add("Average service time (per customer):" + avgServiceTime+" seconds.");
+                //var avgServiceTime = totalServiceTime / vehicle.TotalServicedRequests;
+                //toPrintList.Add("Average service time (per customer):" + avgServiceTime+" seconds.");
                 i++;
             }
 
@@ -193,25 +190,25 @@ namespace Simulator
                     SortEvents();
                 }
             }
+            Random rnd = new Random();
+            var pickup = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
+            var delivery = pickup;
+            while (pickup == delivery)
+            {
+                delivery = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
+            }
 
-                Random rnd = new Random();
-                var pickup = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
-                var delivery = pickup;
-                while (pickup == delivery)
-                {
-                    delivery = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
-                }
-                
-                var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time+1,pickup ,delivery); //Mudar
-                if (eventReq != null)
-                {
-                    AddEvent(eventReq);
-                    SortEvents();
-                }
+            var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup, delivery); //Mudar
+            if (eventReq != null)
+            {
+                AddEvent(eventReq);
+                SortEvents();
+            }
+
         }
             
         
-  
+        
           
 
         public override void Handle(Event evt)
