@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Transactions;
 using GraphLibrary;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
@@ -32,16 +33,19 @@ namespace Simulator
             var c = 0;
             foreach (var route in Routes) // Generates a vehicle for each urban route
             {
-                if (c >= 4)
+                if (c >= 2)
                 {
                     break;
                 }
                     var v = new Vehicle(35, 20);
                     v.StopsGraph = _stopsGraph;
-                    v.Router.AddTrip(route.Trips[0]);
+                    Service service = new Service(route.Trips[0],route.Trips[0].StartTimes[0]);
+                    v.AddService(service);
+                    Service service1 = new Service(route.Trips[0],route.Trips[0].StartTimes[1]);
+                    v.AddService(service1);
                     //foreach (var routeTrip in route.Trips)
                     //{
-                    //    v.Router.AddTrip(routeTrip);
+                    //    v.StopsIterator.AddTrip(routeTrip);
                     //}
                     VehicleFleet.Add(v);
                     c++;
@@ -50,15 +54,13 @@ namespace Simulator
 
             foreach (var vehicle in VehicleFleet)
             {
-                
-                if (vehicle.Router.NextTrip())
+                while (vehicle.NextService())
                 {
-
-                    var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.Router.CurrentTrip.StartTimes[0]);
+                    Console.WriteLine(vehicle.CurrentService.StopsIterator.Trip +" start_Time:"+vehicle.CurrentService.StartTime);
+                    var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.CurrentService.StartTime);
                     AddEvent(events);
                 }
-
-                vehicle.Router.InitCurrentTrip();
+                vehicle.ResetService();
 
 
             } 
@@ -74,7 +76,7 @@ namespace Simulator
             toPrintList.Add("Simulation finished");
             toPrintList.Add("Total number of events handled:"+_totalEventsHandled+" out of "+Events.Count);
             toPrintList.Add("Vehicle Fleet Size:"+VehicleFleet.Count+" vehicle(s).");
-            var i = 0;
+
             foreach (var vehicle in VehicleFleet)
             {
               
@@ -82,40 +84,39 @@ namespace Simulator
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.Router.CurrentTrip)).ToString() + " - "+vehicle.Router.CurrentTrip);
-                //var startTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindows[0,0]);
-                //var endTime = TimeSpan.FromSeconds(vehicle.Router.StartEndTimeWindows[0,1]);
-                //toPrintList.Add("Service start time:" + startTime.ToString());
-                //toPrintList.Add("Service end time:"+endTime.ToString());
-                //adicionar service end time?
-                toPrintList.Add("Number of route trips:"+vehicle.Router.Trips.Count);
-                //foreach (var trip in vehicle.Router.Trips)
-                //{
-                //   toPrintList.Add(trip.ToString());
-                //}
+                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.CurrentService.StopsIterator.Trip)).ToString() + " - "+vehicle.CurrentService.StopsIterator.Trip);
+                toPrintList.Add("Number of services:"+vehicle.Services.Count);
+            
                 toPrintList.Add("Number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
                 {
                     toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"delivery:"+cust.PickupDelivery[1]);
                 }
                 toPrintList.Add("Metrics:");
-                toPrintList.Add("Number of serviced trips:"+vehicle.Router.ServicedTrips.Count);
-                toPrintList.Add( "Total number of requests:" + vehicle.TotalRequests);
-                toPrintList.Add("Total number of serviced requests:" + vehicle.TotalServicedRequests);
-                toPrintList.Add( "Total number of denied requests:" + (vehicle.TotalDeniedRequests));
-                double ratioServicedRequest = Convert.ToDouble(vehicle.TotalServicedRequests) / Convert.ToDouble(vehicle.TotalRequests);
-                toPrintList.Add("Percentage of serviced requests: " + ratioServicedRequest * 100 + "%");
-                double ratioDeniedRequests = 1 - (ratioServicedRequest);
-                toPrintList.Add("Percentage of denied request: " + ratioDeniedRequests * 100 + "%");
-                var totalServiceTime = 0;
-                foreach (var customer in vehicle.ServicedCustomers)
+                toPrintList.Add("Number of serviced trips:" + vehicle.Services.FindAll(s=>s.HasBeenServiced).Count);
+                foreach (var service in vehicle.Services)
                 {
-                    totalServiceTime = totalServiceTime + customer.ServiceTime;
+                    if (service.HasBeenServiced)
+                    {
+                        TimeSpan startTime = TimeSpan.FromSeconds(service.StartTime);
+                        TimeSpan endTime = TimeSpan.FromSeconds(service.EndTime);
+                        toPrintList.Add("Service " + service.StopsIterator.Trip + " - Start_time: " + startTime.ToString()+ " - End_time: " + endTime);
+                        toPrintList.Add("Total number of requests:" + service.TotalRequests);
+                        toPrintList.Add("Total number of serviced requests:" + service.TotalServicedRequests);
+                        toPrintList.Add("Total number of denied requests:" + (service.TotalDeniedRequests));
+                        double ratioServicedRequest = Convert.ToDouble(service.TotalServicedRequests) / Convert.ToDouble(service.TotalRequests);
+                        toPrintList.Add("Percentage of serviced requests: " + ratioServicedRequest * 100 + "%");
+                        double ratioDeniedRequests = 1 - (ratioServicedRequest);
+                        toPrintList.Add("Percentage of denied request: " + ratioDeniedRequests * 100 + "%");
+                        var totalServiceTime = 0;
+                        foreach (var customer in service.ServicedCustomers)
+                        {
+                            totalServiceTime = totalServiceTime + customer.ServiceTime;
+                        }
+                        var avgServiceTime = totalServiceTime / vehicle.CurrentService.TotalServicedRequests;
+                        toPrintList.Add("Average service time (per customer):" + avgServiceTime + " seconds.");
+                    }
                 }
-
-                //var avgServiceTime = totalServiceTime / vehicle.TotalServicedRequests;
-                //toPrintList.Add("Average service time (per customer):" + avgServiceTime+" seconds.");
-                i++;
             }
 
             foreach (var metric in toPrintList)
@@ -190,6 +191,8 @@ namespace Simulator
                     SortEvents();
                 }
             }
+
+            //NEED TO CHANGE THIS!-----------------
             Random rnd = new Random();
             var pickup = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
             var delivery = pickup;
@@ -198,12 +201,13 @@ namespace Simulator
                 delivery = Routes[0].Trips[0].Stops[rnd.Next(0, Routes[0].Trips[0].Stops.Count)];
             }
 
-            var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup, delivery); //Mudar
+            var eventReq = _eventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup, delivery); 
             if (eventReq != null)
             {
                 AddEvent(eventReq);
                 SortEvents();
             }
+            // -------------------------------
 
         }
             

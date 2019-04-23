@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
@@ -17,15 +18,59 @@ namespace Simulator.Objects
         public int Speed { get; internal set; } // vehicle speed in km/h
         public int Capacity { get; internal set; }
 
+        public List<Service> Services { get; internal set; }
+
+        public Service CurrentService
+        {
+            get
+            {
+                return Services[_currentServiceIndex];
+            }
+            set
+            {
+                if (Services.Contains(value))
+                {
+                    _currentService = value;
+                    _currentServiceIndex = Services.FindIndex(s => s == _currentService);
+                }
+            }
+        }
+
+        private int _currentServiceIndex;
+
+        private Service _currentService;
+
+        public bool NextService()
+        {
+            if (_currentService == null)
+            {
+                if (Services.Count > 0)
+                {
+                    ResetService();
+                    return true;
+                }
+            }
+            if (_currentServiceIndex + 1 < Services.Count)
+            {
+                CurrentService = Services[_currentServiceIndex + 1];
+                return true;
+            }
+
+            return false;
+        }
+
+        public void ResetService()
+        {
+            if (Services.Count > 0)
+            {
+                CurrentService = Services[0];
+            }
+        }
         public string State
         {
             get { return "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] "; }
         }
 
-        public int TotalRequests { get; internal set; }
-        public int TotalServicedRequests => ServicedCustomers.Count;
-
-        public int TotalDeniedRequests => (TotalRequests - TotalServicedRequests);
 
         public DirectedGraph<Stop,double> StopsGraph { get; set; }
 
@@ -34,11 +79,8 @@ namespace Simulator.Objects
 
         private double _totalDistanceTraveled;
 
-        public Router Router { get; set; }
-
         public List<Customer> Customers { get; internal set; }
 
-        public List<Customer> ServicedCustomers { get; internal set; }
 
         public Vehicle(int speed,int capacity)
         {
@@ -46,12 +88,11 @@ namespace Simulator.Objects
             Speed = speed;
             Capacity = capacity;
             Customers = new List<Customer>(Capacity);
-            Router = new Router();
-            TotalRequests = 0;
+            Services = new List<Service>();
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);
-            ServicedCustomers = new List<Customer>();
         }
+     
 
         public double TravelTime(double distance)
         {
@@ -83,31 +124,41 @@ namespace Simulator.Objects
             {
                 if (Customers.Contains(customer)) return false;
                 Customers.Add(customer);
-                TotalRequests++;
+                CurrentService.TotalRequests++;
                 return true;
             }
-            TotalRequests++;  
+
+            CurrentService.TotalRequests++; 
             return false;
         }
-
+        public bool AddService(Service service)
+        {
+            if (!Services.Contains(service))
+            {
+                Services.Add(service);
+                Services = Services.OrderBy(s => s.StartTime).ToList();
+                return true;
+            }
+            return false;
+        }
         public bool Arrive(Stop stop, int time)
         {
            
-            if (Router.CurrentStop == stop)
+            if (CurrentService.StopsIterator.CurrentStop == stop)
             {
                 TimeSpan t = TimeSpan.FromSeconds(time);
-                if (Router.CurrentStop == Router.CurrentTrip.Stops[0])
+                if (CurrentService.StopsIterator.CurrentStop == CurrentService.StopsIterator.Trip.Stops[0])
                 {
-                    _consoleLogger.Log(this.ToString() + "CurrentTrip " + this.Router.CurrentTrip.Id + " started at "+t.ToString()+".");
-                    this.Router.StartTime = time;
+                    _consoleLogger.Log(this.ToString() + "Current service - Trip " + this.CurrentService.StopsIterator.Trip.Id + " started at "+t.ToString()+".");
+                    CurrentService.StartTime = time;
                 }
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+t.ToString()+".");
-                if (Router.NextStop == null)
+                if (CurrentService.StopsIterator.NextStop == null)
                 {
-                    _consoleLogger.Log(this.ToString()+"CurrentTrip " + this.Router.CurrentTrip.Id + " finished at "+t.ToString()+".");
-                    Router.ServicedTrips.Add(Router.CurrentTrip);
-                    this.Router.EndTime = time;
-                    //this.Router.NextTrip();
+                    _consoleLogger.Log(this.ToString()+"Current service - Trip " + this.CurrentService.StopsIterator.Trip.Id + " finished at "+t.ToString()+".");
+                    CurrentService.HasBeenServiced = true;
+                    CurrentService.EndTime = time;
+                    NextService();
                 }
                 return true;
             }
@@ -121,11 +172,11 @@ namespace Simulator.Objects
 
         public bool Depart(Stop stop, int time)
         {
-            if (Router.CurrentStop == stop)
+            if (CurrentService.StopsIterator.CurrentStop == stop)
             {
                 TimeSpan t = TimeSpan.FromSeconds(time);
-                _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+t.ToString()+".");  
-                TransverseToNextStop(StopsGraph.GetWeight(Router.CurrentStop, Router.NextStop),time);
+                _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+t.ToString()+".");
+                TransverseToNextStop(StopsGraph.GetWeight(CurrentService.StopsIterator.CurrentStop, CurrentService.StopsIterator.NextStop),time);
                 return true;
 
             }
@@ -142,7 +193,7 @@ namespace Simulator.Objects
             if (Customers.Contains(customer))
             { 
                 Customers.Remove(customer);
-                ServicedCustomers.Add(customer);
+                CurrentService.ServicedCustomers.Add(customer);
                 return true;
             }
             return false;
@@ -150,22 +201,22 @@ namespace Simulator.Objects
 
         public bool TransverseToNextStop(double distance, int startTime)
         {
-            if (Router != null && Router.NextStop != null)
+            if (CurrentService.StopsIterator != null && CurrentService.StopsIterator.NextStop != null)
             {
                 TimeSpan t = TimeSpan.FromSeconds(startTime);
                 var timeToTravel = TravelTime(distance);
                 _totalDistanceTraveled = _totalDistanceTraveled + distance;
-                _consoleLogger.Log(this.ToString() + "started traveling to "+Router.NextStop+" at "+t.ToString()+".");
+                _consoleLogger.Log(this.ToString() + "started traveling to "+CurrentService.StopsIterator.NextStop+" at "+t.ToString()+".");
                 //using (new MinimumSeconds(timeToTravel))
                 //{
-                //    Console.WriteLine(_classDescriptor + "Traveling from stop " + Router.CurrentStop + " to stop " + Router.NextStop +
+                //    Console.WriteLine(_classDescriptor + "Traveling from stop " + StopsIterator.CurrentStop + " to stop " + StopsIterator.NextStop +
                 //                      " distance:" + distance);
                 //}
 
-                Router.GoToNextStop();
+                CurrentService.StopsIterator.GoToNextStop();
                 return true;
             } 
- return false;
+        return false;
             
 
         }

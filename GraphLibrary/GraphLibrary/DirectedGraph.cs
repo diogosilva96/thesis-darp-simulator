@@ -17,10 +17,10 @@ namespace GraphLibrary.GraphLibrary
 
         public void PrintEdges(T vertex)
         {
-            var AdjVert = AdjacentVertices(vertex); //returns all vertices with the specified vertex as origin
-            foreach (var out_vert in AdjVert)
+            var adjVert = AdjacentVertices(vertex); //returns all vertices with the specified vertex as origin
+            foreach (var outVert in adjVert)
             {
-                Console.WriteLine("Edge: "+vertex.ToString() +"->"+ out_vert.ToString()+" - weight: "+GetWeight(vertex,out_vert));   
+                Console.WriteLine("Edge: "+vertex.ToString() +"->"+ outVert.ToString()+" - weight: "+GetWeight(vertex,outVert));   
             }
 
             var OutAdjVert = OutAdjacentVertices(vertex); // returns all vertices with specified vertex as destination
