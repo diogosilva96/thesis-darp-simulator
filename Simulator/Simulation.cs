@@ -6,6 +6,7 @@ using GraphLibrary;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
 using Simulator.Events;
+using Simulator.Iterator;
 using Simulator.Logger;
 using Simulator.Objects;
 
@@ -38,30 +39,37 @@ namespace Simulator
                     break;
                 }
                     
-
- 
                                 var v = new Vehicle(35, 20);
                                 v.StopsGraph = _stopsGraph;
                                 for (int i = 0; i < 2; i++)
-                                {
-                                    Service service = new Service(route.Trips[0], route.Trips[0].StartTimes[i]);
-                                    v.AddService(service);
+                                {     
+                                    v.AddService(new Service(route.Trips[0], route.Trips[0].StartTimes[i]));
                                 }
-
+                                v.InitServiceIterator();
                                 VehicleFleet.Add(v);
                                 c++;                                   
             }
 
             foreach (var vehicle in VehicleFleet)
             {
-                while (vehicle.ServiceIterator.Next())
+                vehicle.ServiceIterator.First();
+                while (!vehicle.ServiceIterator.IsDone)
                 {
-
-                    Console.WriteLine(vehicle.ServiceIterator.Current.Trip + " start_Time:" + vehicle.ServiceIterator.Current.StartTime);
                     var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.ServiceIterator.Current.StartTime);
                     AddEvent(events);
+                    vehicle.ServiceIterator.Next();
                 }
-                vehicle.ServiceIterator.Reset();
+
+                vehicle.ServiceIterator.First();
+                // while (vehicle.ServiceIterator.Next())
+                //{
+
+
+                //Console.WriteLine(vehicle.ServiceIterator.Current.Trip + " start_Time:" + vehicle.ServiceIterator.Current.StartTime);
+                //var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.ServiceIterator.Current.StartTime);
+                //AddEvent(events);
+                //}
+                //vehicle.ServiceIterator.Reset();
 
 
             } 
@@ -80,13 +88,13 @@ namespace Simulator
 
             foreach (var vehicle in VehicleFleet)
             {
-              
+                vehicle.ServiceIterator.First();
                 toPrintList.Add(" ");
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Current " + Routes.Find(r=>r.Trips.Contains(vehicle.ServiceIterator.Current.Trip)).ToString());
                 toPrintList.Add("Number of services:"+vehicle.Services.Count);
+                toPrintList.Add("Number of serviced services:"+vehicle.ServicedServices);
             
                 toPrintList.Add("Number of customers inside:"+vehicle.Customers.Count);
                 foreach (var cust in vehicle.Customers)
@@ -94,30 +102,34 @@ namespace Simulator
                     toPrintList.Add(cust+"pickup:"+cust.PickupDelivery[0]+"delivery:"+cust.PickupDelivery[1]);
                 }
              
-                toPrintList.Add("Number of serviced services:" + vehicle.Services.FindAll(s=>s.HasBeenServiced).Count);
-                foreach (var service in vehicle.Services)
+                //toPrintList.Add("Number of serviced services:" + vehicle.Services.FindAll(s=>s.HasBeenServiced).Count);
+                while(!vehicle.ServiceIterator.IsDone)
                 {
-                    if (service.HasBeenServiced)
+                    if (vehicle.ServiceIterator.Current.HasBeenServiced)
                     {
                         toPrintList.Add("Metrics:");
-
-                        toPrintList.Add(service.ToString());
-                        toPrintList.Add("Total number of requests:" + service.TotalRequests);
-                        toPrintList.Add("Total number of serviced requests:" + service.TotalServicedRequests);
-                        toPrintList.Add("Total number of denied requests:" + (service.TotalDeniedRequests));
-                        double ratioServicedRequest = Convert.ToDouble(service.TotalServicedRequests) / Convert.ToDouble(service.TotalRequests);
+                        toPrintList.Add("Current " + Routes.Find(r => r.Trips.Contains(vehicle.ServiceIterator.Current.Trip)).ToString());
+                        toPrintList.Add(vehicle.ServiceIterator.Current.ToString());
+                        toPrintList.Add("Total number of requests:" + vehicle.ServiceIterator.Current.TotalRequests);
+                        toPrintList.Add("Total number of serviced requests:" + vehicle.ServiceIterator.Current.TotalServicedRequests);
+                        toPrintList.Add("Total number of denied requests:" + (vehicle.ServiceIterator.Current.TotalDeniedRequests));
+                        double ratioServicedRequest = Convert.ToDouble(vehicle.ServiceIterator.Current.TotalServicedRequests) / Convert.ToDouble(vehicle.ServiceIterator.Current.TotalRequests);
                         toPrintList.Add("Percentage of serviced requests: " + ratioServicedRequest * 100 + "%");
                         double ratioDeniedRequests = 1 - (ratioServicedRequest);
                         toPrintList.Add("Percentage of denied request: " + ratioDeniedRequests * 100 + "%");
                         var totalServiceTime = 0;
-                        foreach (var customer in service.ServicedCustomers)
+                        foreach (var customer in vehicle.ServiceIterator.Current.ServicedCustomers)
                         {
                             totalServiceTime = totalServiceTime + customer.ServiceTime;
                         }
                         var avgServiceTime = totalServiceTime / vehicle.ServiceIterator.Current.TotalServicedRequests;
                         toPrintList.Add("Average service time (per customer):" + avgServiceTime + " seconds.");
+                        vehicle.ServiceIterator.Next();
                     }
+
+                    
                 }
+                vehicle.ServiceIterator.First();
             }
 
             foreach (var metric in toPrintList)

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
+using Simulator.Iterator;
 using Simulator.Logger;
 
 namespace Simulator.Objects
@@ -18,7 +19,6 @@ namespace Simulator.Objects
         public int Speed { get; internal set; } // vehicle speed in km/h
         public int Capacity { get; internal set; }
 
-        public ServiceIterator ServiceIterator { get; internal set; }
 
 
         public string State
@@ -26,8 +26,11 @@ namespace Simulator.Objects
             get { return "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] "; }
         }
 
-
         public DirectedGraph<Stop,double> StopsGraph { get; set; }
+
+        public IServiceIterator ServiceIterator { get; internal set; }
+
+        public int ServicedServices;
 
         private readonly Logger.Logger _consoleLogger;
         public bool IsFull => Customers.Count >= Capacity;
@@ -48,6 +51,7 @@ namespace Simulator.Objects
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);
             Services = new List<Service>();
+            ServicedServices = 0;
         }
      
 
@@ -94,11 +98,20 @@ namespace Simulator.Objects
             {
                 Services.Add(service);
                 Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service starttime
-                ServiceIterator = new ServiceIterator(Services);
-
                 return true;
             }
             return false;
+        }
+
+        public void InitServiceIterator()
+        {
+            ServiceCollection serviceCollection = new ServiceCollection();
+            for (int i = 0; i < Services.Count; i++)
+            {
+                serviceCollection[i] = Services[i];
+            }
+
+            ServiceIterator = serviceCollection.CreateIterator();
         }
         public bool Arrive(Stop stop, int time)
         {
@@ -115,8 +128,13 @@ namespace Simulator.Objects
                 if (ServiceIterator.Current.StopsIterator.NextStop == null)
                 {
                     _consoleLogger.Log(this.ToString()+ ServiceIterator.Current + " FINISHED at "+t.ToString()+".");
+                    ServicedServices++;
                     ServiceIterator.Current.End(time);
                     ServiceIterator.Next();
+                    if (ServiceIterator.IsDone)
+                    {
+                        ServiceIterator.First();
+                    }
                 }
                 return true;
             }
