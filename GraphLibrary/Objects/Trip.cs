@@ -21,7 +21,7 @@ namespace GraphLibrary.Objects
 
         public override string ToString()
         {
-            return "Trip:"+Id + "-"+ Headsign;
+            return Id + "-"+ Headsign;
         }
 
         public bool AddStartTime(int startTime)

@@ -11,51 +11,40 @@ namespace Simulator.Objects
         public Stop CurrentStop;
         public Stop NextStop;
 
-
-        public Trip Trip
-        {
-            get => _trip;
-
-            set
-        {
-                _trip = value;
-                ResetStopsIterator();
-            }
-        }
+        private List<Stop> _stops;
 
         private int _numStopsIterated;
 
         private IEnumerator<Stop> _stopsEnum;
 
-        private Trip _trip;
 
-        public StopsIterator(Trip trip)
+        public StopsIterator(List<Stop> stops)
         {
-            Trip = trip;
-            ResetStopsIterator();
+            _stops = stops;
+            Reset();
         }
 
         
-        public void ResetStopsIterator()
+        public void Reset()
         {
-            if (Trip != null)
+            if (_stops != null)
             {
-                _stopsEnum = Trip.Stops.GetEnumerator();
-                if (_stopsEnum != null && Trip.Stops.Count > 0)
+                _stopsEnum = _stops.GetEnumerator();
+                if (_stopsEnum != null && _stops.Count > 0)
                 {
                     _stopsEnum.MoveNext();
                     CurrentStop = _stopsEnum.Current;
                     _numStopsIterated = 0;
-                    NextStop = Trip.Stops[1];
+                    NextStop = _stops[1];
                 }
             } 
         }
 
-        public void GoToNextStop()
+        public bool Next()
         {
-            if (Trip != null && Trip.Stops.Count >0)
+            if (_stops != null && _stops.Count >0)
             {
-                if (_numStopsIterated < Trip.Stops.Count - 2)
+                if (_numStopsIterated < _stops.Count - 2)
                 {
                     CurrentStop = NextStop;
 
@@ -70,13 +59,18 @@ namespace Simulator.Objects
                         NextStop = _stopsEnum.Current;
                         _numStopsIterated++;
                     }
+
+                    return true;
                 }
                 else
                 {
                     CurrentStop = NextStop;
                     NextStop = null;
+                    return true;
                 }
             }
+
+            return false;
         }
       
         public override string ToString()
