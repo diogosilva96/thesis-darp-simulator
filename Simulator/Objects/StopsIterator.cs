@@ -11,18 +11,15 @@ namespace Simulator.Objects
         public Stop CurrentStop;
         public Stop NextStop;
         public bool IsDone;
+
         private List<Stop> _stops;
 
-        private int _numStopsIterated;
-
-        private IEnumerator<Stop> _stopsEnum;
-
+        private int _index;
 
         public StopsIterator(List<Stop> stops)
         {
             _stops = stops;
             Reset();
-            IsDone = false;
         }
 
         
@@ -30,14 +27,12 @@ namespace Simulator.Objects
         {
             if (_stops != null)
             {
-                _stopsEnum = _stops.GetEnumerator();
-                if (_stopsEnum != null && _stops.Count > 0)
+                _index = 0;
+                if (_stops.Count > 1)
                 {
-                    _stopsEnum.MoveNext();
-                    CurrentStop = _stopsEnum.Current;
-                    _numStopsIterated = 0;
+                    CurrentStop = _stops[_index];
                     IsDone = false;
-                    NextStop = _stops[1];
+                    NextStop = _stops[_index+1];
                 }
             } 
         }
@@ -46,26 +41,18 @@ namespace Simulator.Objects
         {
             if (_stops != null && _stops.Count >0)
             {
-                if (_numStopsIterated < _stops.Count - 2)
+                _index++;
+                if (_index +1 <= _stops.Count - 1)
                 {
-                    CurrentStop = NextStop;
+                    CurrentStop = _stops[_index];
+                    NextStop = _stops[_index + 1];
                  
-                    while (_stopsEnum.Current != CurrentStop)
-                    {
-                        _stopsEnum.MoveNext();
-                    }
-
-                    if (_stopsEnum.MoveNext())
-                    {
-                        NextStop = _stopsEnum.Current;
-                        _numStopsIterated++;
-                    }
 
                     return true;
                 }
                 else
                 {
-                    CurrentStop = NextStop;
+                    CurrentStop = _stops[_index];
                     NextStop = null;
                     IsDone = true;
                     return true;

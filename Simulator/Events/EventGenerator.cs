@@ -29,7 +29,7 @@ namespace Simulator.Events
 
             List<Event> events = new List<Event>();
 
-            var customersToLeaveVehicleAtCurrentStop = vehicle.GetCustomersToLeaveVehicle(stop);
+            var customersToLeaveVehicleAtCurrentStop = vehicle.Customers.FindAll(c => c.PickupDelivery[1] == stop);
             var leaveTime = 0;
 
             if (customersToLeaveVehicleAtCurrentStop.Count > 0) //assigns the dropoffstop event

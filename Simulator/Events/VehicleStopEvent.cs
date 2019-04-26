@@ -8,10 +8,10 @@ namespace Simulator.Events
     class VehicleStopEvent:Event
     {
         //Event when a vehicle either arrives at or departs from a stop
-        public Stop Stop { get;set; }
-        public Vehicle Vehicle { get; set; }
+        public Stop Stop { get;internal set; }
+        public Vehicle Vehicle { get; internal set; }
 
-        public Service Service { get; set; }
+        public Service Service { get; internal set; }
         public VehicleStopEvent(int category, int time, Vehicle vehicle, Stop stop) : base(category, time)
         {
             Category = category;//category 0 = arrived stop, category 1 = left stop
@@ -45,13 +45,13 @@ namespace Simulator.Events
                 message = date_string + this.ToString() + Vehicle.ToString();
                 if (Category == 0)
                 {
-                    message = message + " arrived at " + Stop+ " at " +
+                    message = message + " ARRIVED at " + Stop+ " at " +
                               Time + ".";
                 }
 
                 if (Category == 1)
                 {
-                    message = message+ " left " + Stop + " at " + Time +
+                    message = message+ " LEFT " + Stop + " at " + Time +
                               ".";
                 }
             }

@@ -6,8 +6,8 @@ namespace Simulator.Events
     class CustomerVehicleEvent:Event
     {
         //Event when a customer enters or leaves a vehicle
-        public Customer Customer { get; set; }
-        public Vehicle Vehicle { get; set; }
+        public Customer Customer { get; internal set; }
+        public Vehicle Vehicle { get; internal set; }
 
         public CustomerVehicleEvent(int category, int time, Customer customer, Vehicle vehicle) : base(category, time)
         {
@@ -35,11 +35,11 @@ namespace Simulator.Events
                     {
                         if (Vehicle.IsFull)
                         {
-                            message = dateString+this.ToString() + Vehicle.ToString() +"is full,"+Customer.ToString() + " was not served at time"+Time+".";
+                            message = dateString+this.ToString() + Vehicle.ToString() +"is FULL,"+Customer.ToString() + " was not served at time"+Time+".";
                         }
                         else
                         {
-                            message = message + " entered "+Vehicle.ToString() + " at " +
+                            message = message + " ENTERED "+Vehicle.ToString() + " at " +
                                               Customer.PickupDelivery[0] + " with destination to "+Customer.PickupDelivery[1]+" at " + Time + ".";
 
                         }
@@ -47,7 +47,7 @@ namespace Simulator.Events
 
                     if (Category == 3)
                     {
-                        message =  message + " left vehicle " + Vehicle.ToString() +
+                        message =  message + " LEFT vehicle " + Vehicle.ToString() +
                                           " at " +
                                           Customer.PickupDelivery[1]+ " with origin stop as "+Customer.PickupDelivery[0]+" at " + Time + ".";
                     }          

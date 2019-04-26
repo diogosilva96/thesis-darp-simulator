@@ -7,7 +7,7 @@ namespace Simulator.Events
 {
     public class CustomerRequestEvent:Event
     {
-        public Customer Customer;
+        public Customer Customer { get; internal set; }
 
         public CustomerRequestEvent(int category, int time, Customer customer) : base(category, time)
         {

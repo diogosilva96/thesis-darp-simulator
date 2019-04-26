@@ -33,7 +33,6 @@ namespace Simulator.Objects
 
         public List<Service> Services { get; internal set; }
 
-        public int serviceIndex => Services.IndexOf(ServiceIterator.Current);
         private double _totalDistanceTraveled;
 
         public List<Customer> Customers { get; internal set; }
@@ -58,35 +57,21 @@ namespace Simulator.Objects
             return timeToTravel;
         }
 
-
-        public List<Customer> GetCustomersToLeaveVehicle(Stop dropOffStop)
-        {
-            List<Customer> customers = new List<Customer>();
-            foreach (var customer in Customers)
-            {
-                if (customer.PickupDelivery[1] == dropOffStop && !customers.Contains(customer))
-                {
-                    customers.Add(customer);
-                }
-            }
-            return customers;
-        }
         public bool AddCustomer(Customer customer)
         {
             if (customer == null)
             {
                 throw new ArgumentNullException();
             }
-
-            if (!IsFull)
-            {
-                if (Customers.Contains(customer)) return false;
-                Customers.Add(customer);
-                ServiceIterator.Current.TotalRequests++;
-                return true;
-            }
-
-            ServiceIterator.Current.TotalRequests++; 
+               
+                if (!IsFull)
+                {
+                    if (Customers.Contains(customer)) return false;
+                    Customers.Add(customer);
+                    ServiceIterator.Current.TotalRequests++;
+                    return true;
+                } 
+            ServiceIterator.Current.TotalRequests++;
             return false;
         }
         public bool AddService(Service service)

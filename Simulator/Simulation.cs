@@ -38,23 +38,19 @@ namespace Simulator
                     break;
                 }
                     
-                                var v = new Vehicle(17, 20);
+                                var v = new Vehicle(17, 22);
                                 v.StopsGraph = _stopsGraph;
                                 for (int i = 0; i < 3; i++)
-                                {     
+                                {
                                     v.AddService(new Service(route.Trips[0], route.Trips[0].StartTimes[i]));
-                                    v.AddService(new Service(route.Trips[1], route.Trips[1].StartTimes[i]));
+                                    if (Math.Abs(route.Trips[0].StartTimes[i] - route.Trips[1].StartTimes[i])>= 1800) //if the absolute difference between the startTimes is greater than half an hour (60s*30mins = 1800s)
+                                    {
+                                        v.AddService(new Service(route.Trips[1], route.Trips[1].StartTimes[i]));
+                                    }
+
                                 }
 
-                                //foreach (var routeTrip in route.Trips)
-                                //{
-                                //   Console.WriteLine(routeTrip);
-                                //   foreach (var startTime in routeTrip.StartTimes)
-                                //   {
-                                //       Console.WriteLine(TimeSpan.FromSeconds(startTime));
-                                //   }
-                                   
-                                //}
+
                                 VehicleFleet.Add(v);
                                 c++;                                   
             }
