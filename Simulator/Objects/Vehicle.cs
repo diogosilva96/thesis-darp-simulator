@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
+using System.Transactions;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
-using Simulator.Iterator;
 using Simulator.Logger;
 
 namespace Simulator.Objects
@@ -19,7 +19,7 @@ namespace Simulator.Objects
         public int Speed { get; internal set; } // vehicle speed in km/h
         public int Capacity { get; internal set; }
 
-
+        public IEnumerator<Service> ServiceIterator;
 
         public string State
         {
@@ -28,15 +28,12 @@ namespace Simulator.Objects
 
         public DirectedGraph<Stop,double> StopsGraph { get; set; }
 
-        public IServiceIterator ServiceIterator { get; internal set; }
-
-        public int ServicedServices;
-
         private readonly Logger.Logger _consoleLogger;
         public bool IsFull => Customers.Count >= Capacity;
 
         public List<Service> Services { get; internal set; }
 
+        public int serviceIndex => Services.IndexOf(ServiceIterator.Current);
         private double _totalDistanceTraveled;
 
         public List<Customer> Customers { get; internal set; }
@@ -51,7 +48,6 @@ namespace Simulator.Objects
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);
             Services = new List<Service>();
-            ServicedServices = 0;
         }
      
 
@@ -61,6 +57,7 @@ namespace Simulator.Objects
             var timeToTravel = distance / vehicleSpeed; // time it takes for the vehicle to transverse the distance
             return timeToTravel;
         }
+
 
         public List<Customer> GetCustomersToLeaveVehicle(Stop dropOffStop)
         {
@@ -98,44 +95,29 @@ namespace Simulator.Objects
             {
                 Services.Add(service);
                 Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service starttime
+                ServiceIterator = Services.GetEnumerator();
                 return true;
             }
             return false;
         }
 
-        public void InitServiceIterator()
-        {
-            ServiceCollection serviceCollection = new ServiceCollection();
-            for (int i = 0; i < Services.Count; i++)
-            {
-                serviceCollection[i] = Services[i];
-            }
-
-            ServiceIterator = serviceCollection.CreateIterator();
-        }
         public bool Arrive(Stop stop, int time)
         {
            
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                TimeSpan t = TimeSpan.FromSeconds(time);
-                if (ServiceIterator.Current.StopsIterator.CurrentStop ==ServiceIterator.Current.Trip.Stops[0])
+                if (ServiceIterator.Current.StopsIterator.CurrentStop == ServiceIterator.Current.Trip.Stops[0])
                 {
-                    _consoleLogger.Log(this.ToString() + ServiceIterator.Current + ServiceIterator.Current.Trip.Id + " STARTED at "+t.ToString()+".");
                     ServiceIterator.Current.Start(time);
                 }
-                _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+t.ToString()+".");
-                if (ServiceIterator.Current.StopsIterator.NextStop == null)
+
+                _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+TimeSpan.FromSeconds(time).ToString()+".");
+                if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0)
                 {
-                    _consoleLogger.Log(this.ToString()+ ServiceIterator.Current + " FINISHED at "+t.ToString()+".");
-                    ServicedServices++;
-                    ServiceIterator.Current.End(time);
-                    ServiceIterator.Next();
-                    if (ServiceIterator.IsDone)
-                    {
-                        ServiceIterator.First();
-                    }
+                        ServiceIterator.Current.End(time);
+                        ServiceIterator.MoveNext();   
                 }
+
                 return true;
             }
             return false;
@@ -150,8 +132,7 @@ namespace Simulator.Objects
         {
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                TimeSpan t = TimeSpan.FromSeconds(time);
-                _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+t.ToString()+".");
+                _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+TimeSpan.FromSeconds(time).ToString()+".");
                 TransverseToNextStop(StopsGraph.GetWeight(ServiceIterator.Current.StopsIterator.CurrentStop, ServiceIterator.Current.StopsIterator.NextStop),time);
                 return true;
 
@@ -177,17 +158,11 @@ namespace Simulator.Objects
 
         public bool TransverseToNextStop(double distance, int startTime)
         {
-            if (ServiceIterator.Current.StopsIterator != null && ServiceIterator.Current.StopsIterator.NextStop != null)
+            if (ServiceIterator.Current.StopsIterator != null && !ServiceIterator.Current.StopsIterator.IsDone)
             {
                 TimeSpan t = TimeSpan.FromSeconds(startTime);
-                var timeToTravel = TravelTime(distance);
                 _totalDistanceTraveled = _totalDistanceTraveled + distance;
                 _consoleLogger.Log(this.ToString() + "started traveling to "+ServiceIterator.Current.StopsIterator.NextStop+" at "+t.ToString()+".");
-                //using (new MinimumSeconds(timeToTravel))
-                //{
-                //    Console.WriteLine(_classDescriptor + "Traveling from stop " + StopsIterator.CurrentStop + " to stop " + StopsIterator.NextStop +
-                //                      " distance:" + distance);
-                //}
 
                 ServiceIterator.Current.StopsIterator.Next();
                 return true;

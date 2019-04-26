@@ -10,12 +10,15 @@ namespace Simulator.Events
         //Event when a vehicle either arrives at or departs from a stop
         public Stop Stop { get;set; }
         public Vehicle Vehicle { get; set; }
+
+        public Service Service { get; set; }
         public VehicleStopEvent(int category, int time, Vehicle vehicle, Stop stop) : base(category, time)
         {
             Category = category;//category 0 = arrived stop, category 1 = left stop
             Time = time;
             Vehicle = vehicle;
             Stop = stop;
+            Service = vehicle.ServiceIterator.Current;
         }
 
 

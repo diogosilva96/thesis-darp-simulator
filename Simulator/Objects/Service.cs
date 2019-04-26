@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using GraphLibrary.Objects;
+using Simulator.Logger;
 
 namespace Simulator.Objects
 {
@@ -13,10 +14,13 @@ namespace Simulator.Objects
 
         public int EndTime { get; internal set; }
 
+        private readonly Logger.Logger _consoleLogger;
+
+        public int RouteDuration => EndTime - StartTime;
+
         public StopsIterator StopsIterator { get; internal set; }
 
-
-        public bool HasBeenServiced { get; set; }
+        public bool IsDone { get; set; }
 
         public int TotalRequests { get; set; }
         public int TotalServicedRequests => ServicedCustomers.Count;
@@ -29,15 +33,18 @@ namespace Simulator.Objects
         {
             Trip = trip;
             StartTime = startTime;
-            HasBeenServiced = false;
+            IsDone = false;
+            IRecorder recorder = new ConsoleRecorder();
+            _consoleLogger = new Logger.Logger(recorder);
             StopsIterator = new StopsIterator(Trip.Stops);
             ServicedCustomers = new List<Customer>();
         }
 
         public bool Start(int time)
         {
-            if (!HasBeenServiced)
+            if (!IsDone)
             {
+                _consoleLogger.Log(this.ToString()+ " STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
                 TotalRequests = 0;
                 ServicedCustomers = new List<Customer>();
                 StartTime = time;
@@ -52,10 +59,12 @@ namespace Simulator.Objects
 
         public bool End(int time)
         {
-            if (!HasBeenServiced)
+            if (!IsDone)
             {
                 EndTime = time;
-                HasBeenServiced = true;
+                IsDone = true;
+                _consoleLogger.Log("["+this.ToString() + "] FINISHED at " +
+                                   TimeSpan.FromSeconds(time).ToString() + ".");
                 return true;
             }
             else
@@ -67,15 +76,7 @@ namespace Simulator.Objects
         public override string ToString()
         {
 
-            string baseString = "Service: " + Trip + " - Start_Time:" + TimeSpan.FromSeconds(StartTime).ToString();
-            if (EndTime == 0)
-            {
-                return baseString;
-            }
-            else
-            {
-                return baseString + " - End_Time:" + TimeSpan.FromSeconds(EndTime).ToString();
-            }
+            return "Service: " + Trip;
         }
     }
 }

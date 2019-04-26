@@ -13,7 +13,7 @@ namespace Simulator.Objects
     public class Customer:Person
     {
 
-        public int ServiceTime => RealTimeWindow[1]-RealTimeWindow[0];
+        public int RideTime => RealTimeWindow[1]-RealTimeWindow[0];
 
         private Logger.Logger _consoleLogger;
 
@@ -21,26 +21,23 @@ namespace Simulator.Objects
 
         public int[] RealTimeWindow;
 
-        //public int[] DesiredTimeWindow;
+        public int[] DesiredTimeWindow;
 
         private bool _isInVehicle;
+
+        public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
         
         public Customer(Stop pickUpStop,Stop deliveryStop)
         {
 
             PickupDelivery = new Stop[] {pickUpStop,deliveryStop};
-            Init();
-        }
-
-
-        private void Init()
-        {
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);
             RealTimeWindow = new int[2];
             _isInVehicle = false;
         }
+
         public override string ToString()
         {
             return "Customer "+Id+" ";
@@ -73,18 +70,24 @@ namespace Simulator.Objects
             return false;
         }
 
-        public bool Leave(Vehicle v, int time)
+        public bool Leave(Vehicle vehicle, int time)
         {
             if (_isInVehicle)
             {
-                var customerLeft = v.RemoveCustomer(this);
+                var customerLeft = vehicle.RemoveCustomer(this);
                 if (customerLeft)
                 {
                     TimeSpan t = TimeSpan.FromSeconds(time);
-                    _consoleLogger.Log(v.State+this.ToString() + "LEFT at " + PickupDelivery[1] +
+                    _consoleLogger.Log(vehicle.State+this.ToString() + "LEFT at " + PickupDelivery[1] +
                                        "at " + t.ToString() + ".");
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
+                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count == 0)
+                    {
+                        vehicle.ServiceIterator.Current.End(time);
+                        vehicle.ServiceIterator.MoveNext();
+                    }
+
                 }
 
                 return customerLeft;

@@ -114,7 +114,7 @@ namespace Simulator.Events
                                 vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop, vehicle.ServiceIterator.Current.StopsIterator.NextStop);
 
                         var travelTime = vehicle.TravelTime(distance);
-                        time = Convert.ToInt32(time + travelTime * 2);
+                        time = Convert.ToInt32(time + travelTime);
                     }
 
                     var evtArrive = _eventFactory.CreateEvent(0, time, vehicle, stop, null);

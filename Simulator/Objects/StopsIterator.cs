@@ -10,7 +10,7 @@ namespace Simulator.Objects
     {
         public Stop CurrentStop;
         public Stop NextStop;
-
+        public bool IsDone;
         private List<Stop> _stops;
 
         private int _numStopsIterated;
@@ -22,6 +22,7 @@ namespace Simulator.Objects
         {
             _stops = stops;
             Reset();
+            IsDone = false;
         }
 
         
@@ -35,6 +36,7 @@ namespace Simulator.Objects
                     _stopsEnum.MoveNext();
                     CurrentStop = _stopsEnum.Current;
                     _numStopsIterated = 0;
+                    IsDone = false;
                     NextStop = _stops[1];
                 }
             } 
@@ -47,7 +49,6 @@ namespace Simulator.Objects
                 if (_numStopsIterated < _stops.Count - 2)
                 {
                     CurrentStop = NextStop;
-
                  
                     while (_stopsEnum.Current != CurrentStop)
                     {
@@ -66,6 +67,7 @@ namespace Simulator.Objects
                 {
                     CurrentStop = NextStop;
                     NextStop = null;
+                    IsDone = true;
                     return true;
                 }
             }

@@ -8,6 +8,7 @@ namespace Simulator.Events
         //Event when a customer enters or leaves a vehicle
         public Customer Customer { get; set; }
         public Vehicle Vehicle { get; set; }
+
         public CustomerVehicleEvent(int category, int time, Customer customer, Vehicle vehicle) : base(category, time)
         {
             Category = category; //Cat 2 = enters vehicle, cat 3 = leaves vehicle
