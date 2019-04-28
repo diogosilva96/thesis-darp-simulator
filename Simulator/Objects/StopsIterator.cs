@@ -10,11 +10,12 @@ namespace Simulator.Objects
     {
         public Stop CurrentStop;
         public Stop NextStop;
+
         public bool IsDone;
 
-        private List<Stop> _stops;
+        private readonly List<Stop> _stops;
 
-        private int _index;
+        private int _currentIndex;
 
         public StopsIterator(List<Stop> stops)
         {
@@ -27,36 +28,39 @@ namespace Simulator.Objects
         {
             if (_stops != null)
             {
-                _index = 0;
-                if (_stops.Count > 1)
+                _currentIndex = 0;
+                if (_stops.Count > 0)
                 {
-                    CurrentStop = _stops[_index];
+                    CurrentStop = _stops[_currentIndex];
                     IsDone = false;
-                    NextStop = _stops[_index+1];
+                    NextStop = _stops[_currentIndex+1];
                 }
             } 
         }
 
         public bool Next()
         {
+            if (IsDone)
+            {
+                return false;
+            }
             if (_stops != null && _stops.Count >0)
             {
-                _index++;
-                if (_index +1 <= _stops.Count - 1)
+                _currentIndex++;
+                if (_currentIndex +1 <= _stops.Count - 1)
                 {
-                    CurrentStop = _stops[_index];
-                    NextStop = _stops[_index + 1];
-                 
-
+                    CurrentStop = _stops[_currentIndex];
+                    NextStop = _stops[_currentIndex + 1];
                     return true;
                 }
                 else
                 {
-                    CurrentStop = _stops[_index];
+                    CurrentStop = _stops[_currentIndex];
                     NextStop = null;
                     IsDone = true;
                     return true;
                 }
+                
             }
 
             return false;

@@ -7,7 +7,7 @@ using Simulator.Objects;
 
 namespace Simulator.Events
 {
-    class EventGenerator
+    public class EventGenerator
     {
         private EventFactory _eventFactory;
         private IDistribution _distribution;

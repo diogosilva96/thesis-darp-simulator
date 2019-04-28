@@ -15,46 +15,49 @@ namespace Simulator
     public class Simulation:AbstractSimulation
     {
         public List<Route> Routes;
-        
-
-        private int _totalEventsHandled;
-
-        private EventGenerator _eventGenerator;
+       
 
         public Simulation()
         {
-            Routes = _tsDataObject.Routes;
-            _eventGenerator = new EventGenerator();   
-            _totalEventsHandled = 0;
+            Routes = _tsDataObject.Routes; 
+            GenerateVehicleFleet(3); // GEnerates a vehicle for each route
         }
 
-        public override void GenerateVehicleFleet()
+        public override void AssignVehicleServices()
         {
-            var c = 0;
-            foreach (var route in Routes) // Generates a vehicle for each urban route
+            var ind = 0;
+            foreach (var route in Routes) // Each vehicle is responsible for a route
             {
-                if (c >= 1)
+                if (ind > VehicleFleet.Count-1)
                 {
                     break;
                 }
-                    
-                                var v = new Vehicle(17, 22);
-                                v.StopsGraph = _stopsGraph;
-                                for (int i = 0; i < 3; i++)
-                                {
-                                    v.AddService(new Service(route.Trips[0], route.Trips[0].StartTimes[i]));
-                                    if (Math.Abs(route.Trips[0].StartTimes[i] - route.Trips[1].StartTimes[i])>= 1800) //if the absolute difference between the startTimes is greater than half an hour (60s*30mins = 1800s)
-                                    {
-                                        v.AddService(new Service(route.Trips[1], route.Trips[1].StartTimes[i]));
-                                    }
+                var v = VehicleFleet[ind];
+                for (int i = 0; i < 3; i++) // TO BE CHANGED!
+                {
+                    if (route.Trips[0].StartTimes.Count > i)
+                    {
+                        v.AddService(new Service(route.Trips[0], route.Trips[0].StartTimes[i]));
+                    }
 
-                                }
-
-
-                                VehicleFleet.Add(v);
-                                c++;                                   
+                    if (route.Trips.Count > 1)
+                    {
+                        if (route.Trips[1].StartTimes.Count > i)
+                        {
+                            if (Math.Abs(route.Trips[0].StartTimes[i] - route.Trips[1].StartTimes[i]) >= 1800
+                            ) //if the absolute difference between the startTimes is greater than half an hour (60s*30mins = 1800s)
+                            {
+                                v.AddService(new Service(route.Trips[1], route.Trips[1].StartTimes[i]));
+                            }
+                        }
+                    }
+                }
+                ind++;                                   
             }
+        }
 
+        public override void GenerateVehicleServiceEvents()
+        {
             foreach (var vehicle in VehicleFleet)
             {
                 vehicle.ServiceIterator.Reset();
@@ -63,16 +66,13 @@ namespace Simulator
                     var events = _eventGenerator.GenerateRouteEvents(vehicle, vehicle.ServiceIterator.Current.StartTime);
                     AddEvent(events);
                 }
-
                 vehicle.ServiceIterator.Reset();
                 vehicle.ServiceIterator.MoveNext();
-
-
-            } 
+            }
             SortEvents();
         }
  
-        public override void PrintMetrics()
+        public override void PrintSolution()
         {
             IRecorder fileRecorder = new FileRecorder(@"C:\Users\Diogo Silva\Desktop\Simulation\sim_metrics.txt");
             Logger.Logger myFileLogger = new Logger.Logger(fileRecorder);
@@ -239,8 +239,8 @@ namespace Simulator
         public override void Handle(Event evt)
         { 
             evt.Treat();
-            _fileLogger.Log(evt.GetMessage());
             _totalEventsHandled++;
+            _fileLogger.Log(evt.GetMessage());
         }
     }
 }

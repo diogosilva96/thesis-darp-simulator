@@ -38,11 +38,12 @@ namespace Simulator.Objects
         public List<Customer> Customers { get; internal set; }
 
 
-        public Vehicle(int speed,int capacity)
+        public Vehicle(int speed,int capacity, DirectedGraph<Stop,double> stopsGraph)
         {
             Id = Interlocked.Increment(ref _nextId);
             Speed = speed;
             Capacity = capacity;
+            StopsGraph = stopsGraph;
             Customers = new List<Customer>(Capacity);
             IRecorder recorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(recorder);

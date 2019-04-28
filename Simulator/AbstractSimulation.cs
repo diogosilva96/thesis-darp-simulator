@@ -27,6 +27,10 @@ namespace Simulator
 
         protected DirectedGraph<Stop, double> _stopsGraph;
 
+        protected EventGenerator _eventGenerator;
+
+        protected int _totalEventsHandled;
+
         public AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
@@ -45,27 +49,41 @@ namespace Simulator
             _tsDataObject = stopsNetworkGraph.TripStopDataObject;
             stopsNetworkGraph.LoadGraph();
             _stopsGraph = stopsNetworkGraph.StopsGraph;
+            _eventGenerator = new EventGenerator();
+            _totalEventsHandled = 0;
         }
         public void Simulate()
         {
-            GenerateVehicleFleet();
             if (Events != null)
             {
                     
                     for (int i = 0; i < Events.Count ;i++)
                     {
                             Handle(Events[i]);
-                            Append(Events[i]);
+                            Append(Events[i]);                            
                             //SortEvents();
 
 
                     }
-                    PrintMetrics();
+                    PrintSolution();
             }
             
         }
 
-        public abstract void GenerateVehicleFleet();
+        public void GenerateVehicleFleet(int n)
+        {
+            for (int index = 0; index < n; index++)
+            {
+                var vehicle = new Vehicle(17, 22, _stopsGraph);
+                VehicleFleet.Add(vehicle);
+            }
+            AssignVehicleServices();
+            GenerateVehicleServiceEvents();
+        }
+
+        public abstract void AssignVehicleServices();
+        public abstract void GenerateVehicleServiceEvents();
+
         public abstract void Handle(Event evt);
 
         public abstract void Append(Event evt);
@@ -100,6 +118,6 @@ namespace Simulator
             }
             return true;
         }
-        public abstract void PrintMetrics();
+        public abstract void PrintSolution();
     }
 }
