@@ -19,22 +19,22 @@ namespace Simulator
 
         public List<Vehicle> VehicleFleet;
 
-        protected Logger.Logger _consoleLogger;
+        protected Logger.Logger ConsoleLogger;
 
-        protected Logger.Logger _fileLogger;
+        protected Logger.Logger FileLogger;
 
-        protected TripStopsDataObject _tsDataObject;
+        protected TripStopsDataObject TsDataObject;
 
-        protected DirectedGraph<Stop, double> _stopsGraph;
+        private readonly DirectedGraph<Stop, double> _stopsGraph;
 
-        protected EventGenerator _eventGenerator;
+        protected EventGenerator EventGenerator;
 
-        protected int _totalEventsHandled;
+        protected int TotalEventsHandled;
 
-        public AbstractSimulation()
+        protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(consoleRecorder);
+            ConsoleLogger = new Logger.Logger(consoleRecorder);
             string loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
             if (!Directory.Exists(loggerPath))
             {
@@ -42,28 +42,25 @@ namespace Simulator
             }
 
             IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"sim.txt"));
-            _fileLogger = new Logger.Logger(fileRecorder);
+            FileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
             StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph( true);
-            _tsDataObject = stopsNetworkGraph.TripStopDataObject;
+            TsDataObject = stopsNetworkGraph.TripStopDataObject;
             stopsNetworkGraph.LoadGraph();
             _stopsGraph = stopsNetworkGraph.StopsGraph;
-            _eventGenerator = new EventGenerator();
-            _totalEventsHandled = 0;
+            EventGenerator = new EventGenerator();
+            TotalEventsHandled = 0;
         }
         public void Simulate()
         {
-            if (Events != null)
+            if (Events.Count > 0)
             {
                     
                     for (int i = 0; i < Events.Count ;i++)
                     {
                             Handle(Events[i]);
                             Append(Events[i]);                            
-                            //SortEvents();
-
-
                     }
                     PrintSolution();
             }

@@ -79,10 +79,10 @@ namespace Simulator.Objects
         {
             if (!Services.Contains(service))
             {
-                Services.Add(service);
-                Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service starttime
-                ServiceIterator = Services.GetEnumerator();
-                return true;
+                    Services.Add(service);
+                    Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service starttime
+                    ServiceIterator = Services.GetEnumerator();
+                    return true;
             }
             return false;
         }
