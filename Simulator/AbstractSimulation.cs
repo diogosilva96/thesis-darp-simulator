@@ -14,7 +14,7 @@ using Simulator.Objects;
 
 namespace Simulator
 {
-    public abstract class AbstractSimulator
+    public abstract class AbstractSimulation
     {
         public List<Event> Events;
 
@@ -32,7 +32,7 @@ namespace Simulator
 
         protected int TotalEventsHandled;
 
-        protected AbstractSimulator()
+        protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             ConsoleLogger = new Logger.Logger(consoleRecorder);

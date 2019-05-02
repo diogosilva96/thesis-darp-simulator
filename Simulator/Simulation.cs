@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Transactions;
 using Google.OrTools.ConstraintSolver;
 using GraphLibrary;
@@ -13,15 +14,15 @@ using Simulator.Objects;
 
 namespace Simulator
 {
-    public class Simulator:AbstractSimulator
+    public class Simulation:AbstractSimulation
     {
         public List<Route> Routes;
        
 
-        public Simulator()
+        public Simulation()
         {
             Routes = TsDataObject.Routes; 
-            GenerateVehicleFleet(10); // Generates a vehicle for each route
+            GenerateVehicleFleet(8); // Generates a vehicle for each route
         }
 
         public override void AssignVehicleServices()
@@ -33,21 +34,30 @@ namespace Simulator
                 {
                     break;
                 }
-
+                
                 var v = VehicleFleet[ind];
+                var allRouteServices = new List<Service>(); //ADD this to Route object instead of here!
                 foreach (var trip in route.Trips)
                 {
                     foreach (var startTime in trip.StartTimes)
                     {
                         var service = new Service(trip, startTime);
-                        if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 45).Count == 0
-                        ) //if there is no service where the start time is lower than 45mins (2700seconds)
-                        {
-                            v.AddService(service); //adds the service
-                        }
+                        allRouteServices.Add(service);
                     }
 
                 }
+
+                allRouteServices = allRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time
+           
+                    foreach (var service in allRouteServices)
+                    {
+                        if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
+                        ) //if there is no service where the start time is lower than 30mins (1800seconds)
+                        {
+                            v.AddService(service); //Adds the service
+                            ConsoleLogger.Log(service+"- start_time:"+TimeSpan.FromSeconds(service.StartTime));
+                        }
+                    }
 
                 if (v.Services.Count > 0)
                 {
@@ -95,9 +105,8 @@ namespace Simulator
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Total number of services:" + vehicle.Services.Count);
                 var totalServices = vehicle.Services.FindAll(s => s.IsDone).Count;
-                toPrintList.Add("Total number of completed services:" + totalServices);
+                toPrintList.Add("Total number of completed services:" + totalServices +" out of "+vehicle.Services.Count);
                 if (vehicle.Services.Count > 0)
                 {
                     toPrintList.Add("Service route:" + Routes.Find(r => r.Trips.Contains(vehicle.Services[0].Trip)));

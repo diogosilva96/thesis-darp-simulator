@@ -24,7 +24,7 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Vehicle != null && Stop != null && !AlreadyHandled)
+            if (Vehicle != null && Stop != null && !AlreadyHandled && Vehicle.ServiceIterator.Current == Service)
             {
                 if (Category == 0)
                 {

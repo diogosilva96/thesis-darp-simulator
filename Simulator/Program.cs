@@ -44,7 +44,7 @@ namespace Simulator
 
 
          
-            AbstractSimulator sim = new Simulator();
+            AbstractSimulation sim = new Simulation();
             sim.Simulate();
             
             
