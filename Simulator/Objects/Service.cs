@@ -14,8 +14,6 @@ namespace Simulator.Objects
 
         public int EndTime { get; internal set; }
 
-        private readonly Logger.Logger _consoleLogger;
-
         public int RouteDuration => EndTime - StartTime;
 
         public StopsIterator StopsIterator { get; internal set; }
@@ -34,8 +32,6 @@ namespace Simulator.Objects
             Trip = trip;
             StartTime = startTime;
             IsDone = false;
-            IRecorder recorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(recorder);
             StopsIterator = new StopsIterator(Trip.Stops);
             ServicedCustomers = new List<Customer>();
         }
@@ -44,7 +40,7 @@ namespace Simulator.Objects
         {
             if (!IsDone)
             {
-                _consoleLogger.Log(this.ToString()+ " STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
+                
                 TotalRequests = 0;
                 ServicedCustomers = new List<Customer>();
                 StartTime = time;
@@ -57,14 +53,12 @@ namespace Simulator.Objects
             }
         }
 
-        public bool End(int time)
+        public bool Finish(int time)
         {
             if (!IsDone)
             {
                 EndTime = time;
                 IsDone = true;
-                _consoleLogger.Log("["+this.ToString() + "] FINISHED at " +
-                                   TimeSpan.FromSeconds(time).ToString() + ".");
                 return true;
             }
             else

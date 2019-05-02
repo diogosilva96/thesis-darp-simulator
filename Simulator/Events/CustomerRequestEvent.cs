@@ -31,9 +31,10 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Customer != null)
+            if (Customer != null && !AlreadyHandled)
             {
                 Console.WriteLine("New request:"+Customer+" - "+Customer.PickupDelivery[0]+" -> "+Customer.PickupDelivery[1]);
+                AlreadyHandled = true;
                 //AddRequest to the scheduler
             }
         }

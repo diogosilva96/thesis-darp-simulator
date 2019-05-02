@@ -7,17 +7,15 @@ namespace Simulator.Events
         public int Time { get; internal set; }
         public int Category { get; internal set; }
 
+        public bool AlreadyHandled { get; internal set; }
+
         public Event(int category, int time)
         {
             Category = category;
             Time = time;
+            AlreadyHandled = false;
         }
 
-        public Event(int category)
-        {
-            Category = category;
-            Time = 0;
-        }
 
         public abstract string GetMessage();
 

@@ -24,13 +24,19 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Category == 0)
+            if (Vehicle != null && Stop != null && !AlreadyHandled)
             {
-                Vehicle.Arrive(Stop, Time);
-            }
-            if (Category == 1)
-            {
-                Vehicle.Depart(Stop, Time);
+                if (Category == 0)
+                {
+                    Vehicle.Arrive(Stop, Time);
+                    AlreadyHandled = true;
+                }
+
+                if (Category == 1)
+                {
+                    Vehicle.Depart(Stop, Time);
+                    AlreadyHandled = true;
+                }
             }
 
         }

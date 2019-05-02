@@ -62,6 +62,7 @@ namespace Simulator.Events
                 if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1
                 ) // generation of customers at each stop
                 {
+                    var enterTime = time;
                     for (int i = 1; i <= sample; i++)
                     {
                         var rnd = new Random();
@@ -69,7 +70,11 @@ namespace Simulator.Events
                             vehicle.ServiceIterator.Current.Trip.Stops.Count - 1);
                         Stop dropOffStop = vehicle.ServiceIterator.Current.Trip.Stops[dropOffStopIndex];
                         Customer customer = new Customer(stop, dropOffStop);
-                        var enterTime = time + i;
+                        if (!vehicle.IsFull)
+                        { 
+                            enterTime++;
+                        }
+
                         var customerEnterVehicleEvent =
                             _eventFactory.CreateEvent(2, enterTime, vehicle, null, customer);
             
@@ -112,14 +117,14 @@ namespace Simulator.Events
                     {
                             var distance =
                                 vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop, vehicle.ServiceIterator.Current.StopsIterator.NextStop);
-
+                            vehicle.ServiceIterator.Current.StopsIterator.Next();
                         var travelTime = vehicle.TravelTime(distance);
                         time = Convert.ToInt32(time + travelTime);
                     }
 
                     var evtArrive = _eventFactory.CreateEvent(0, time, vehicle, stop, null);
                     events.Add(evtArrive);
-                    var waitTime = 2;
+                    var waitTime = 1;
                     time = time + waitTime;
                     if (!(vehicle.ServiceIterator.Current.Trip.Stops.IndexOf(stop) == vehicle.ServiceIterator.Current.Trip.Stops.Count - 1))
                     {
@@ -130,6 +135,7 @@ namespace Simulator.Events
 
                 }
             }
+            vehicle.ServiceIterator.Current.StopsIterator.Reset();
 
             return events;
         }

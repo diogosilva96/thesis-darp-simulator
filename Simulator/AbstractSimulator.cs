@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -13,7 +14,7 @@ using Simulator.Objects;
 
 namespace Simulator
 {
-    public abstract class AbstractSimulation
+    public abstract class AbstractSimulator
     {
         public List<Event> Events;
 
@@ -31,7 +32,7 @@ namespace Simulator
 
         protected int TotalEventsHandled;
 
-        protected AbstractSimulation()
+        protected AbstractSimulator()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             ConsoleLogger = new Logger.Logger(consoleRecorder);
@@ -41,7 +42,7 @@ namespace Simulator
                 Directory.CreateDirectory(loggerPath);
             }
 
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"sim.txt"));
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"sim_events.txt"));
             FileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
@@ -54,15 +55,21 @@ namespace Simulator
         }
         public void Simulate()
         {
+         
             if (Events.Count > 0)
-            {
-                    
-                    for (int i = 0; i < Events.Count ;i++)
+            {                
+                ConsoleLogger.Log(this.ToString()+"Press any key to start the simulation...");
+                Console.ReadLine();
+                var watch = Stopwatch.StartNew();
+                for (int i = 0; i < Events.Count ;i++)
                     {
                             Handle(Events[i]);
                             Append(Events[i]);                            
                     }
-                    PrintSolution();
+                watch.Stop();
+                ConsoleLogger.Log("-----------------------------------------------------");
+                ConsoleLogger.Log(this.ToString()+"Simulation finished after "+TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds+" seconds.");
+                PrintSolution();
             }
             
         }
@@ -71,11 +78,17 @@ namespace Simulator
         {
             for (int index = 0; index < n; index++)
             {
-                var vehicle = new Vehicle(17, 22, _stopsGraph);
+                var vehicle = new Vehicle(30, 22, _stopsGraph);
                 VehicleFleet.Add(vehicle);
             }
+            ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully created.");
             AssignVehicleServices();
             GenerateVehicleServiceEvents();
+        }
+
+        public override string ToString()
+        {
+            return "["+GetType().Name+"] ";
         }
 
         public abstract void AssignVehicleServices();

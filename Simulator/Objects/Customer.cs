@@ -53,14 +53,14 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (customerAdded)
                 {
-                    _consoleLogger.Log(v.State +this.ToString()+"ENTERED at " + PickupDelivery[0] +
+                    _consoleLogger.Log(v.SeatsState +this.ToString()+"ENTERED at " + PickupDelivery[0] +
                                        " at " + t.ToString()+ ".");
                     RealTimeWindow[0] = time;
                     _isInVehicle = true;
                 }
                 else
                 {
-                    _consoleLogger.Log(v.State+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is full!");
+                    _consoleLogger.Log(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is full!");
                     _isInVehicle = false;
                 }
 
@@ -78,13 +78,15 @@ namespace Simulator.Objects
                 if (customerLeft)
                 {
                     TimeSpan t = TimeSpan.FromSeconds(time);
-                    _consoleLogger.Log(vehicle.State+this.ToString() + "LEFT at " + PickupDelivery[1] +
+                    _consoleLogger.Log(vehicle.SeatsState+this.ToString() + "LEFT at " + PickupDelivery[1] +
                                        "at " + t.ToString() + ".");
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
-                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count == 0)
+                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count == 0)//this means that the service is complete
                     {
-                        vehicle.ServiceIterator.Current.End(time);
+                        vehicle.ServiceIterator.Current.Finish(time); //Finishes the service
+                        _consoleLogger.Log(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +
+                                           TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
                         vehicle.ServiceIterator.MoveNext();
                     }
 

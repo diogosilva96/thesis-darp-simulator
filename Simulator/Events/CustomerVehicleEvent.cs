@@ -17,12 +17,6 @@ namespace Simulator.Events
             Vehicle = vehicle;
         }
 
-        public CustomerVehicleEvent(int category) : base(category)
-        {
-            Category = category;
-            Customer = null;
-            Vehicle = null;
-        }
         public override string GetMessage()
         {
             string dateString = "[" + DateTime.Now.ToString() + "] ";
@@ -58,19 +52,21 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Vehicle != null && Customer != null)
+            if (Vehicle != null && Customer != null && !AlreadyHandled)
             {
                 if (Category == 2)
                 {
                     //Customer entered vehicle i at stop x with destination y
                     Customer.Enter(Vehicle,Time);
-          
+                    AlreadyHandled = true;
+
                 }
 
                 if (Category == 3)
                 {
                     //Customer left vehicle i at stop x with destination y
                     Customer.Leave(Vehicle,Time);
+                    AlreadyHandled = true;
 
                 }
             }

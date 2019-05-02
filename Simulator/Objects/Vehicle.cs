@@ -21,7 +21,7 @@ namespace Simulator.Objects
 
         public IEnumerator<Service> ServiceIterator;
 
-        public string State
+        public string SeatsState
         {
             get { return "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] "; }
         }
@@ -36,7 +36,6 @@ namespace Simulator.Objects
         private double _totalDistanceTraveled;
 
         public List<Customer> Customers { get; internal set; }
-
 
         public Vehicle(int speed,int capacity, DirectedGraph<Stop,double> stopsGraph)
         {
@@ -54,7 +53,7 @@ namespace Simulator.Objects
         public double TravelTime(double distance)
         {
             var vehicleSpeed = Speed / 3.6; //vehicle speed in m/s
-            var timeToTravel = distance / vehicleSpeed; // time it takes for the vehicle to transverse the distance
+            var timeToTravel = distance / vehicleSpeed; // time it takes for the vehicle to travel the distance = distance(m)/vehicleSpeed(m/s)
             return timeToTravel;
         }
 
@@ -89,19 +88,22 @@ namespace Simulator.Objects
 
         public bool Arrive(Stop stop, int time)
         {
-           
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 if (ServiceIterator.Current.StopsIterator.CurrentStop == ServiceIterator.Current.Trip.Stops[0])
                 {
                     ServiceIterator.Current.Start(time);
+                    _consoleLogger.Log(this.ToString()+ServiceIterator.Current+" STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
                 }
 
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+TimeSpan.FromSeconds(time).ToString()+".");
-                if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0)
+                if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0) //this means that the service is complete
                 {
-                        ServiceIterator.Current.End(time);
-                        ServiceIterator.MoveNext();   
+  
+                    ServiceIterator.Current.Finish(time); //Finishes the service
+                    _consoleLogger.Log(this.ToString() + ServiceIterator.Current + " FINISHED at " +
+                                       TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
+                    ServiceIterator.MoveNext();   
                 }
 
                 return true;
@@ -123,7 +125,6 @@ namespace Simulator.Objects
                 return true;
 
             }
-
             return false;
         }
         public bool RemoveCustomer(Customer customer)
@@ -155,7 +156,6 @@ namespace Simulator.Objects
             } 
         return false;
             
-
         }
 
     }
