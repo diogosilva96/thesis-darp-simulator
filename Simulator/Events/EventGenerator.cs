@@ -107,17 +107,18 @@ namespace Simulator.Events
             if (vehicle.ServiceIterator.Current.Trip != null)
             {
 
-                foreach (var stop in vehicle.ServiceIterator.Current.Trip.Stops)
+                foreach (var stop in vehicle.ServiceIterator.Current.Trip.Stops)//Change this to use stopIterator!
                 {
+                    var currentStopIndex = vehicle.ServiceIterator.Current.Trip.Stops.IndexOf(stop);
                     if (stop == vehicle.ServiceIterator.Current.Trip.Stops[0])
                     {
                         time = startTime;
                     }
                     else
                     {
+                        
                             var distance =
-                                vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop, vehicle.ServiceIterator.Current.StopsIterator.NextStop);
-                            vehicle.ServiceIterator.Current.StopsIterator.Next();
+                                vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.Trip.Stops[currentStopIndex-1], vehicle.ServiceIterator.Current.Trip.Stops[currentStopIndex]);
                         var travelTime = vehicle.TravelTime(distance);
                         time = Convert.ToInt32(time + travelTime);
                     }
@@ -126,16 +127,13 @@ namespace Simulator.Events
                     events.Add(evtArrive);
                     var waitTime = 1;
                     time = time + waitTime;
-                    if (!(vehicle.ServiceIterator.Current.Trip.Stops.IndexOf(stop) == vehicle.ServiceIterator.Current.Trip.Stops.Count - 1))
+                    if (!(currentStopIndex == vehicle.ServiceIterator.Current.Trip.Stops.Count - 1))//If it isn't the last stop creates new depart event
                     {
                         var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                         events.Add(evtDepart);
                     }
-
-
                 }
             }
-            vehicle.ServiceIterator.Current.StopsIterator.Reset();
 
             return events;
         }

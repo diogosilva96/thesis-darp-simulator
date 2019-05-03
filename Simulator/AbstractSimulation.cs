@@ -64,7 +64,8 @@ namespace Simulator
                 for (int i = 0; i < Events.Count ;i++)
                     {
                             Handle(Events[i]);
-                            Append(Events[i]);                            
+                            Append(Events[i]);                  
+                            SortEvents();
                     }
                 watch.Stop();
                 ConsoleLogger.Log("-----------------------------------------------------");
@@ -106,13 +107,13 @@ namespace Simulator
         {
             if (evt != null)
             {
-                Events.Add(evt);
-                return true;
+                if (!Events.Contains(evt))
+                {
+                    Events.Add(evt);
+                    return true;
+                }
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         public bool AddEvent(IEnumerable<Event> eventSet)

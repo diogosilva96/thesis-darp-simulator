@@ -27,6 +27,8 @@ namespace Simulator.Objects
 
         public int TotalDeniedRequests => (TotalRequests - TotalServicedRequests);
 
+        public double TotalDistanceTraveled;
+
         public Service(Trip trip,int startTime)
         {
             Trip = trip;
@@ -34,13 +36,13 @@ namespace Simulator.Objects
             IsDone = false;
             StopsIterator = new StopsIterator(Trip.Stops);
             ServicedCustomers = new List<Customer>();
+            TotalDistanceTraveled = 0;
         }
 
         public bool Start(int time)
         {
             if (!IsDone)
             {
-                
                 TotalRequests = 0;
                 ServicedCustomers = new List<Customer>();
                 StartTime = time;

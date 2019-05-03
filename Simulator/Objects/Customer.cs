@@ -15,7 +15,7 @@ namespace Simulator.Objects
 
         public int RideTime => RealTimeWindow[1]-RealTimeWindow[0];
 
-        private Logger.Logger _consoleLogger;
+        private readonly Logger.Logger _consoleLogger;
 
         public Stop[] PickupDelivery;
 
@@ -27,7 +27,6 @@ namespace Simulator.Objects
 
         public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
-        
         public Customer(Stop pickUpStop,Stop deliveryStop)
         {
 
@@ -43,10 +42,8 @@ namespace Simulator.Objects
             return "Customer "+Id+" ";
         }
 
- 
         public bool Enter(Vehicle v, int time)
-        {
-            
+        {  
             if (!_isInVehicle)
             {
                 var customerAdded = v.AddCustomer(this);

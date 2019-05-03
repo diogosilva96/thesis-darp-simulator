@@ -33,8 +33,6 @@ namespace Simulator.Objects
 
         public List<Service> Services { get; internal set; }
 
-        private double _totalDistanceTraveled;
-
         public List<Customer> Customers { get; internal set; }
 
         public Vehicle(int speed,int capacity, DirectedGraph<Stop,double> stopsGraph)
@@ -79,7 +77,7 @@ namespace Simulator.Objects
             if (!Services.Contains(service))
             {
                     Services.Add(service);
-                    Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service starttime
+                    Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service start_time
                     ServiceIterator = Services.GetEnumerator();
                     return true;
             }
@@ -148,9 +146,9 @@ namespace Simulator.Objects
             if (ServiceIterator.Current.StopsIterator != null && !ServiceIterator.Current.StopsIterator.IsDone)
             {
                 TimeSpan t = TimeSpan.FromSeconds(startTime);
-                _totalDistanceTraveled = _totalDistanceTraveled + distance;
+                ServiceIterator.Current.TotalDistanceTraveled =
+                    ServiceIterator.Current.TotalDistanceTraveled + distance;
                 _consoleLogger.Log(this.ToString() + "started traveling to "+ServiceIterator.Current.StopsIterator.NextStop+" at "+t.ToString()+".");
-
                 ServiceIterator.Current.StopsIterator.Next();
                 return true;
             } 

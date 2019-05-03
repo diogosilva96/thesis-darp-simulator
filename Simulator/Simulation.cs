@@ -22,7 +22,7 @@ namespace Simulator
         public Simulation()
         {
             Routes = TsDataObject.Routes; 
-            GenerateVehicleFleet(8); // Generates a vehicle for each route
+            GenerateVehicleFleet(1); // Generates a vehicle for each route
         }
 
         public override void AssignVehicleServices()
@@ -30,7 +30,7 @@ namespace Simulator
             var ind = 0;
             foreach (var route in Routes) // Each vehicle is responsible for a route
             {
-                if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the foreach
+                if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
                 {
                     break;
                 }
@@ -48,14 +48,14 @@ namespace Simulator
                 }
 
                 allRouteServices = allRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time
-           
+                
                     foreach (var service in allRouteServices)
                     {
                         if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
                         ) //if there is no service where the start time is lower than 30mins (1800seconds)
                         {
                             v.AddService(service); //Adds the service
-                            ConsoleLogger.Log(service+"- start_time:"+TimeSpan.FromSeconds(service.StartTime));
+                            ConsoleLogger.Log(service + "- start_time:" + TimeSpan.FromSeconds(service.StartTime));
                         }
                     }
 
@@ -93,10 +93,10 @@ namespace Simulator
  
         public override void PrintSolution()
         {
-            IRecorder fileRecorder = new FileRecorder(@"C:\Users\Diogo Silva\Desktop\Simulation\sim_solution.txt");
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/sim_solution.txt"));
             Logger.Logger myFileLogger = new Logger.Logger(fileRecorder);
             List<string> toPrintList = new List<string>();
-            toPrintList.Add(this.ToString()+"Total number of events handled:"+Events.FindAll(e=>e.AlreadyHandled == true).Count+" out of "+Events.Count);
+            toPrintList.Add(this.ToString()+"Total number of events handled: "+Events.FindAll(e=>e.AlreadyHandled == true).Count+" out of "+Events.Count+".");
             toPrintList.Add(this.ToString()+"Vehicle Fleet Size: "+VehicleFleet.Count+" vehicle(s).");
 
             foreach (var vehicle in VehicleFleet)
@@ -151,56 +151,37 @@ namespace Simulator
                 }
 
                 //End of debug purposes---------------------------------------------------------------------------
-                toPrintList.Add(" ");
-                var totalRouteDuration = 0;
-                var totalRequests = 0;
-                var totalServicedRequests = 0;
-                var totalDeniedRequests = 0;
-                var totalAverageServiceTime = 0;
+                
                 if (vehicle.ServiceIterator != null)
                 {
-                    vehicle.ServiceIterator.Reset();
-                    while (vehicle.ServiceIterator.MoveNext())
-                    {
-                        if (vehicle.ServiceIterator.Current.IsDone)
-                        {
-                            totalRouteDuration = totalRouteDuration + vehicle.ServiceIterator.Current.RouteDuration;
-                            totalRequests = totalRequests + vehicle.ServiceIterator.Current.TotalRequests;
-                            totalServicedRequests =
-                                totalServicedRequests + vehicle.ServiceIterator.Current.TotalServicedRequests;
-                            totalDeniedRequests =
-                                totalDeniedRequests + vehicle.ServiceIterator.Current.TotalDeniedRequests;
-                            var totalServiceTime = 0;
-                            foreach (var customer in vehicle.ServiceIterator.Current.ServicedCustomers)
-                            {
-                                totalServiceTime = totalServiceTime + customer.RideTime;
-                            }
+ 
+                    var completedServices = vehicle.Services.FindAll(s => s.IsDone);//Finds all the completed services
+                    var totalCustomerRideTime = completedServices.Sum(s => s.ServicedCustomers.Sum(c => c.RideTime));
+                    var avgCustomerRideTime =
+                        totalCustomerRideTime / completedServices.Sum(s => s.TotalServicedRequests);
 
-                            var avgServiceTime =
-                                totalServiceTime / vehicle.ServiceIterator.Current.TotalServicedRequests;
-                            totalAverageServiceTime = totalAverageServiceTime + avgServiceTime;
-                        }
-                    }
-
-                    vehicle.ServiceIterator.Reset();
+                    toPrintList.Add("Total Distance Traveled: "+Math.Round(completedServices.Sum(s=>s.TotalDistanceTraveled))+" meters.");
+                    toPrintList.Add(" ");
                     toPrintList.Add("Metrics (per service):");
-                    toPrintList.Add("Average route duration:" + Math.Round(TimeSpan.FromSeconds(totalRouteDuration / totalServices).TotalMinutes) + " minutes.");
-                    toPrintList.Add("Average number of requests:" + totalRequests / totalServices);
-                    toPrintList.Add("Average number of serviced requests:" + totalServicedRequests / totalServices);
-                    toPrintList.Add("Average number of denied requests:" + totalDeniedRequests / totalServices);
-                    double avgServicedRequestRatio = Convert.ToDouble(totalServicedRequests / totalServices) /
-                                                     Convert.ToDouble(totalRequests / totalServices);
+                    toPrintList.Add("Average route duration:" + Math.Round(TimeSpan.FromSeconds(completedServices.Average(s=>s.RouteDuration)).TotalMinutes) + " minutes.");
+                    toPrintList.Add("Average number of requests:" + completedServices.Average(s=>s.TotalRequests));
+                    var avgServicedRequests = completedServices.Average(s => s.TotalServicedRequests);
+                    toPrintList.Add("Average number of serviced requests:" + avgServicedRequests);
+                    toPrintList.Add("Average number of denied requests:" + completedServices.Average(s=>s.TotalDeniedRequests));
+                    double avgServicedRequestRatio = Convert.ToDouble(avgServicedRequests) /
+                                                     Convert.ToDouble(completedServices.Average(s=>s.TotalRequests));
                     double avgDeniedRequestRatio = 1 - (avgServicedRequestRatio);
                     toPrintList.Add("Average percentage of serviced requests:" + avgServicedRequestRatio * 100 + "%");
                     toPrintList.Add("Average percentage of denied requests:" + avgDeniedRequestRatio * 100 + "%");
-                    toPrintList.Add("Average service time (per customer):" + totalAverageServiceTime / totalServices +
+                    toPrintList.Add("Average service time (per customer):" + Math.Round((decimal) avgCustomerRideTime) +
                                     " seconds");
+                    toPrintList.Add("Average distance traveled: "+Math.Round(completedServices.Average(s=>s.TotalDistanceTraveled))+" meters.");
                 }
             }
 
             foreach (var printableMessage in toPrintList)
             {
-                 myFileLogger.Log(printableMessage);
+                myFileLogger.Log(printableMessage);
                 ConsoleLogger.Log(printableMessage);
             }
         }
@@ -260,12 +241,9 @@ namespace Simulator
                         {
                             if (ev is VehicleStopEvent vseEv)
                             {
-                                if (vseEv.Vehicle == vseEvt.Vehicle) 
+                                if (vseEv.Vehicle == vseEvt.Vehicle && vseEv.Service == vseEvt.Service) 
                                 {
-                                    if (vseEv.Service == vseEvt.Service)
-                                    {
                                         ev.Time = ev.Time + timeAdded; //adds the added time to all the next events of that service for that vehicle
-                                    }
                                 }
                             }
                         }
