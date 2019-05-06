@@ -21,8 +21,8 @@ namespace Simulator
 
         public Simulation()
         {
-            Routes = TsDataObject.Routes; 
-            GenerateVehicleFleet(1); // Generates a vehicle for each route
+            Routes = StopsNetworkGraph.TripStopDataObject.Routes; 
+            GenerateVehicleFleet(2); // Generates a vehicle for each route
         }
 
         public override void AssignVehicleServices()
@@ -34,38 +34,39 @@ namespace Simulator
                 {
                     break;
                 }
-                
-                var v = VehicleFleet[ind];
-                var allRouteServices = new List<Service>(); //ADD this to Route object instead of here!
-                foreach (var trip in route.Trips)
-                {
-                    foreach (var startTime in trip.StartTimes)
+
+                    var v = VehicleFleet[ind];
+                    var allRouteServices = new List<Service>(); //ADD this to Route object instead of here!
+                    foreach (var trip in route.Trips)
                     {
-                        var service = new Service(trip, startTime);
-                        allRouteServices.Add(service);
+                        foreach (var startTime in trip.StartTimes)
+                        {
+                            var service = new Service(trip, startTime);
+                            allRouteServices.Add(service);
+                        }
+
                     }
-
-                }
-
-                allRouteServices = allRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time
-                
+                    allRouteServices =
+                        allRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time
                     foreach (var service in allRouteServices)
                     {
                         if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
                         ) //if there is no service where the start time is lower than 30mins (1800seconds)
                         {
                             v.AddService(service); //Adds the service
-                            ConsoleLogger.Log(service + "- start_time:" + TimeSpan.FromSeconds(service.StartTime));
                         }
                     }
 
-                if (v.Services.Count > 0)
-                {
-                    ConsoleLogger.Log(this.ToString() + v.Services.Count + " Services ("+Routes.Find(r=>r.Trips.Contains(v.Services[0].Trip))+") were assigned to Vehicle " +
-                                      v.Id + ".");
-                }
 
-                ind++;
+                    if (v.Services.Count > 0)
+                    {
+                        ConsoleLogger.Log(this.ToString() + v.Services.Count + " Services (" +
+                                          Routes.Find(r => r.Trips.Contains(v.Services[0].Trip)) +
+                                          ") were assigned to Vehicle " +
+                                          v.Id + ".");
+                    }
+
+                    ind++;
 
             }
         }
@@ -118,9 +119,8 @@ namespace Simulator
                         {
                             serviceRoutes.Add(service.Trip);
                             var completedServices = vehicle.Services.FindAll(s => s.Trip == service.Trip && s.IsDone);
-                            toPrintList.Add(" - " + service.Trip.ToString() + ", Number of services completed:" +
+                            toPrintList.Add(" - " + service.Trip.ToString() + "- Route Length:"+Math.Round(vehicle.Services.Find(s=>s.Trip == service.Trip).TotalDistanceTraveled)+" meters, Number of services completed:" +
                                             completedServices.Count);
-
                         }
                     }
                 }
@@ -154,28 +154,28 @@ namespace Simulator
                 
                 if (vehicle.ServiceIterator != null)
                 {
- 
                     var completedServices = vehicle.Services.FindAll(s => s.IsDone);//Finds all the completed services
                     var totalCustomerRideTime = completedServices.Sum(s => s.ServicedCustomers.Sum(c => c.RideTime));
                     var avgCustomerRideTime =
                         totalCustomerRideTime / completedServices.Sum(s => s.TotalServicedRequests);
-
                     toPrintList.Add("Total Distance Traveled: "+Math.Round(completedServices.Sum(s=>s.TotalDistanceTraveled))+" meters.");
                     toPrintList.Add(" ");
                     toPrintList.Add("Metrics (per service):");
+        
                     toPrintList.Add("Average route duration:" + Math.Round(TimeSpan.FromSeconds(completedServices.Average(s=>s.RouteDuration)).TotalMinutes) + " minutes.");
-                    toPrintList.Add("Average number of requests:" + completedServices.Average(s=>s.TotalRequests));
+                    toPrintList.Add("Average number of requests:" + Math.Floor(completedServices.Average(s=>s.TotalRequests)));
                     var avgServicedRequests = completedServices.Average(s => s.TotalServicedRequests);
-                    toPrintList.Add("Average number of serviced requests:" + avgServicedRequests);
-                    toPrintList.Add("Average number of denied requests:" + completedServices.Average(s=>s.TotalDeniedRequests));
+                    toPrintList.Add("Average number of serviced requests:" + Math.Floor(avgServicedRequests));
+                    toPrintList.Add("Average number of denied requests:" + Math.Floor(completedServices.Average(s=>s.TotalDeniedRequests)));
                     double avgServicedRequestRatio = Convert.ToDouble(avgServicedRequests) /
                                                      Convert.ToDouble(completedServices.Average(s=>s.TotalRequests));
                     double avgDeniedRequestRatio = 1 - (avgServicedRequestRatio);
-                    toPrintList.Add("Average percentage of serviced requests:" + avgServicedRequestRatio * 100 + "%");
-                    toPrintList.Add("Average percentage of denied requests:" + avgDeniedRequestRatio * 100 + "%");
-                    toPrintList.Add("Average service time (per customer):" + Math.Round((decimal) avgCustomerRideTime) +
-                                    " seconds");
+                    toPrintList.Add("Average percentage of serviced requests:" + Math.Round(avgServicedRequestRatio * 100) + "%");
+                    toPrintList.Add("Average percentage of denied requests:" + Math.Round(avgDeniedRequestRatio * 100) + "%");
+                    toPrintList.Add("Average customer ride time:" + Math.Round((decimal) avgCustomerRideTime) +
+                                    " seconds.");
                     toPrintList.Add("Average distance traveled: "+Math.Round(completedServices.Average(s=>s.TotalDistanceTraveled))+" meters.");
+                    toPrintList.Add("Longest route duration:" + Math.Round(TimeSpan.FromSeconds(completedServices.Max(s => s.RouteDuration)).TotalMinutes)+" seconds.");
                 }
             }
 
@@ -189,6 +189,7 @@ namespace Simulator
 
         public override void Append(Event evt)
         {
+            var eventsCount = Events.Count;
             Random rnd = new Random();
             //INSERTION (APPEND) OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS---------------------------------------
             if (evt.Category == 0 && evt is VehicleStopEvent vseEvt)
@@ -197,14 +198,7 @@ namespace Simulator
                     List<Event> customerLeaveVehicleEvents = EventGenerator.GenerateCustomerLeaveVehicleEvents(vseEvt.Vehicle,vseEvt.Stop, baseTime); //Generates customer leave vehicle event
                     var lastInsertedLeaveTime = 0;
                     var lastInsertedEnterTime = 0;
-                    if (customerLeaveVehicleEvents.Count > 0)
-                    {     
-                        lastInsertedLeaveTime = customerLeaveVehicleEvents[customerLeaveVehicleEvents.Count - 1].Time;
-                    }
-                    else
-                    {
-                        lastInsertedLeaveTime = baseTime;
-                    }
+                    lastInsertedLeaveTime = customerLeaveVehicleEvents.Count > 0 ? customerLeaveVehicleEvents[customerLeaveVehicleEvents.Count - 1].Time : baseTime;
 
                     List<Event> customerEnterVehicleEvents = null;
                     if (vseEvt.Vehicle.ServiceIterator.Current != null)
@@ -237,48 +231,40 @@ namespace Simulator
                 {
                     foreach (var ev in Events)
                     {
-                        if (ev.Time > baseTime) 
+                        if (ev.Time > baseTime && ev is VehicleStopEvent vseEv) 
                         {
-                            if (ev is VehicleStopEvent vseEv)
+                            if (vseEv.Vehicle == vseEvt.Vehicle && vseEv.Service == vseEvt.Service) 
                             {
-                                if (vseEv.Vehicle == vseEvt.Vehicle && vseEv.Service == vseEvt.Service) 
-                                {
-                                        ev.Time = ev.Time + timeAdded; //adds the added time to all the next events of that service for that vehicle
-                                }
+                                ev.Time = ev.Time + timeAdded; //adds the added time to all the next events of that service for that vehicle
                             }
                         }
                     }
                 }
-                var evtEnterAdded = AddEvent(customerEnterVehicleEvents);
-                var evtLeaveAdded = AddEvent(customerLeaveVehicleEvents);
-                if (evtLeaveAdded || evtEnterAdded)//if any of these events were added (true), it sorts the event list
-                {
-                    SortEvents();
-                }
+                AddEvent(customerEnterVehicleEvents);
+                AddEvent(customerLeaveVehicleEvents);
             }
             //END OF INSERTION OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS--------------------------------------
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
-            var pickup = TsDataObject.Stops[rnd.Next(0, TsDataObject.Stops.Count)];
+            var pickup = StopsNetworkGraph.TripStopDataObject.Stops[rnd.Next(0, StopsNetworkGraph.TripStopDataObject.Stops.Count)];
             var delivery = pickup;
             while (pickup == delivery)
             {
-                delivery = TsDataObject.Stops[rnd.Next(0, TsDataObject.Stops.Count)];
+                delivery = StopsNetworkGraph.TripStopDataObject.Stops[rnd.Next(0, StopsNetworkGraph.TripStopDataObject.Stops.Count)];
             }
 
             var eventReq = EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup, delivery); //Generates a pickup and delivery customer request
             if (eventReq != null) //if eventReq isn't null, add the event and then sorts the events list
             {
                 AddEvent(eventReq);
-                SortEvents();
             }
             //END OF INSERTION OF PICKUP DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
 
+            if (eventsCount != Events.Count) //If the size of the events list has changed, Sorts Events
+            {
+                SortEvents();
+            }
         }
-
-
-
-
 
         public override void Handle(Event evt)
         { 

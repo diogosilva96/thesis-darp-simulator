@@ -88,16 +88,16 @@ namespace Simulator.Objects
         {
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                if (ServiceIterator.Current.StopsIterator.CurrentStop == ServiceIterator.Current.Trip.Stops[0])
+                if (ServiceIterator.Current.StopsIterator.CurrentIndex == 0)
                 {
                     ServiceIterator.Current.Start(time);
+                    _consoleLogger.Log(" ");
                     _consoleLogger.Log(this.ToString()+ServiceIterator.Current+" STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
                 }
 
                 _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+TimeSpan.FromSeconds(time).ToString()+".");
                 if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0) //this means that the service is complete
                 {
-  
                     ServiceIterator.Current.Finish(time); //Finishes the service
                     _consoleLogger.Log(this.ToString() + ServiceIterator.Current + " FINISHED at " +
                                        TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");

@@ -58,7 +58,7 @@ namespace Simulator.Events
             {
 
                 var sample = ((Poisson) _distribution).Sample();
-                int currentStopIndex = vehicle.ServiceIterator.Current.Trip.Stops.IndexOf(stop);
+                int currentStopIndex = vehicle.ServiceIterator.Current.StopsIterator.CurrentIndex;
                 if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1
                 ) // generation of customers at each stop
                 {
@@ -104,35 +104,39 @@ namespace Simulator.Events
             Lambda = 1;
             var events = new List<Event>();
             var time = 0;
+            vehicle.ServiceIterator.Current.StopsIterator.Reset();
             if (vehicle.ServiceIterator.Current.Trip != null)
             {
-
-                foreach (var stop in vehicle.ServiceIterator.Current.Trip.Stops)//Change this to use stopIterator!
+                var ind = 0;
+                while (!vehicle.ServiceIterator.Current.StopsIterator.IsDone)
                 {
-                    var currentStopIndex = vehicle.ServiceIterator.Current.Trip.Stops.IndexOf(stop);
-                    if (stop == vehicle.ServiceIterator.Current.Trip.Stops[0])
+                    if (ind == 0)//If the index is 0, the evt time is the starttime
                     {
                         time = startTime;
                     }
-                    else
+                    else //otherwise adds the time to travel the distance from the the currentStop to the nextStop, which will give the next event startTime
                     {
                         
                             var distance =
-                                vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.Trip.Stops[currentStopIndex-1], vehicle.ServiceIterator.Current.Trip.Stops[currentStopIndex]);
+                                vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop, vehicle.ServiceIterator.Current.StopsIterator.NextStop);
                         var travelTime = vehicle.TravelTime(distance);
                         time = Convert.ToInt32(time + travelTime);
+                        vehicle.ServiceIterator.Current.StopsIterator.Next();                       
                     }
-
+                    var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
                     var evtArrive = _eventFactory.CreateEvent(0, time, vehicle, stop, null);
                     events.Add(evtArrive);
                     var waitTime = 1;
                     time = time + waitTime;
-                    if (!(currentStopIndex == vehicle.ServiceIterator.Current.Trip.Stops.Count - 1))//If it isn't the last stop creates new depart event
+                    if (!(vehicle.ServiceIterator.Current.StopsIterator.IsDone))//If stopIterator isn't done yet, creates new depart event
                     {
                         var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                         events.Add(evtDepart);
                     }
+
+                    ind++;
                 }
+                vehicle.ServiceIterator.Current.StopsIterator.Reset();
             }
 
             return events;

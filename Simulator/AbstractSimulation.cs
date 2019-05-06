@@ -24,9 +24,7 @@ namespace Simulator
 
         protected Logger.Logger FileLogger;
 
-        protected TripStopsDataObject TsDataObject;
-
-        private readonly DirectedGraph<Stop, double> _stopsGraph;
+        protected StopsNetworkGraph StopsNetworkGraph;
 
         protected EventGenerator EventGenerator;
 
@@ -46,10 +44,8 @@ namespace Simulator
             FileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-            StopsNetworkGraph stopsNetworkGraph = new StopsNetworkGraph( true);
-            TsDataObject = stopsNetworkGraph.TripStopDataObject;
-            stopsNetworkGraph.LoadGraph();
-            _stopsGraph = stopsNetworkGraph.StopsGraph;
+            StopsNetworkGraph = new StopsNetworkGraph( true);
+            StopsNetworkGraph.LoadGraph();
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }
@@ -62,11 +58,12 @@ namespace Simulator
                 Console.ReadLine();
                 var watch = Stopwatch.StartNew();
                 for (int i = 0; i < Events.Count ;i++)
-                    {
-                            Handle(Events[i]);
-                            Append(Events[i]);                  
+                {
+                            var currentEvent = Events[i];
+                            Handle(currentEvent);
+                            Append(currentEvent);                  
                             SortEvents();
-                    }
+                }
                 watch.Stop();
                 ConsoleLogger.Log("-----------------------------------------------------");
                 ConsoleLogger.Log(this.ToString()+"Simulation finished after "+TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds+" seconds.");
@@ -79,7 +76,7 @@ namespace Simulator
         {
             for (int index = 0; index < n; index++)
             {
-                var vehicle = new Vehicle(30, 22, _stopsGraph);
+                var vehicle = new Vehicle(30, 22, StopsNetworkGraph.StopsGraph);
                 VehicleFleet.Add(vehicle);
             }
             ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully created.");

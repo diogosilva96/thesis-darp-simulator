@@ -57,7 +57,7 @@ namespace Simulator.Objects
                 }
                 else
                 {
-                    _consoleLogger.Log(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is full!");
+                    _consoleLogger.Log(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is FULL!");
                     _isInVehicle = false;
                 }
 
@@ -79,7 +79,7 @@ namespace Simulator.Objects
                                        "at " + t.ToString() + ".");
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
-                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count == 0)//this means that the service is complete
+                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
                     {
                         vehicle.ServiceIterator.Current.Finish(time); //Finishes the service
                         _consoleLogger.Log(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +

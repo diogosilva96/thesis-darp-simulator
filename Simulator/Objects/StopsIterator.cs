@@ -17,6 +17,10 @@ namespace Simulator.Objects
 
         private int _currentIndex;
 
+        public int CurrentIndex {
+            get { return _currentIndex; }
+        }
+
         public StopsIterator(List<Stop> stops)
         {
             _stops = stops;
