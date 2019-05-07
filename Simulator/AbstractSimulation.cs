@@ -9,8 +9,10 @@ using GraphLibrary;
 using GraphLibrary.GraphLibrary;
 using GraphLibrary.Objects;
 using Simulator.Events;
+using Simulator.GraphLibrary;
 using Simulator.Logger;
 using Simulator.Objects;
+using Simulator.Objects.Data_Objects;
 
 namespace Simulator
 {
@@ -24,7 +26,9 @@ namespace Simulator
 
         protected Logger.Logger FileLogger;
 
-        protected StopsNetworkGraph StopsNetworkGraph;
+        protected DirectedGraph<Stop, double> StopsGraph;
+
+        protected RoutesDataObject RoutesDataObject;
 
         protected EventGenerator EventGenerator;
 
@@ -44,8 +48,10 @@ namespace Simulator
             FileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-            StopsNetworkGraph = new StopsNetworkGraph( true);
-            StopsNetworkGraph.LoadGraph();
+            var stopsNetworkGraph = new StopsNetworkGraphLoader( true);
+            stopsNetworkGraph.LoadGraph();
+            RoutesDataObject = stopsNetworkGraph.RouteInformationDataObject;
+            StopsGraph = stopsNetworkGraph.StopsGraph;
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }
@@ -76,7 +82,7 @@ namespace Simulator
         {
             for (int index = 0; index < n; index++)
             {
-                var vehicle = new Vehicle(30, 22, StopsNetworkGraph.StopsGraph);
+                var vehicle = new Vehicle(30, 22, StopsGraph);
                 VehicleFleet.Add(vehicle);
             }
             ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully created.");

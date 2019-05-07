@@ -10,6 +10,7 @@ using GraphLibrary.Objects;
 using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
+using Simulator.Objects.Data_Objects;
 
 
 namespace Simulator
@@ -21,7 +22,7 @@ namespace Simulator
 
         public Simulation()
         {
-            Routes = StopsNetworkGraph.TripStopDataObject.Routes; 
+            Routes = RoutesDataObject.Routes; 
             GenerateVehicleFleet(2); // Generates a vehicle for each route
         }
 
@@ -36,19 +37,7 @@ namespace Simulator
                 }
 
                     var v = VehicleFleet[ind];
-                    var allRouteServices = new List<Service>(); //ADD this to Route object instead of here!
-                    foreach (var trip in route.Trips)
-                    {
-                        foreach (var startTime in trip.StartTimes)
-                        {
-                            var service = new Service(trip, startTime);
-                            allRouteServices.Add(service);
-                        }
-
-                    }
-                    allRouteServices =
-                        allRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time
-                    foreach (var service in allRouteServices)
+                    foreach (var service in route.AllRouteServices)
                     {
                         if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
                         ) //if there is no service where the start time is lower than 30mins (1800seconds)
@@ -220,11 +209,11 @@ namespace Simulator
             //END OF INSERTION OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS--------------------------------------
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
-            var pickup = StopsNetworkGraph.TripStopDataObject.Stops[rnd.Next(0, StopsNetworkGraph.TripStopDataObject.Stops.Count)];
+            var pickup = RoutesDataObject.Stops[rnd.Next(0, RoutesDataObject.Stops.Count)];
             var delivery = pickup;
             while (pickup == delivery)
             {
-                delivery = StopsNetworkGraph.TripStopDataObject.Stops[rnd.Next(0, StopsNetworkGraph.TripStopDataObject.Stops.Count)];
+                delivery = RoutesDataObject.Stops[rnd.Next(0, RoutesDataObject.Stops.Count)];
             }
 
             var eventReq = EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup, delivery); //Generates a pickup and delivery customer request

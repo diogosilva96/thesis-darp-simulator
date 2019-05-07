@@ -1,5 +1,6 @@
 ﻿using System;
 using Simulator.Objects;
+using Simulator.Objects.Data_Objects;
 
 namespace Simulator.Events
 {

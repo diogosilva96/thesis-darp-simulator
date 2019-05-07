@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using GraphLibrary.Objects;
 using MathNet.Numerics.Distributions;
 using Simulator.Objects;
+using Simulator.Objects.Data_Objects;
 
 
 namespace Simulator.Events
