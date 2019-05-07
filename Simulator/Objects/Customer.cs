@@ -15,8 +15,6 @@ namespace Simulator.Objects
 
         public int RideTime => RealTimeWindow[1]-RealTimeWindow[0];
 
-        private readonly Logger.Logger _consoleLogger;
-
         public Stop[] PickupDelivery;
 
         public int[] RealTimeWindow;
@@ -31,8 +29,6 @@ namespace Simulator.Objects
         {
 
             PickupDelivery = new Stop[] {pickUpStop,deliveryStop};
-            IRecorder recorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(recorder);
             RealTimeWindow = new int[2];
             _isInVehicle = false;
         }
@@ -50,14 +46,14 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (customerAdded)
                 {
-                    _consoleLogger.Log(v.SeatsState +this.ToString()+"ENTERED at " + PickupDelivery[0] +
+                    Console.WriteLine(v.SeatsState +this.ToString()+"ENTERED at " + PickupDelivery[0] +
                                        " at " + t.ToString()+ ".");
                     RealTimeWindow[0] = time;
                     _isInVehicle = true;
                 }
                 else
                 {
-                    _consoleLogger.Log(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is FULL!");
+                    Console.WriteLine(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is FULL!");
                     _isInVehicle = false;
                 }
 
@@ -75,14 +71,14 @@ namespace Simulator.Objects
                 if (customerLeft)
                 {
                     TimeSpan t = TimeSpan.FromSeconds(time);
-                    _consoleLogger.Log(vehicle.SeatsState+this.ToString() + "LEFT at " + PickupDelivery[1] +
+                    Console.WriteLine(vehicle.SeatsState+this.ToString() + "LEFT at " + PickupDelivery[1] +
                                        "at " + t.ToString() + ".");
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
                     if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
                     {
                         vehicle.ServiceIterator.Current.Finish(time); //Finishes the service
-                        _consoleLogger.Log(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +
+                        Console.WriteLine(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +
                                            TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
                         vehicle.ServiceIterator.MoveNext();
                     }

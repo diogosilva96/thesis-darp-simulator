@@ -27,8 +27,7 @@ namespace Simulator.Objects
         }
 
         public DirectedGraph<Stop,double> StopsGraph { get; set; }
-
-        private readonly Logger.Logger _consoleLogger;
+       
         public bool IsFull => Customers.Count >= Capacity;
 
         public List<Service> Services { get; internal set; }
@@ -42,8 +41,6 @@ namespace Simulator.Objects
             Capacity = capacity;
             StopsGraph = stopsGraph;
             Customers = new List<Customer>(Capacity);
-            IRecorder recorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(recorder);
             Services = new List<Service>();
         }
      
@@ -91,15 +88,15 @@ namespace Simulator.Objects
                 if (ServiceIterator.Current.StopsIterator.CurrentIndex == 0)
                 {
                     ServiceIterator.Current.Start(time);
-                    _consoleLogger.Log(" ");
-                    _consoleLogger.Log(this.ToString()+ServiceIterator.Current+" STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
+                    Console.WriteLine(" ");
+                    Console.WriteLine(this.ToString()+ServiceIterator.Current+" STARTED at " + TimeSpan.FromSeconds(time).ToString() + ".");
                 }
 
-                _consoleLogger.Log(this.ToString() + "ARRIVED at " + stop+" at "+TimeSpan.FromSeconds(time).ToString()+".");
+                Console.WriteLine(this.ToString() + "ARRIVED at " + stop+" at "+TimeSpan.FromSeconds(time).ToString()+".");
                 if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0) //this means that the service is complete
                 {
                     ServiceIterator.Current.Finish(time); //Finishes the service
-                    _consoleLogger.Log(this.ToString() + ServiceIterator.Current + " FINISHED at " +
+                    Console.WriteLine(this.ToString() + ServiceIterator.Current + " FINISHED at " +
                                        TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
                     ServiceIterator.MoveNext();   
                 }
@@ -118,7 +115,7 @@ namespace Simulator.Objects
         {
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                _consoleLogger.Log(this.ToString() +"DEPARTED from "+ stop+"at "+TimeSpan.FromSeconds(time).ToString()+".");
+                Console.WriteLine(this.ToString() +"DEPARTED from "+ stop+"at "+TimeSpan.FromSeconds(time).ToString()+".");
                 TransverseToNextStop(StopsGraph.GetWeight(ServiceIterator.Current.StopsIterator.CurrentStop, ServiceIterator.Current.StopsIterator.NextStop),time);
                 return true;
 
@@ -148,7 +145,7 @@ namespace Simulator.Objects
                 TimeSpan t = TimeSpan.FromSeconds(startTime);
                 ServiceIterator.Current.TotalDistanceTraveled =
                     ServiceIterator.Current.TotalDistanceTraveled + distance;
-                _consoleLogger.Log(this.ToString() + "started traveling to "+ServiceIterator.Current.StopsIterator.NextStop+" at "+t.ToString()+".");
+                Console.WriteLine(this.ToString() + "started traveling to "+ServiceIterator.Current.StopsIterator.NextStop+" at "+t.ToString()+".");
                 ServiceIterator.Current.StopsIterator.Next();
                 return true;
             } 

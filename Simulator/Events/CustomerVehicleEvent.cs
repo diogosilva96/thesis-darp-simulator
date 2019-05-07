@@ -29,12 +29,12 @@ namespace Simulator.Events
                     {
                         if (Vehicle.IsFull)
                         {
-                            message = dateString+this.ToString() + Vehicle.ToString() +"is FULL,"+Customer.ToString() + " was not served at time"+Time+".";
+                            message = dateString+this.ToString() + Vehicle.ToString() +"is FULL,"+Customer.ToString() + " was not served.";
                         }
                         else
                         {
                             message = message + " ENTERED "+Vehicle.ToString() + " at " +
-                                              Customer.PickupDelivery[0] + " with destination to "+Customer.PickupDelivery[1]+" at " + Time + ".";
+                                              Customer.PickupDelivery[0] + " with destination to "+Customer.PickupDelivery[1]+".";
 
                         }
                     }
@@ -43,7 +43,7 @@ namespace Simulator.Events
                     {
                         message =  message + " LEFT vehicle " + Vehicle.ToString() +
                                           " at " +
-                                          Customer.PickupDelivery[1]+ " with origin stop as "+Customer.PickupDelivery[0]+" at " + Time + ".";
+                                          Customer.PickupDelivery[1]+ " with origin stop as "+Customer.PickupDelivery[0]+".";
                     }          
             }
 

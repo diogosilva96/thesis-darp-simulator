@@ -51,14 +51,12 @@ namespace Simulator.Events
                 message = date_string + this.ToString() + Vehicle.ToString();
                 if (Category == 0)
                 {
-                    message = message + " ARRIVED at " + Stop+ " at " +
-                              Time + ".";
+                    message = message + " ARRIVED at " + Stop+ ".";
                 }
 
                 if (Category == 1)
                 {
-                    message = message+ " LEFT " + Stop + " at " + Time +
-                              ".";
+                    message = message+ " LEFT " + Stop + ".";
                 }
             }
 

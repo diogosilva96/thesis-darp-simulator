@@ -16,7 +16,7 @@ namespace Simulator
 {
     public class Simulation:AbstractSimulation
     {
-        public List<Route> Routes;
+        public static List<Route> Routes;
        
 
         public Simulation()
@@ -106,24 +106,7 @@ namespace Simulator
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                var totalServices = vehicle.Services.FindAll(s => s.IsDone).Count;
-                toPrintList.Add("Total number of completed services:" + totalServices +" out of "+vehicle.Services.Count);
-                if (vehicle.Services.Count > 0)
-                {
-                    toPrintList.Add("Service route:" + Routes.Find(r => r.Trips.Contains(vehicle.Services[0].Trip)));
-                    toPrintList.Add("Service Trips:");
-                    List<Trip> serviceRoutes = new List<Trip>();
-                    foreach (var service in vehicle.Services)
-                    {
-                        if (!serviceRoutes.Contains(service.Trip))
-                        {
-                            serviceRoutes.Add(service.Trip);
-                            var completedServices = vehicle.Services.FindAll(s => s.Trip == service.Trip && s.IsDone);
-                            toPrintList.Add(" - " + service.Trip.ToString() + "- Route Length:"+Math.Round(vehicle.Services.Find(s=>s.Trip == service.Trip).TotalDistanceTraveled)+" meters, Number of services completed:" +
-                                            completedServices.Count);
-                        }
-                    }
-                }
+                toPrintList.Add("Service route:" + Routes.Find(r => r.Trips.Contains(vehicle.Services[0].Trip)));
 
                 //For debug purposes---------------------------------------------------------------------------
                 if (vehicle.Services.Count != vehicle.Services.FindAll(s => s.IsDone).Count)
@@ -154,28 +137,18 @@ namespace Simulator
                 
                 if (vehicle.ServiceIterator != null)
                 {
-                    var completedServices = vehicle.Services.FindAll(s => s.IsDone);//Finds all the completed services
-                    var totalCustomerRideTime = completedServices.Sum(s => s.ServicedCustomers.Sum(c => c.RideTime));
-                    var avgCustomerRideTime =
-                        totalCustomerRideTime / completedServices.Sum(s => s.TotalServicedRequests);
-                    toPrintList.Add("Total Distance Traveled: "+Math.Round(completedServices.Sum(s=>s.TotalDistanceTraveled))+" meters.");
-                    toPrintList.Add(" ");
-                    toPrintList.Add("Metrics (per service):");
-        
-                    toPrintList.Add("Average route duration:" + Math.Round(TimeSpan.FromSeconds(completedServices.Average(s=>s.RouteDuration)).TotalMinutes) + " minutes.");
-                    toPrintList.Add("Average number of requests:" + Math.Floor(completedServices.Average(s=>s.TotalRequests)));
-                    var avgServicedRequests = completedServices.Average(s => s.TotalServicedRequests);
-                    toPrintList.Add("Average number of serviced requests:" + Math.Floor(avgServicedRequests));
-                    toPrintList.Add("Average number of denied requests:" + Math.Floor(completedServices.Average(s=>s.TotalDeniedRequests)));
-                    double avgServicedRequestRatio = Convert.ToDouble(avgServicedRequests) /
-                                                     Convert.ToDouble(completedServices.Average(s=>s.TotalRequests));
-                    double avgDeniedRequestRatio = 1 - (avgServicedRequestRatio);
-                    toPrintList.Add("Average percentage of serviced requests:" + Math.Round(avgServicedRequestRatio * 100) + "%");
-                    toPrintList.Add("Average percentage of denied requests:" + Math.Round(avgDeniedRequestRatio * 100) + "%");
-                    toPrintList.Add("Average customer ride time:" + Math.Round((decimal) avgCustomerRideTime) +
-                                    " seconds.");
-                    toPrintList.Add("Average distance traveled: "+Math.Round(completedServices.Average(s=>s.TotalDistanceTraveled))+" meters.");
-                    toPrintList.Add("Longest route duration:" + Math.Round(TimeSpan.FromSeconds(completedServices.Max(s => s.RouteDuration)).TotalMinutes)+" seconds.");
+                    ServicesMetricContainer servicesMetricContainer = new ServicesMetricContainer(vehicle);
+                    var list = servicesMetricContainer.GetPrintableList();
+                    var logList = servicesMetricContainer.GetEachServicePrintableList();
+
+                    foreach (var log in logList)
+                    {
+                        toPrintList.Add(log);
+                    }
+                    foreach (var toPrint in list)
+                    {
+                        toPrintList.Add(toPrint);
+                    }
                 }
             }
 
@@ -184,6 +157,7 @@ namespace Simulator
                 myFileLogger.Log(printableMessage);
                 ConsoleLogger.Log(printableMessage);
             }
+            
         }
 
 

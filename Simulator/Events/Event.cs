@@ -23,7 +23,7 @@ namespace Simulator.Events
 
         public override string ToString()
         {
-            return "[Event category:" + Category + " time: " + Time+"] ";
+            return "[Event category:" + Category + " Time: " + Time+"] ";
         }
     }
 }
