@@ -44,7 +44,7 @@ namespace Simulator
                 Directory.CreateDirectory(loggerPath);
             }
 
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"sim_events.txt"));
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"events_logs.txt"));
             FileLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();

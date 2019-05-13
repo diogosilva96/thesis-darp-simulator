@@ -83,7 +83,7 @@ namespace Simulator
  
         public override void PrintSolution()
         {
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/sim_solution.txt"));
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/metrics_logs.txt"));
             Logger.Logger myFileLogger = new Logger.Logger(fileRecorder);
             List<string> toPrintList = new List<string>();
             toPrintList.Add(this.ToString()+"Total number of events handled: "+Events.FindAll(e=>e.AlreadyHandled == true).Count+" out of "+Events.Count+".");
@@ -126,13 +126,13 @@ namespace Simulator
                 
                 if (vehicle.ServiceIterator != null)
                 {
-                    ServicesMetricContainer servicesMetricContainer = new ServicesMetricContainer(vehicle);
-                    var list = servicesMetricContainer.GetPrintableList();
-                    var logList = servicesMetricContainer.GetEachServicePrintableList();
+                    ServicesMetricsObject servicesMetricsObject = new ServicesMetricsObject(vehicle);
+                    var list = servicesMetricsObject.GetPrintableAverageMetricsList();
+                    var logList = servicesMetricsObject.GetEachServiceMetricsPrintableList();
 
                     foreach (var log in logList)
                     {
-                        toPrintList.Add(log);
+                        myFileLogger.Log(log);
                     }
                     foreach (var toPrint in list)
                     {

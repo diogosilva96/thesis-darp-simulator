@@ -17,7 +17,7 @@ namespace Simulator.Objects.Data_Objects
 
         public List<Trip> Trips { get; set; }
 
-        public List<Service> AllRouteServices { get; private set; } //All the services of the route
+        public List<Service> AllRouteServices { get; private set; } //All the services of the route, basically every different start_time of the route trips
 
         public Route(int id, string displayName, string longName, string description, int type)
         {

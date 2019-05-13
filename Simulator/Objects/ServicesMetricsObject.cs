@@ -7,7 +7,7 @@ using Simulator.Objects.Data_Objects;
 
 namespace Simulator.Objects
 {
-    public class ServicesMetricContainer//Has metrics for a set of completed services
+    public class ServicesMetricsObject// contains the metrics for a set of completed services
     {
         private List<Service> _completedServices;
 
@@ -63,21 +63,21 @@ namespace Simulator.Objects
 
         public double AverageDeniedRequestsRatio => 1 - AverageServicedRequestsRatio;
 
-        public ServicesMetricContainer(Vehicle vehicle)
+        public ServicesMetricsObject(Vehicle vehicle)
         {
             _vehicle = vehicle;
             _completedServices = vehicle.Services.FindAll(s=>s.IsDone);
         }
 
 
-        public List<string> GetPrintableList()
+        public List<string> GetPrintableAverageMetricsList()
         {
-            List<string> printableList = new List<string>();
-            printableList.Add("Total number of completed services:" + _completedServices.Count + " out of " + _vehicle.Services.Count);
+            List<string> toPrintList = new List<string>();
+            toPrintList.Add("Total number of completed services:" + _completedServices.Count + " out of " + _vehicle.Services.Count);
             if (_vehicle.Services.Count > 0)
             {
                 
-                printableList.Add("Service Trips:");
+                toPrintList.Add("Service Trips:");
                 List<Trip> serviceRoutes = new List<Trip>();
                 foreach (var service in _vehicle.Services)
                 {
@@ -85,27 +85,27 @@ namespace Simulator.Objects
                     {
                         serviceRoutes.Add(service.Trip);
                         var completedServices = _vehicle.Services.FindAll(s => s.Trip == service.Trip && s.IsDone);
-                        printableList.Add(" - " + service.Trip.ToString() + " - Route Length:" + Math.Round(_vehicle.Services.Find(s => s.Trip == service.Trip).TotalDistanceTraveled) + " meters, Number of services completed:" +
+                        toPrintList.Add(" - " + service.Trip.ToString() + " - Route Length:" + Math.Round(_vehicle.Services.Find(s => s.Trip == service.Trip).TotalDistanceTraveled) + " meters, Number of services completed:" +
                                         completedServices.Count);
                     }
                 }
             }
-            printableList.Add("Total Distance Traveled: " + TotalDistanceTraveled + " meters.");
-            printableList.Add(" ");
-            printableList.Add("Metrics (per service):");
-            printableList.Add("Average route duration:" + TimeSpan.FromSeconds(AverageRouteDuration).TotalMinutes + " minutes.");
-            printableList.Add("Average number of requests:" + AverageNumberRequests);
-            printableList.Add("Average number of serviced requests: " + AverageNumberServicedRequests);
-            printableList.Add("Average number of denied requests: " + AverageNumberDeniedRequests);
-            printableList.Add("Average Serviced Requests ratio: "+AverageServicedRequestsRatio);
-            printableList.Add("Average Denied Requests Ratio: "+AverageDeniedRequestsRatio);
-            printableList.Add("Average customer ride time: "+AverageCustomerRideTime+" seconds.");
-            printableList.Add("Average Distance traveled: "+AverageDistanceTraveled);
-            printableList.Add("Longest route duration: "+TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes+" minutes.");
-            return printableList;
+            toPrintList.Add("Total Distance Traveled: " + TotalDistanceTraveled + " meters.");
+            toPrintList.Add(" ");
+            toPrintList.Add("Metrics (per service):");
+            toPrintList.Add("Average route duration:" + TimeSpan.FromSeconds(AverageRouteDuration).TotalMinutes + " minutes.");
+            toPrintList.Add("Average number of requests:" + AverageNumberRequests);
+            toPrintList.Add("Average number of serviced requests: " + AverageNumberServicedRequests);
+            toPrintList.Add("Average number of denied requests: " + AverageNumberDeniedRequests);
+            toPrintList.Add("Average Serviced Requests ratio: "+AverageServicedRequestsRatio);
+            toPrintList.Add("Average Denied Requests Ratio: "+AverageDeniedRequestsRatio);
+            toPrintList.Add("Average customer ride time: "+AverageCustomerRideTime+" seconds.");
+            toPrintList.Add("Average Distance traveled: "+AverageDistanceTraveled);
+            toPrintList.Add("Longest route duration: "+TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes+" minutes.");
+            return toPrintList;
         }
 
-        public List<string> GetEachServicePrintableList()
+        public List<string> GetEachServiceMetricsPrintableList()
         {
             List<string> printableList = new List<string>();
             foreach (var service in _completedServices)
@@ -117,8 +117,7 @@ namespace Simulator.Objects
                 printableList.Add("Denied requests: "+service.TotalDeniedRequests);
                 printableList.Add("Average Customer Ride time:"+service.ServicedCustomers.Average(c=>c.RideTime));
                 printableList.Add("Distance traveled: "+service.TotalDistanceTraveled);
-                printableList.Add("");
-                
+                printableList.Add("");  
             }
             return printableList;
         }
