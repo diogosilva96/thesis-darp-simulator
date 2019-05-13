@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using GraphLibrary.Objects;
 using Simulator.Objects.Data_Objects;
 
 namespace Simulator.Objects

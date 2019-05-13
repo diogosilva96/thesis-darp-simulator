@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace GraphLibrary.Objects
+namespace Simulator.Objects
 {
     public class FileDataReader
     {

@@ -6,7 +6,6 @@ using System.Transactions;
 using Google.OrTools.ConstraintSolver;
 using GraphLibrary;
 using GraphLibrary.GraphLibrary;
-using GraphLibrary.Objects;
 using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;

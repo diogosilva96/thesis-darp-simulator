@@ -1,5 +1,4 @@
 ﻿using System;
-using GraphLibrary.Objects;
 
 namespace Simulator.Objects.Data_Objects
 {

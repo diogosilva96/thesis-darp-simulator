@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using GraphLibrary.GraphLibrary;
-using GraphLibrary.Objects;
 using Simulator.GraphLibrary;
 using Simulator.Objects.Data_Objects;
 
@@ -20,7 +19,7 @@ namespace Simulator.Objects
             var i = 0;
             var j = 0;
             long[,] distanceMatrix = new long[dGraph.VerticesNumber(), dGraph.VerticesNumber()];
-            DistanceCalculator dcalc = new DistanceCalculator();
+            DistanceCalculator calc = new DistanceCalculator();
             Console.WriteLine(this.ToString()+"Generating distance matrix...");
             foreach (var stopO in dGraph.GetVertexSet())
             {
@@ -33,7 +32,7 @@ namespace Simulator.Objects
                     }
                     else
                     {
-                        var dist = Convert.ToInt32(dcalc.CalculateDistance(stopO.Latitude, stopO.Longitude,
+                        var dist = Convert.ToInt32(calc.CalculateDistance(stopO.Latitude, stopO.Longitude,
                             stopD.Latitude, stopD.Longitude));
                         distanceMatrix[i, j] = dist;
                     }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using GraphLibrary.Objects;
 
 namespace Simulator.Objects.Data_Objects
 {

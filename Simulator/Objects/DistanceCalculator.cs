@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GraphLibrary.Objects
+namespace Simulator.Objects
 {
     public class
         DistanceCalculator //class to calculate the distance between two points using haversine formula (calculates the shortest distance between two latlong points over the earth surface - using as the crow-flies distance (ignoring hills,etc))
