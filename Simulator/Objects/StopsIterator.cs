@@ -9,7 +9,10 @@ namespace Simulator.Objects
     public class StopsIterator
     {
         public Stop CurrentStop;
+
         public Stop NextStop;
+
+        public int TotalStops => _stops.Count;
 
         public bool IsDone;
 

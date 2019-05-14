@@ -10,42 +10,25 @@ namespace Simulator.Events
         public Customer Customer { get; internal set; }
         public Vehicle Vehicle { get; internal set; }
 
+        public Service Service { get; internal set; }
+
         public CustomerVehicleEvent(int category, int time, Customer customer, Vehicle vehicle) : base(category, time)
         {
             Category = category; //Cat 2 = enters vehicle, cat 3 = leaves vehicle
             Time = time;
             Customer = customer;
             Vehicle = vehicle;
+            Service = vehicle.ServiceIterator.Current;
         }
 
-        public override string GetMessage()
+        public override string GetTraceMessage()
         {
-            string dateString = "[" + DateTime.Now.ToString() + "] ";
+            string timestamp = DateTime.Now.ToString();
+            string splitter = ", ";
             string message = "";
             if (Customer != null && Vehicle != null)
             {
-                message = dateString+this.ToString() + Customer.ToString();
-
-                    if (Category == 2)
-                    {
-                        if (Vehicle.IsFull)
-                        {
-                            message = dateString+this.ToString() + Vehicle.ToString() +"is FULL,"+Customer.ToString() + " was not served.";
-                        }
-                        else
-                        {
-                            message = message + " ENTERED "+Vehicle.ToString() + " at " +
-                                              Customer.PickupDelivery[0] + " with destination to "+Customer.PickupDelivery[1]+".";
-
-                        }
-                    }
-
-                    if (Category == 3)
-                    {
-                        message =  message + " LEFT vehicle " + Vehicle.ToString() +
-                                          " at " +
-                                          Customer.PickupDelivery[1]+ " with origin stop as "+Customer.PickupDelivery[0]+".";
-                    }          
+                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "Start_time:" + Service.StartTime + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
             }
 
             return message;
@@ -53,7 +36,7 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Vehicle != null && Customer != null && !AlreadyHandled)
+            if (Vehicle != null && Customer != null && !AlreadyHandled && Vehicle.ServiceIterator.Current == Service)
             {
                 if (Category == 2)
                 {

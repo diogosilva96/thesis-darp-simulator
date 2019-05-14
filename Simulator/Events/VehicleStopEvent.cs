@@ -42,22 +42,14 @@ namespace Simulator.Events
         }
   
 
-        public override string GetMessage()
+        public override string GetTraceMessage()
         {
-            string date_string = "["+DateTime.Now.ToString()+"] ";
+            string timestamp = DateTime.Now.ToString();
+            string splitter = ", ";
             string message = "";
             if (Stop != null && Vehicle != null)
             {
-                message = date_string + this.ToString() + Vehicle.ToString();
-                if (Category == 0)
-                {
-                    message = message + " ARRIVED at " + Stop+ ".";
-                }
-
-                if (Category == 1)
-                {
-                    message = message+ " LEFT " + Stop + ".";
-                }
+                message = timestamp + splitter+ this.ToString() +splitter+"Vehicle:"+ Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "Start_time:" + Service.StartTime+splitter+Stop;
             }
 
             return message;

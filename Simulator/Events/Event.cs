@@ -17,13 +17,13 @@ namespace Simulator.Events
         }
 
 
-        public abstract string GetMessage();
+        public abstract string GetTraceMessage();
 
         public abstract void Treat();
 
         public override string ToString()
         {
-            return "[Event category:" + Category + " Time: " + Time+"] ";
+            return "Category:" + Category + ", Time:" + Time;
         }
     }
 }

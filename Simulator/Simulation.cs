@@ -22,7 +22,7 @@ namespace Simulator
         public Simulation()
         {
             Routes = RoutesDataObject.Routes; 
-            GenerateVehicleFleet(2); // Generates a vehicle for each route
+            GenerateVehicleFleet(1); // Generates a vehicle for each route
         }
 
         public override void AssignVehicleServices()
@@ -82,7 +82,7 @@ namespace Simulator
  
         public override void PrintSolution()
         {
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/metrics_logs.txt"));
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/stats_logs.txt"));
             Logger.Logger myFileLogger = new Logger.Logger(fileRecorder);
             List<string> toPrintList = new List<string>();
             toPrintList.Add(this.ToString()+"Total number of events handled: "+Events.FindAll(e=>e.AlreadyHandled == true).Count+" out of "+Events.Count+".");
@@ -125,9 +125,9 @@ namespace Simulator
                 
                 if (vehicle.ServiceIterator != null)
                 {
-                    ServicesMetricsObject servicesMetricsObject = new ServicesMetricsObject(vehicle);
-                    var list = servicesMetricsObject.GetPrintableAverageMetricsList();
-                    var logList = servicesMetricsObject.GetEachServiceMetricsPrintableList();
+                    VehicleServicesStatistics servicesMetricsObject = new VehicleServicesStatistics(vehicle);
+                    var list = servicesMetricsObject.GetOverallStatsPrintableList();
+                    var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
 
                     foreach (var log in logList)
                     {
@@ -232,7 +232,7 @@ namespace Simulator
         { 
             evt.Treat();
             TotalEventsHandled++;
-            FileLogger.Log(evt.GetMessage());
+            EventLogger.Log(evt.GetTraceMessage());
         }
     }
 }

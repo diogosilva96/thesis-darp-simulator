@@ -18,13 +18,14 @@ namespace Simulator.Events
         }
 
 
-        public override string GetMessage()
+        public override string GetTraceMessage()
         {
-            string dateString = "[" + DateTime.Now.ToString() + "] ";
+            string timestamp = DateTime.Now.ToString();
+            string splitter = ", ";
             string message = "";
             if (Customer != null)
             {
-                message = dateString + this.ToString() + Customer.ToString() +" requested serviced at "+ Time +" pickup:"+Customer.PickupDelivery[0]+ " dropoff:" +Customer.PickupDelivery[1];
+                message = timestamp + splitter+ this.ToString() + splitter +"Customer pickup:"+Customer.PickupDelivery[0].Id +splitter+"Customer delivery:"+Customer.PickupDelivery[1].Id;
             }
 
             return message;

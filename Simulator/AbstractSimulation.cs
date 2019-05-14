@@ -23,7 +23,7 @@ namespace Simulator
 
         protected Logger.Logger ConsoleLogger;
 
-        protected Logger.Logger FileLogger;
+        protected Logger.Logger EventLogger;
 
         protected DirectedGraph<Stop, double> StopsGraph;
 
@@ -43,8 +43,8 @@ namespace Simulator
                 Directory.CreateDirectory(loggerPath);
             }
 
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"events_logs.txt"));
-            FileLogger = new Logger.Logger(fileRecorder);
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"event_logs.txt"));
+            EventLogger = new Logger.Logger(fileRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
             var stopsNetworkGraph = new StopsNetworkGraphLoader( true);
