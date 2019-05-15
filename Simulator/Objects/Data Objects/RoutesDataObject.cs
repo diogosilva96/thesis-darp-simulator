@@ -9,7 +9,7 @@ namespace Simulator.Objects.Data_Objects
     public class
         RoutesDataObject //Class that contains the data for the Stops, trips and routes
     {
-        public List<Trip> Trips { get; internal set; }
+        private List<Trip> _trips { get; set; }
         public List<Stop> Stops { get; internal set; }
         public List<Route> Routes { get; internal set; }
 
@@ -18,7 +18,7 @@ namespace Simulator.Objects.Data_Objects
         public RoutesDataObject(bool urbanOnly)
         {
             _urbanOnly = urbanOnly;
-            Trips = new List<Trip>();
+            _trips = new List<Trip>();
             Stops = new List<Stop>();
             Routes = new List<Route>();
 
@@ -53,42 +53,66 @@ namespace Simulator.Objects.Data_Objects
             var stopsData = GenerateListData(stopsPath);
             LoadStops(stopsData);;
             var stopTimesDataList = GenerateListData(stopTimesPath);
+            FileDataExporter dataExporter = new FileDataExporter();
 
-                if (!File.Exists(tripStopsPath)
+            if (!File.Exists(tripStopsPath)
                 ) //if the file doesn't exists, generate the dictionary required to sort the stops in ascending order then export to txt, then reads from the txt the next time the program is executed (to save computational time)
                 {
                   
                     var tripsStopTupleDictionary = GenerateTripStopTuplesDictionary(stopTimesDataList);
-                    ExportTripStopsToTxt(tripsStopTupleDictionary,tripStopsPath);
+                    dataExporter.ExportTripStops(tripsStopTupleDictionary,tripStopsPath);
                 }
                 FileDataReader fdr = new FileDataReader();
                 var tripsStopData = fdr.ImportData(tripStopsPath, ',');
                 LoadStopsIntoTrips(tripsStopData);  
                 LoadTripStartTimeDictionary(tripsStopData);
-                if (_urbanOnly)
+                AssignUrbanStops();
+                RemoveRedundantTrips();
+                //dataExporter.ExportStops(Stops, Path.Combine(Environment.CurrentDirectory, @"stops.txt"));
+                //dataExporter.ExportTrips(Routes, Path.Combine(Environment.CurrentDirectory, @"trips.txt"));
+                //dataExporter.ExportTripStopSequence(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_stops.txt"));
+                //dataExporter.ExportTripStartTimes(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_start_times.txt"));
+            if (_urbanOnly)
                 {
-                    LoadUrbanStopsOnly();
+                    Routes = Routes.FindAll(r => r.UrbanRoute);
+                    List<Trip> Trips = new List<Trip>();
+                    foreach (var route in Routes)
+                    {
+                        foreach (var trip in route.Trips)
+                        {
+                            Trips.Add(trip);
+                        }
+                    }
+                    Stops = Stops.FindAll(s => s.IsUrban);
                 }
-                SimplifyTripsAndRoutes();
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 Console.WriteLine(this+"All the necessary data was successfully generated in "+elapsedMs*0.001+" seconds.");
-                Console.WriteLine(this+"Total of Routes:"+Routes.Count);
-                Console.WriteLine(this+"Total of Trips:"+Trips.Count);
-                Console.WriteLine(this+"Total of Stops:"+Stops.Count);
+                string str;
+                if (_urbanOnly)
+                {
+                    str = "Urban ";
+                }
+                else
+                {
+                    str = "";
+                }
+                Console.WriteLine(this+"Total of "+str+"Routes:"+Routes.Count);
+                Console.WriteLine(this+"Total of "+str+"Route Trips:"+Routes.Sum(r=>r.Trips.Count));
+                Console.WriteLine(this+"Total of "+str+"Stops:"+Stops.Count);
         
         }
 
-        public void SimplifyTripsAndRoutes() //simplifies trips and routes removing all unnecessary trips and adding the starttimes for each trip
+        public void RemoveRedundantTrips() //simplifies trips removing all unnecessary trips from routes and adding the starttimes for each trip
         {
 
             List<Trip> routeTrips = new List<Trip>();
-            int id = 0;
-            Console.WriteLine(this+"Simplifying trips and routes...");
+            int id = 1;
+            int totalTrips = Routes.Sum(r => r.Trips.Count);
+            Console.WriteLine(this+"Removing redundant trips...");
             var watch = Stopwatch.StartNew();
             foreach (var route in Routes)
             {
-                
                     Trip newTrip = null;
                     List<Trip> addedTripsList = new List<Trip>(); // auxiliary list to later add to the route.trips
                     foreach (var trip in route.Trips)
@@ -138,31 +162,34 @@ namespace Simulator.Objects.Data_Objects
             }
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
-            Console.WriteLine(this+"Trips and routes were successfully simplified in "+elapsedMs*0.001+" seconds.");
+            Console.WriteLine(this+"A total of "+(totalTrips - (id-1))+" redundant trips were successfully removed in "+elapsedMs*0.001+" seconds.");
          
-            Trips = routeTrips; 
+            _trips = routeTrips; 
         }
 
-        public void LoadUrbanStopsOnly()
+        public void AssignUrbanStops()
         {
             var urbanStops = new List<Stop>();
-            if (Trips.Count > 0 && Trips != null)
+            if (_trips.Count > 0 && _trips != null)
             {
-                foreach (var trip in Trips)
+                var urbanRoutes =Routes.FindAll(r => r.UrbanRoute);
+                foreach (var route in urbanRoutes)
                 {
-                    foreach (var s in trip.Stops)
+                    foreach (var trip in route.Trips)
                     {
-                        if (!urbanStops.Contains(s))
+                        foreach (var s in trip.Stops)
                         {
-                            urbanStops.Add(s);
+                            if (!urbanStops.Contains(s))
+                            {
+                                s.IsUrban = true;
+                                urbanStops.Add(s);
+                            }
                         }
                     }
                 }
-
-                Stops = urbanStops;
             }
 
-            Console.WriteLine(this.ToString()+urbanStops.Count+" urban stops were successfully loaded.");
+            Console.WriteLine(this.ToString()+urbanStops.Count+" urban stops were successfully assigned.");
         }
 
         public void LoadTripStartTimeDictionary(List<string[]> tripStopTimesData)
@@ -199,17 +226,7 @@ namespace Simulator.Objects.Data_Objects
                 Route route = new Route(int.Parse(routeData[0]),routeData[2],routeData[3],routeData[4], int.Parse(routeData[1]));
                 if (!Routes.Contains(route))
                 {
-                    if (_urbanOnly)
-                    {
-                        if (route.UrbanRoute)
-                        {
-                            Routes.Add(route);
-                        }
-                    }
-                    else
-                    {
-                        Routes.Add(route);
-                    }
+                    Routes.Add(route);                    
                 }
             }
             watch.Stop();
@@ -228,8 +245,7 @@ namespace Simulator.Objects.Data_Objects
             {
                 var auxLat = stopData[4].Split(".");
                 var auxLon = stopData[5].Split(".");
-                var stop = new Stop(int.Parse(stopData[0]), stopData[1], stopData[2],
-                    stopData[3], double.Parse(auxLat[0] + "," + auxLat[1]),
+                var stop = new Stop(int.Parse(stopData[0]), stopData[1], stopData[2], double.Parse(auxLat[0] + "," + auxLat[1]),
                     double.Parse(auxLon[0] + "," + auxLon[1]));
                 if (!Stops.Contains(stop))
                 {
@@ -247,7 +263,7 @@ namespace Simulator.Objects.Data_Objects
             
             if (tripsStopData != null)
             {
-                Console.WriteLine(this + "Inserting Stops into Trips...");
+                Console.WriteLine(this + "Inserting Stop sequence into each Trip...");
                 var watch = Stopwatch.StartNew();
                 int prevTripId = 0;
                 Trip tr = null;
@@ -258,13 +274,13 @@ namespace Simulator.Objects.Data_Objects
                         {
 
 
-                            tr = Trips.Find(t => t.Id == tripId); 
+                            tr = _trips.Find(t => t.Id == tripId); 
                         }
                         prevTripId = tripId;
                     if (tr != null)
                         {
 
-                            if (Trips.Contains(tr))
+                            if (_trips.Contains(tr))
                             {
                                 var stopId = int.Parse(tripStopData[1]);
                                 Stop stop = Stops.Find(s => s.Id == stopId);
@@ -306,57 +322,23 @@ namespace Simulator.Objects.Data_Objects
                 {
                     int routeId = int.Parse(tripData[0]);
                     Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
-                 
+                    Route route = Routes.Find(r=>r.Id == routeId);
 
-                    var route = Routes.Find(r => r.Id == routeId);
-                    if (route != null)
-                    {
-                        if (_urbanOnly)
-                        {
-                            if (route.UrbanRoute)
+                if (route != null)
+                    {                      
+                           if (!route.Trips.Contains(trip))
                             {
-                                if (!route.Trips.Contains(trip))
-                                {
-                                    Trips.Add(trip);
-                                    route.Trips.Add(trip);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!route.Trips.Contains(trip))
-                            {
-                                Trips.Add(trip);
+                                _trips.Add(trip);
                                 route.Trips.Add(trip);
                             }
-                        }
                     }
                 }
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 var seconds = elapsedMs * 0.001;
-                Console.WriteLine(this.ToString() +Trips.Count+" trips were successfully loaded in " + seconds +
+                Console.WriteLine(this.ToString() +_trips.Count+" trips were successfully loaded in " + seconds +
                                   " seconds.");
 
-        }
-
-  
-        private void ExportTripStopsToTxt(Dictionary<int, List<Tuple<int, string[]>>> tripsStopTupleDictionary,string path)
-        {
-            using (var file = new StreamWriter(path, true)) //writes the data to a file
-            {
-                file.WriteLine("trip_id,stop_id,arrival_time");
-                foreach (var tripStopTuple in tripsStopTupleDictionary)
-                {
-                    var tuples = tripStopTuple.Value;
-                    foreach (var tuple in tuples)
-                    {
-                        var text = tripStopTuple.Key.ToString() + ',' + tuple.Item2[0] + ',' + tuple.Item2[1];
-                        file.WriteLine(
-                            text); // writes the trip_id,stop_id with the stop order already sorted in ascent order 
-                    }
-                }
-            }
         }
 
 

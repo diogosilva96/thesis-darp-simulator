@@ -6,8 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.OrTools" Version="7.0.6546" />
+    <PackageReference Include="Google.OrTools" Version="7.1.6720" />
     <PackageReference Include="MathNet.Numerics" Version="4.7.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System">
+      <HintPath>System</HintPath>
+    </Reference>
+    <Reference Include="System.Data">
+      <HintPath>System.Data</HintPath>
+    </Reference>
+    <Reference Include="System.Xml">
+      <HintPath>System.Xml</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
