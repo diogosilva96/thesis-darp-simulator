@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.421
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Simulator", "Simulator\Simulator.csproj", "{D0B3A69C-97CA-4389-BBBD-FFCD99A31610}"
-EndProject
-Project("{159641D6-6404-4A2A-AE62-294DE0FE8301}") = "ISProject", "ISProject\ISProject.dtproj", "{999C9609-7602-43BC-839B-391F7700091B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,12 +18,6 @@ Global
 		{D0B3A69C-97CA-4389-BBBD-FFCD99A31610}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{D0B3A69C-97CA-4389-BBBD-FFCD99A31610}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0B3A69C-97CA-4389-BBBD-FFCD99A31610}.Release|Any CPU.Build.0 = Release|Any CPU
-		{999C9609-7602-43BC-839B-391F7700091B}.Debug|Any CPU.ActiveCfg = Development
-		{999C9609-7602-43BC-839B-391F7700091B}.Debug|Any CPU.Build.0 = Development
-		{999C9609-7602-43BC-839B-391F7700091B}.Development|Any CPU.ActiveCfg = Development
-		{999C9609-7602-43BC-839B-391F7700091B}.Development|Any CPU.Build.0 = Development
-		{999C9609-7602-43BC-839B-391F7700091B}.Release|Any CPU.ActiveCfg = Development
-		{999C9609-7602-43BC-839B-391F7700091B}.Release|Any CPU.Build.0 = Development
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
