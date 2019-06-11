@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using MathNet.Numerics.Distributions;
+using MathNet.Numerics.Statistics.Mcmc;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
 
@@ -12,9 +13,10 @@ namespace Simulator.Events
         private EventFactory _eventFactory;
         private IDistribution _distribution;
 
-
-        public EventGenerator()
+        private List<Route> _routes;
+        public EventGenerator(List<Route> routes)
         {
+            _routes = routes;
             _eventFactory= new EventFactory();
         }
         public int Lambda
@@ -55,9 +57,30 @@ namespace Simulator.Events
             Lambda = lambda;
 
             if (vehicle.ServiceIterator.Current.Trip != null)
-            {
+            { 
+                var t = TimeSpan.FromSeconds(time);
+                int currentHour = t.Hours;
+                var currentRoute =_routes.Find(r=>r.Trips.Contains(vehicle.ServiceIterator.Current.Trip));
+                int demand = 0;
+                int sample = 0;
+                if (currentRoute != null)
+                {
+                    var routeHourTuple = Tuple.Create(currentRoute, currentHour);
+                    if (stop.DemandDictionary.TryGetValue(routeHourTuple, out demand))
+                    {
+                        sample = demand;
+                    }
+                    else
+                    {
+                        sample = 0;
+                    }
+                   
+                }
 
-                var sample = ((Poisson) _distribution).Sample();
+
+                //var sample = ((Poisson)_distribution).Sample();
+                
+
                 int currentStopIndex = vehicle.ServiceIterator.Current.StopsIterator.CurrentIndex;
                 if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1
                 ) // generation of customers at each stop

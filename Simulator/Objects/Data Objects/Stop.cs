@@ -1,4 +1,6 @@
-﻿using System.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
 
 namespace Simulator.Objects.Data_Objects
 {
@@ -9,9 +11,9 @@ namespace Simulator.Objects.Data_Objects
         public string Name { get;}
         public double Latitude { get;}
         public double Longitude { get;}
-
         public bool IsUrban { get; set; }
 
+        public Dictionary<Tuple<Route,int>, int> DemandDictionary { get; }
         public Stop(int id, string code,string name, double lat, double lon)
         {
             Id = id;
@@ -20,6 +22,7 @@ namespace Simulator.Objects.Data_Objects
             Latitude = lat;
             Longitude = lon;
             IsUrban = false;
+            DemandDictionary = new Dictionary<Tuple<Route, int>, int>();
         }
 
         public override string ToString()

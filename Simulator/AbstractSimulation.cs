@@ -51,7 +51,7 @@ namespace Simulator
             stopsNetworkGraph.LoadGraph();
             RoutesDataObject = stopsNetworkGraph.RouteInformationDataObject;
             StopsGraph = stopsNetworkGraph.StopsGraph;
-            EventGenerator = new EventGenerator();
+            EventGenerator = new EventGenerator(RoutesDataObject.Routes);
             TotalEventsHandled = 0;
         }
         public void Simulate()

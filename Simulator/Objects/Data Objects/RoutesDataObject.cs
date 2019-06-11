@@ -41,6 +41,7 @@ namespace Simulator.Objects.Data_Objects
             Console.WriteLine(this + "Urban routes only:" + _urbanOnly);
             var stopsPath = Path.Combine(Environment.CurrentDirectory, @"files\stops.txt"); //files from google transit (GTFS file)
             var routesPath = Path.Combine(Environment.CurrentDirectory, @"files\routes.txt"); //files from google transit (GTFS file)
+            var demandsPath = Path.Combine(Environment.CurrentDirectory, @"files\demands.csv");
             var stopTimesPath =
                 Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
             string tripsPath = Path.Combine(Environment.CurrentDirectory, @"files\trips.txt");
@@ -51,7 +52,8 @@ namespace Simulator.Objects.Data_Objects
             var tripsData = GenerateListData(tripsPath);
             LoadTrips(tripsData);
             var stopsData = GenerateListData(stopsPath);
-            LoadStops(stopsData);;
+            LoadStops(stopsData);
+            var demandsData = GenerateListData(demandsPath);
             var stopTimesDataList = GenerateListData(stopTimesPath);
             FileDataExporter dataExporter = new FileDataExporter();
 
@@ -73,36 +75,59 @@ namespace Simulator.Objects.Data_Objects
                 //dataExporter.ExportTripStopSequence(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_stops.txt"));
                 //dataExporter.ExportTripStartTimes(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_start_times.txt"));
             if (_urbanOnly)
+            {
+                Routes = Routes.FindAll(r => r.UrbanRoute);
+                List<Trip> Trips = new List<Trip>();
+                foreach (var route in Routes)
                 {
-                    Routes = Routes.FindAll(r => r.UrbanRoute);
-                    List<Trip> Trips = new List<Trip>();
-                    foreach (var route in Routes)
+                    foreach (var trip in route.Trips)
                     {
-                        foreach (var trip in route.Trips)
-                        {
-                            Trips.Add(trip);
-                        }
+                        Trips.Add(trip);
                     }
-                    Stops = Stops.FindAll(s => s.IsUrban);
                 }
-                watch.Stop();
-                var elapsedMs = watch.ElapsedMilliseconds;
-                Console.WriteLine(this+"All the necessary data was successfully generated in "+elapsedMs*0.001+" seconds.");
-                string str;
-                if (_urbanOnly)
-                {
-                    str = "Urban ";
-                }
-                else
-                {
-                    str = "";
-                }
-                Console.WriteLine(this+"Total of "+str+"Routes:"+Routes.Count);
-                Console.WriteLine(this+"Total of "+str+"Route Trips:"+Routes.Sum(r=>r.Trips.Count));
-                Console.WriteLine(this+"Total of "+str+"Stops:"+Stops.Count);
+                Stops = Stops.FindAll(s => s.IsUrban);
+            }
+
+            LoadStopDemands(demandsData);
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine(this+"All the necessary data was successfully generated in "+elapsedMs*0.001+" seconds.");
+            string str;
+            str = _urbanOnly ? "Urban " : "";
+            Console.WriteLine(this+"Total of "+str+"Routes:"+Routes.Count);
+            Console.WriteLine(this+"Total of "+str+"Route Trips:"+Routes.Sum(r=>r.Trips.Count));
+            Console.WriteLine(this+"Total of "+str+"Stops:"+Stops.Count);
         
         }
 
+        public void LoadStopDemands(List<string[]> demandsData)
+        {
+            if (demandsData != null)
+            {
+                Console.WriteLine(this + "Loading Stop Demands...");
+                var watch = Stopwatch.StartNew();
+                foreach (var demandData in demandsData)
+                {
+                    var route = Routes.Find(r=>r.Id == int.Parse(demandData[0]));
+                    var stop = Stops.Find(s=>s.Id==int.Parse(demandData[1]));
+                    var hourOfDay = int.Parse(demandData[2]);
+                    var avgDemand = (int)Math.Round(double.Parse(demandData[3]));
+                    if (route != null && stop != null)
+                    {
+                        Tuple<Route, int> routeHourTuple = Tuple.Create(route,hourOfDay);
+                        if (!stop.DemandDictionary.ContainsKey(routeHourTuple))
+                        {
+                            stop.DemandDictionary.Add(routeHourTuple, avgDemand);
+                        }
+                    }
+                }
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                var seconds = elapsedMs * 0.001;
+                Console.WriteLine(this.ToString() + "Trip start times dictionary was successfully loaded in " + seconds +
+                                  " seconds.");
+            }
+        }
         public void RemoveRedundantTrips() //simplifies trips removing all unnecessary trips from routes and adding the starttimes for each trip
         {
 

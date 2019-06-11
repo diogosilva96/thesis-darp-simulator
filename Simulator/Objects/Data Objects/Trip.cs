@@ -4,13 +4,6 @@ namespace Simulator.Objects.Data_Objects
 {
     public class Trip
     {
-        public int Id { get; }
-        public string Headsign { get; }
-
-        public List<Stop> Stops { get; set; }
-
-        public List<int> StartTimes { get; set; }
-
         public Trip(int id, string headsign)
         {
             Id = id;
@@ -19,9 +12,16 @@ namespace Simulator.Objects.Data_Objects
             StartTimes = new List<int>();
         }
 
+        public int Id { get; }
+        public string Headsign { get; }
+
+        public List<Stop> Stops { get; set; }
+
+        public List<int> StartTimes { get; set; }
+
         public override string ToString()
         {
-            return Id + "-"+ Headsign;
+            return Id + "-" + Headsign;
         }
 
         public bool AddStartTime(int startTime)
@@ -32,6 +32,7 @@ namespace Simulator.Objects.Data_Objects
                 StartTimes.Sort();
                 return true;
             }
+
             return false;
         }
     }
