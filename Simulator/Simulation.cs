@@ -19,30 +19,36 @@ namespace Simulator
             GenerateVehicleFleet(1); // Generates a vehicle for each route
         }
 
-        public override void AssignVehicleServices()
+        public override void AssignVehicleServices(int startHour, int endHour, int routeIndex)
         {
             var ind = 0;
             foreach (var route in Routes) // Each vehicle is responsible for a route
             {
-                if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
-                    break;
+                if (ind == routeIndex)
+                {
+                    //if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
+                    //    break;
 
-                var v = VehicleFleet[0];
-                foreach (var service in route.AllRouteServices)
-                    if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
-                    ) //if there is no service where the start time is lower than 30mins (1800seconds)
+                    var v = VehicleFleet[0];
+                    var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= startHour && TimeSpan.FromSeconds(s.StartTime).Hours <= endHour);
+                    if (allRouteServices.Count > 0)
                     {
-                        v.AddService(service); //Adds the service
-                        break;
+                        foreach (var service in allRouteServices)
+                            if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
+                            ) //if there is no service where the start time is lower than 30mins (1800seconds)
+                            {
+                                v.AddService(service); //Adds the service
+                            }
                     }
 
 
-                if (v.Services.Count > 0)
-                    ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +
-                                      Routes.Find(r => r.Trips.Contains(v.Services[0].Trip)) +
-                                      ") were assigned to Vehicle " +
-                                      v.Id + ".");
+                    if (v.Services.Count > 0)
+                        ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +
+                                          v.Services[0].Trip.Route +
+                                          ") were assigned to Vehicle " +
+                                          v.Id + ".");
 
+                }
 
                 ind++;
             }
@@ -86,7 +92,7 @@ namespace Simulator
                 toPrintList.Add("Vehicle " + vehicle.Id + ":");
                 toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
                 toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Service route:" + Routes.Find(r => r.Trips.Contains(vehicle.Services[0].Trip)));
+                toPrintList.Add("Service route:" + vehicle.Services[0].Trip.Route);
 
                 //For debug purposes---------------------------------------------------------------------------
                 if (vehicle.Services.Count != vehicle.Services.FindAll(s => s.IsDone).Count)
@@ -204,6 +210,10 @@ namespace Simulator
             evt.Treat();
             TotalEventsHandled++;
             EventLogger.Log(evt.GetTraceMessage());
+            if (evt is CustomerVehicleEvent cve)
+            {
+                ValidationsLogger.Log(cve.GetValidationsMessage());
+            }
         }
     }
 }

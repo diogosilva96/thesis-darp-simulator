@@ -12,6 +12,8 @@ namespace Simulator.Objects.Data_Objects
             StartTimes = new List<int>();
         }
 
+        public Route Route { get; set; }
+
         public int Id { get; }
         public string Headsign { get; }
 

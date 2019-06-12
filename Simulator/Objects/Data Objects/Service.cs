@@ -4,6 +4,7 @@ namespace Simulator.Objects.Data_Objects
 {
     public class Service //Service is basically a trip to be served at a certain start_time
     {
+        public int Id { get; }
         public Trip Trip { get; }
 
         public int StartTime { get; internal set; }
@@ -25,8 +26,9 @@ namespace Simulator.Objects.Data_Objects
 
         public double TotalDistanceTraveled;
 
-        public Service(Trip trip,int startTime)
+        public Service(int id,Trip trip,int startTime)
         {
+            Id = id;
             Trip = trip;
             StartTime = startTime;
             IsDone = false;

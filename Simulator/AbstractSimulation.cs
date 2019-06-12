@@ -25,6 +25,8 @@ namespace Simulator
 
         protected Logger.Logger EventLogger;
 
+        protected Logger.Logger ValidationsLogger;
+
         protected DirectedGraph<Stop, double> StopsGraph;
 
         protected RoutesDataObject RoutesDataObject;
@@ -45,13 +47,15 @@ namespace Simulator
 
             IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"event_logs.txt"));
             EventLogger = new Logger.Logger(fileRecorder);
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(loggerPath, @"validations.txt"), "CustomerId, Category, RouteId, TripId, ServiceId, VehicleId, TripId, StopId,Time");
+            ValidationsLogger = new Logger.Logger(validationsRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
             var stopsNetworkGraph = new StopsNetworkGraphLoader( true);
             stopsNetworkGraph.LoadGraph();
             RoutesDataObject = stopsNetworkGraph.RouteInformationDataObject;
             StopsGraph = stopsNetworkGraph.StopsGraph;
-            EventGenerator = new EventGenerator(RoutesDataObject.Routes);
+            EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }
         public void Simulate()
@@ -84,8 +88,38 @@ namespace Simulator
                 var vehicle = new Vehicle(30, 22, StopsGraph);
                 VehicleFleet.Add(vehicle);
             }
-            ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully created.");
-            AssignVehicleServices();
+            ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully generated.");
+        
+            ConsoleLogger.Log(this.ToString()+"Please insert the start hour and end hour of the simulation in the format [StartHour] - [EndHour].");
+            insertLabel:
+            string hourRange = Console.ReadLine();
+            int startHour = 0;
+            int endHour = 0;
+            if (hourRange != null)
+            {
+                var auxRange = hourRange.Split("-");
+                if (auxRange.Length > 1)
+                {
+                    startHour = int.Parse(auxRange[0]);
+                    endHour = int.Parse(auxRange[1]);
+                }
+                else
+                {
+                    ConsoleLogger.Log(this.ToString() + "Please insert the start hour and end hour of the simulation in the correct format [StartHour - EndHour].");
+                    goto insertLabel;
+                }
+            }
+
+
+            int i = 1;
+            foreach (var route in RoutesDataObject.Routes)
+            {
+                ConsoleLogger.Log(i + " - " + route.Name);
+                i++;
+            }
+            ConsoleLogger.Log(this.ToString() + "Please select the route that you want to simulate.");
+            int routeIndex = int.Parse(Console.ReadLine());
+            AssignVehicleServices(startHour,endHour,routeIndex-1);
             GenerateVehicleServiceEvents();
         }
 
@@ -94,7 +128,7 @@ namespace Simulator
             return "["+GetType().Name+"] ";
         }
 
-        public abstract void AssignVehicleServices();
+        public abstract void AssignVehicleServices(int startHour,int endHour,int routeIndex);
         public abstract void GenerateVehicleServiceEvents();
 
         public abstract void Handle(Event evt);

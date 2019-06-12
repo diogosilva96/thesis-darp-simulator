@@ -13,10 +13,8 @@ namespace Simulator.Events
         private EventFactory _eventFactory;
         private IDistribution _distribution;
 
-        private List<Route> _routes;
-        public EventGenerator(List<Route> routes)
+        public EventGenerator()
         {
-            _routes = routes;
             _eventFactory= new EventFactory();
         }
         public int Lambda
@@ -60,25 +58,16 @@ namespace Simulator.Events
             { 
                 var t = TimeSpan.FromSeconds(time);
                 int currentHour = t.Hours;
-                var currentRoute =_routes.Find(r=>r.Trips.Contains(vehicle.ServiceIterator.Current.Trip));
+                var currentRoute =vehicle.ServiceIterator.Current.Trip.Route;
                 int demand = 0;
-                int sample = 0;
-                if (currentRoute != null)
+                if (stop != null)
                 {
-                    var routeHourTuple = Tuple.Create(currentRoute, currentHour);
-                    if (stop.DemandDictionary.TryGetValue(routeHourTuple, out demand))
-                    {
-                        sample = demand;
-                    }
-                    else
-                    {
-                        sample = 0;
-                    }
-                   
+                    demand = stop.GetDemand(currentRoute, currentHour);
                 }
 
-
+                var sample = demand;
                 //var sample = ((Poisson)_distribution).Sample();
+                //check if distribution will be used or the linear use of the inputs
                 
 
                 int currentStopIndex = vehicle.ServiceIterator.Current.StopsIterator.CurrentIndex;

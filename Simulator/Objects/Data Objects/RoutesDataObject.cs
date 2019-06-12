@@ -110,15 +110,12 @@ namespace Simulator.Objects.Data_Objects
                 {
                     var route = Routes.Find(r=>r.Id == int.Parse(demandData[0]));
                     var stop = Stops.Find(s=>s.Id==int.Parse(demandData[1]));
-                    var hourOfDay = int.Parse(demandData[2]);
-                    var avgDemand = (int)Math.Round(double.Parse(demandData[3]));
-                    if (route != null && stop != null)
+                    var hour = int.Parse(demandData[2]);
+                    var auxDemand = demandData[3].Split(".");
+                    var demand = (int)Math.Round(Convert.ToDouble(auxDemand[0]+","+auxDemand[1]));
+                    if (stop != null)
                     {
-                        Tuple<Route, int> routeHourTuple = Tuple.Create(route,hourOfDay);
-                        if (!stop.DemandDictionary.ContainsKey(routeHourTuple))
-                        {
-                            stop.DemandDictionary.Add(routeHourTuple, avgDemand);
-                        }
+                        stop.AddToDemands(route, hour, demand);
                     }
                 }
                 watch.Stop();
@@ -147,6 +144,7 @@ namespace Simulator.Objects.Data_Objects
                         if (findTrip == null)
                         {
                             newTrip = new Trip(id, trip.Headsign) {Stops = trip.Stops};
+                            newTrip.Route = trip.Route;
 
                             
                             foreach (var tr in trips)
@@ -346,8 +344,9 @@ namespace Simulator.Objects.Data_Objects
                 foreach (var tripData in tripsData)
                 {
                     int routeId = int.Parse(tripData[0]);
-                    Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
                     Route route = Routes.Find(r=>r.Id == routeId);
+                    Trip trip = new Trip(int.Parse(tripData[2]), tripData[3]);
+                    trip.Route = route;
 
                 if (route != null)
                     {                      

@@ -8,9 +8,9 @@ namespace Simulator.Objects
 {
     public class VehicleServicesStatistics// contains the metrics for a set of completed services
     {
-        private List<Service> _completedServices;
+        private readonly List<Service> _completedServices;
 
-        private Vehicle _vehicle;
+        private readonly Vehicle _vehicle;
 
         public double AverageRouteDuration
         {
@@ -119,7 +119,7 @@ namespace Simulator.Objects
             List<string> printableList = new List<string>();
             foreach (var service in _completedServices)
             {
-                printableList.Add(service.ToString()+" ["+TimeSpan.FromSeconds(service.StartTime).ToString()+" - "+TimeSpan.FromSeconds(service.EndTime)+"]");
+                printableList.Add(service.ToString()+"Service Id: "+service.Id+" ["+TimeSpan.FromSeconds(service.StartTime).ToString()+" - "+TimeSpan.FromSeconds(service.EndTime)+"]");
                 printableList.Add("Route duration: "+service.RouteDuration);
                 printableList.Add("Total stops:"+service.StopsIterator.TotalStops);
                 printableList.Add("Total requests: "+service.TotalRequests);

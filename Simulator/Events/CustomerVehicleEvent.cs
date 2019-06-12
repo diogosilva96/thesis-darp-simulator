@@ -34,6 +34,28 @@ namespace Simulator.Events
             return message;
         }
 
+        public string GetValidationsMessage()
+        {
+            //(CustomerId, Category, VehicleId, RouteId, TripId, Service.Id, StopId,Time)
+            string message = "";
+            int stopId;
+            if (Category == 2)
+            {
+                stopId = Customer.PickupDelivery[0].Id;
+            }
+            else
+            {
+                stopId = Customer.PickupDelivery[1].Id;
+            }
+
+            message = Customer.Id + "," + Category + "," + Vehicle.Id + ","+Service.Trip.Route.Id+"," + Service.Trip.Id +","+ Service.Id+"," + stopId + "," +
+                      TimeSpan.FromSeconds(Time).ToString();
+                       
+            
+
+            return message;
+        }
+
         public override void Treat()
         {
             if (Vehicle != null && Customer != null && !AlreadyHandled && Vehicle.ServiceIterator.Current == Service)
