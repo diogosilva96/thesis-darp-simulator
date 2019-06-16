@@ -14,7 +14,10 @@ namespace Simulator.Objects
 
         public double AverageRouteDuration
         {
-            get { return _completedServices.Average(s => s.RouteDuration); }
+            get
+            {
+                return _completedServices.Average(s => s.RouteDuration);
+            }
         }
 
         public double AverageNumberRequests
@@ -29,14 +32,31 @@ namespace Simulator.Objects
 
         public double AverageNumberDeniedRequests
         {
-            get { return _completedServices.Average(s => s.TotalDeniedRequests); }
+            get
+            {
+                try
+                {
+                    return _completedServices.Average(s => s.TotalDeniedRequests);
+                }
+                catch (Exception e)
+                {
+                    return 0;
+                }
+            }
         }
 
         public double AverageCustomerRideTime
         {
             get
             {
-                return (_completedServices.Average(s => s.ServicedCustomers.Average(c => c.RideTime)));
+                try
+                {
+                    return (_completedServices.Average(s => s.ServicedCustomers.Average(c => c.RideTime)));
+                }
+                catch (Exception e)
+                {
+                    return 0;
+                }
             }
         }
 
@@ -44,18 +64,45 @@ namespace Simulator.Objects
         {
             get
             {
-                return (_completedServices.Average(s => s.TotalDistanceTraveled));
+                try
+                {
+                    return (_completedServices.Average(s => s.TotalDistanceTraveled));
+                }
+                catch (Exception e)
+                {
+                    return 0;
+                }
             }
         }
 
         public double LongestRouteDuration
         {
-            get { return _completedServices.Max(s => s.RouteDuration); }
+            get
+            {
+                try
+                {
+                    return _completedServices.Max(s => s.RouteDuration);
+                }
+                catch (Exception e)
+                {
+                    return 0;
+                }
+            }
         }
 
         public double TotalDistanceTraveled
         {
-            get { return _completedServices.Sum(s => s.TotalDistanceTraveled); }
+            get
+            {
+                try
+                {
+                    return _completedServices.Sum(s => s.TotalDistanceTraveled);
+                }
+                catch (Exception e)
+                {
+                    return 0;
+                }
+            }
         }
 
         public double AverageServicedRequestsRatio => AverageNumberServicedRequests / AverageNumberRequests;

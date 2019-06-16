@@ -16,20 +16,18 @@ namespace Simulator
         public Simulation()
         {
             Routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(1); // Generates a vehicle for each route
+            GenerateVehicleFleet(3); // Generates a vehicle for each route
         }
 
-        public override void AssignVehicleServices(int startHour, int endHour, int routeIndex)
+        public override void AssignVehicleServices(int startHour, int endHour)
         {
             var ind = 0;
             foreach (var route in Routes) // Each vehicle is responsible for a route
             {
-                if (ind == routeIndex)
-                {
-                    //if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
-                    //    break;
 
-                    var v = VehicleFleet[0];
+                if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
+                    break;
+                var v = VehicleFleet[ind];
                     var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= startHour && TimeSpan.FromSeconds(s.StartTime).Hours <= endHour);
                     if (allRouteServices.Count > 0)
                     {
@@ -48,7 +46,6 @@ namespace Simulator
                                           ") were assigned to Vehicle " +
                                           v.Id + ".");
 
-                }
 
                 ind++;
             }
@@ -119,9 +116,9 @@ namespace Simulator
                 {
                     var servicesMetricsObject = new VehicleServicesStatistics(vehicle);
                     var list = servicesMetricsObject.GetOverallStatsPrintableList();
-                    var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
+                    //var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
 
-                    foreach (var log in logList) myFileLogger.Log(log);
+                    //foreach (var log in logList) myFileLogger.Log(log);
                     foreach (var toPrint in list) toPrintList.Add(toPrint);
                 }
             }
