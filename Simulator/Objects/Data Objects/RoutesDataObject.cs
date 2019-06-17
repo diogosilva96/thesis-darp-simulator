@@ -121,7 +121,7 @@ namespace Simulator.Objects.Data_Objects
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 var seconds = elapsedMs * 0.001;
-                Console.WriteLine(this.ToString() + "Trip start times dictionary was successfully loaded in " + seconds +
+                Console.WriteLine(this.ToString() + "Stop demands were successfully loaded in " + seconds +
                                   " seconds.");
             }
         }

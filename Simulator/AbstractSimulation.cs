@@ -24,10 +24,6 @@ namespace Simulator
 
         protected Logger.Logger ConsoleLogger;
 
-        protected Logger.Logger EventLogger;
-
-        protected Logger.Logger ValidationsLogger;
-
         protected DirectedGraph<Stop, double> StopsGraph;
 
         protected RoutesDataObject RoutesDataObject;
@@ -36,20 +32,18 @@ namespace Simulator
 
         protected int TotalEventsHandled;
 
+        protected string LoggerPath;
+
         protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             ConsoleLogger = new Logger.Logger(consoleRecorder);
-            string loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
-            if (!Directory.Exists(loggerPath))
+            LoggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
+            if (!Directory.Exists(LoggerPath))
             {
-                Directory.CreateDirectory(loggerPath);
+                Directory.CreateDirectory(LoggerPath);
             }
 
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(loggerPath, @"event_logs.txt"));
-            EventLogger = new Logger.Logger(fileRecorder);
-            IRecorder validationsRecorder = new FileRecorder(Path.Combine(loggerPath, @"validations.txt"), "CustomerId, Category, RouteId, TripId, ServiceId, VehicleId, TripId, StopId,Time");
-            ValidationsLogger = new Logger.Logger(validationsRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
             var stopsNetworkGraph = new StopsNetworkGraphLoader( true);

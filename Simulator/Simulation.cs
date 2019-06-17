@@ -10,19 +10,30 @@ namespace Simulator
 {
     public class Simulation : AbstractSimulation
     {
-        public static List<Route> Routes;
+        private readonly List<Route> _routes;
+
+        private readonly Logger.Logger _eventLogger;
+
+        private readonly Logger.Logger _validationsLogger;
+
+        private int _validationsId;
 
 
         public Simulation()
         {
-            Routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(3); // Generates a vehicle for each route
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
+            _eventLogger = new Logger.Logger(fileRecorder);
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, TripId, StopId, Time");
+            _validationsLogger = new Logger.Logger(validationsRecorder);
+            _routes = RoutesDataObject.Routes;
+            GenerateVehicleFleet(6); // Generates a vehicle for each route
+            _validationsId = 1;
         }
 
         public override void AssignVehicleServices(int startHour, int endHour)
         {
             var ind = 0;
-            foreach (var route in Routes) // Each vehicle is responsible for a route
+            foreach (var route in _routes) // Each vehicle is responsible for a route
             {
 
                 if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
@@ -116,9 +127,9 @@ namespace Simulator
                 {
                     var servicesMetricsObject = new VehicleServicesStatistics(vehicle);
                     var list = servicesMetricsObject.GetOverallStatsPrintableList();
-                    //var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
+                    var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
 
-                    //foreach (var log in logList) myFileLogger.Log(log);
+                    foreach (var log in logList) myFileLogger.Log(log);
                     foreach (var toPrint in list) toPrintList.Add(toPrint);
                 }
             }
@@ -206,10 +217,11 @@ namespace Simulator
         {
             evt.Treat();
             TotalEventsHandled++;
-            EventLogger.Log(evt.GetTraceMessage());
+            _eventLogger.Log(evt.GetTraceMessage());
             if (evt is CustomerVehicleEvent cve)
             {
-                ValidationsLogger.Log(cve.GetValidationsMessage());
+                _validationsLogger.Log(cve.GetValidationsMessage(_validationsId));
+                _validationsId++;
             }
         }
     }

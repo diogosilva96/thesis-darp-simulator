@@ -49,7 +49,7 @@ namespace Simulator.Events
             string message = "";
             if (Stop != null && Vehicle != null)
             {
-                message = timestamp + splitter+ this.ToString() +splitter+"Vehicle:"+ Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "Start_time:" + Service.StartTime+splitter+Stop;
+                message = timestamp + splitter+ this.ToString() +splitter+"Vehicle:"+ Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "ServiceId:" + Service.Id+splitter+Stop;
             }
 
             return message;

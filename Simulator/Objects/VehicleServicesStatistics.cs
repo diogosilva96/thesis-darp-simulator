@@ -164,19 +164,30 @@ namespace Simulator.Objects
         public List<string> GetPerServiceStatsPrintableList()
         {
             List<string> printableList = new List<string>();
+            printableList.Add("Vehicle:" + _vehicle.Id + " capacity:" + _vehicle.Capacity);
             foreach (var service in _completedServices)
             {
-                printableList.Add(service.ToString()+"Service Id: "+service.Id+" ["+TimeSpan.FromSeconds(service.StartTime).ToString()+" - "+TimeSpan.FromSeconds(service.EndTime)+"]");
+                printableList.Add("Route:"+service.Trip.Route.Name+" Service Id: "+service.Id+" ["+TimeSpan.FromSeconds(service.StartTime).ToString()+" - "+TimeSpan.FromSeconds(service.EndTime)+"]"+ " Trip Id:"+service.Trip.Id);
                 printableList.Add("Route duration: "+service.RouteDuration);
                 printableList.Add("Total stops:"+service.StopsIterator.TotalStops);
                 printableList.Add("Total requests: "+service.TotalRequests);
                 printableList.Add("Serviced requests: "+service.TotalServicedRequests);
                 printableList.Add("Denied requests: "+service.TotalDeniedRequests);
-                printableList.Add("Average Customer Ride time:"+service.ServicedCustomers.Average(c=>c.RideTime));
-                printableList.Add("Average number requests per stop:"+service.TotalRequests/service.StopsIterator.TotalStops);
+                try
+                {
+                    printableList.Add(
+                        "Average Customer Ride time:" + service.ServicedCustomers.Average(c => c.RideTime));
+                }
+                catch (Exception e)
+                {
+                    printableList.Add("Average Customer ride time: NaN");
+                }
+
+                printableList.Add("Average number of requests per stop:"+service.TotalRequests/service.StopsIterator.TotalStops);
                 printableList.Add("Distance traveled: "+service.TotalDistanceTraveled);
-                printableList.Add("");  
+                printableList.Add("");
             }
+            printableList.Add("-------------------------------------------------------------------");
             return printableList;
         }
 
