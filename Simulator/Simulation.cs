@@ -16,7 +16,7 @@ namespace Simulator
 
         private readonly Logger.Logger _validationsLogger;
 
-        private int _validationsId;
+        private int _validationsCounter;
 
 
         public Simulation()
@@ -26,8 +26,8 @@ namespace Simulator
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, TripId, StopId, Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(6); // Generates a vehicle for each route
-            _validationsId = 1;
+            GenerateVehicleFleet(5); // Generates a vehicle for each route
+            _validationsCounter = 1;
         }
 
         public override void AssignVehicleServices(int startHour, int endHour)
@@ -49,15 +49,8 @@ namespace Simulator
                                 v.AddService(service); //Adds the service
                             }
                     }
-
-
                     if (v.Services.Count > 0)
-                        ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +
-                                          v.Services[0].Trip.Route +
-                                          ") were assigned to Vehicle " +
-                                          v.Id + ".");
-
-
+                        ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +v.Services[0].Trip.Route +") were assigned to Vehicle " +v.Id + ".");
                 ind++;
             }
         }
@@ -72,8 +65,7 @@ namespace Simulator
                     {
                         var events =
                             EventGenerator.GenerateRouteEvents(vehicle,
-                                vehicle.ServiceIterator.Current
-                                    .StartTime); //Generates the arrive/depart events for that service
+                                vehicle.ServiceIterator.Current.StartTime); //Generates the arrive/depart events for that service
                         AddEvent(events);
                     }
 
@@ -220,8 +212,8 @@ namespace Simulator
             _eventLogger.Log(evt.GetTraceMessage());
             if (evt is CustomerVehicleEvent cve)
             {
-                _validationsLogger.Log(cve.GetValidationsMessage(_validationsId));
-                _validationsId++;
+                _validationsLogger.Log(cve.GetValidationsMessage(_validationsCounter));
+                _validationsCounter++;
             }
         }
     }
