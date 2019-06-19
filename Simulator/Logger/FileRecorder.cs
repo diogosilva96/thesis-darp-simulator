@@ -11,9 +11,11 @@ namespace Simulator.Logger
         public FileRecorder(string path)
         {
             _streamWriter = new StreamWriter(path,false);
+       
         }
         public void Record(string message)
-        { 
+        {
+            _streamWriter.Flush();
             _streamWriter.WriteLine(message);
         }
 

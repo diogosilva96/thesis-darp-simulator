@@ -19,6 +19,7 @@ namespace Simulator
         private int _validationsCounter;
 
 
+
         public Simulation()
         {
             IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
@@ -154,9 +155,12 @@ namespace Simulator
                 List<Event> customerEnterVehicleEvents = null;
                 if (vseEvt.Vehicle.ServiceIterator.Current != null)
                 {
+                    int expectedDemand = RoutesDataObject.DemandsDataObject.GetDemand(vseEvt.Stop.Id,
+                        vseEvt.Vehicle.ServiceIterator.Current.Trip.Route.Id,
+                        TimeSpan.FromSeconds(vseEvt.Time).Hours);
                     customerEnterVehicleEvents =
                         EventGenerator.GenerateCustomerEnterVehicleEvents(vseEvt.Vehicle, vseEvt.Stop,
-                            lastInsertedLeaveTime, rnd.Next(1, 7));
+                            lastInsertedLeaveTime, rnd.Next(1, 7),expectedDemand);
                     if (customerEnterVehicleEvents.Count > 0)
                         lastInsertedEnterTime = customerEnterVehicleEvents[customerEnterVehicleEvents.Count - 1].Time;
                 }

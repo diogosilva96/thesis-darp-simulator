@@ -9,18 +9,20 @@ namespace Simulator.Objects.Data_Objects
     public class
         RoutesDataObject //Class that contains the data for the Stops, trips and routes
     {
-        private List<Trip> _trips { get; set; }
+        private List<Trip> Trips { get; set; }
         public List<Stop> Stops { get; internal set; }
         public List<Route> Routes { get; internal set; }
+        public DemandsDataObject DemandsDataObject { get; internal set; }
 
         private bool _urbanOnly;
 
         public RoutesDataObject(bool urbanOnly)
         {
             _urbanOnly = urbanOnly;
-            _trips = new List<Trip>();
+            Trips = new List<Trip>();
             Stops = new List<Stop>();
             Routes = new List<Route>();
+            DemandsDataObject = new DemandsDataObject();
 
             Load();
         }
@@ -111,11 +113,10 @@ namespace Simulator.Objects.Data_Objects
                     var route = Routes.Find(r=>r.Id == int.Parse(demandData[0]));
                     var stop = Stops.Find(s=>s.Id==int.Parse(demandData[1]));
                     var hour = int.Parse(demandData[2]);
-                    var auxDemand = demandData[3].Split(".");
-                    var demand = (int)Math.Round(Convert.ToDouble(auxDemand[0]+","+auxDemand[1]));
-                    if (stop != null)
+                    var demand = (int)Math.Round(Convert.ToDouble(double.Parse(demandData[3])));
+                    if (stop != null && route != null)
                     {
-                        stop.AddToDemands(route, hour, demand);
+                        DemandsDataObject.AddDemand(stop.Id, route.Id, hour, demand);
                     }
                 }
                 watch.Stop();
@@ -187,13 +188,12 @@ namespace Simulator.Objects.Data_Objects
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine(this+"A total of "+(totalTrips - (id-1))+" redundant trips were successfully removed in "+elapsedMs*0.001+" seconds.");
          
-            _trips = routeTrips; 
+            Trips = routeTrips; 
         }
-
         public void AssignUrbanStops()
         {
             var urbanStops = new List<Stop>();
-            if (_trips.Count > 0 && _trips != null)
+            if (Trips.Count > 0 && Trips != null)
             {
                 var urbanRoutes =Routes.FindAll(r => r.UrbanRoute);
                 foreach (var route in urbanRoutes)
@@ -266,10 +266,8 @@ namespace Simulator.Objects.Data_Objects
             var watch = Stopwatch.StartNew();
             foreach (var stopData in stopsData)
             {
-                var auxLat = stopData[4].Split(".");
-                var auxLon = stopData[5].Split(".");
-                var stop = new Stop(int.Parse(stopData[0]), stopData[1], stopData[2], double.Parse(auxLat[0] + "," + auxLat[1]),
-                    double.Parse(auxLon[0] + "," + auxLon[1]));
+                var stop = new Stop(int.Parse(stopData[0]), stopData[1], stopData[2], double.Parse(stopData[4]),
+                    double.Parse(stopData[5]));
                 if (!Stops.Contains(stop))
                 {
                     Stops.Add(stop);
@@ -297,13 +295,13 @@ namespace Simulator.Objects.Data_Objects
                         {
 
 
-                            tr = _trips.Find(t => t.Id == tripId); 
+                            tr = Trips.Find(t => t.Id == tripId); 
                         }
                         prevTripId = tripId;
                     if (tr != null)
                         {
 
-                            if (_trips.Contains(tr))
+                            if (Trips.Contains(tr))
                             {
                                 var stopId = int.Parse(tripStopData[1]);
                                 Stop stop = Stops.Find(s => s.Id == stopId);
@@ -352,7 +350,7 @@ namespace Simulator.Objects.Data_Objects
                     {                      
                            if (!route.Trips.Contains(trip))
                             {
-                                _trips.Add(trip);
+                                Trips.Add(trip);
                                 route.Trips.Add(trip);
                             }
                     }
@@ -360,7 +358,7 @@ namespace Simulator.Objects.Data_Objects
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 var seconds = elapsedMs * 0.001;
-                Console.WriteLine(this.ToString() +_trips.Count+" trips were successfully loaded in " + seconds +
+                Console.WriteLine(this.ToString() +Trips.Count+" trips were successfully loaded in " + seconds +
                                   " seconds.");
 
         }
