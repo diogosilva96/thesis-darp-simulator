@@ -119,8 +119,8 @@ namespace Simulator.Objects
         {
             get
             {
-                return _completedServices.Sum(s => s.TotalRequests) /
-                       _completedServices.Sum(s => s.StopsIterator.TotalStops);
+                return (double)Decimal.Divide(_completedServices.Sum(s => s.TotalRequests),
+                    _completedServices.Sum(s => s.StopsIterator.TotalStops)); ;
             }
         }
 

@@ -46,9 +46,10 @@ namespace Simulator
 
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-            var stopsNetworkGraph = new StopsNetworkGraphLoader( true);
+           
+            RoutesDataObject = new RoutesDataObject(true);
+            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops,RoutesDataObject.Routes);
             stopsNetworkGraph.LoadGraph();
-            RoutesDataObject = stopsNetworkGraph.RouteInformationDataObject;
             StopsGraph = stopsNetworkGraph.StopsGraph;
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;

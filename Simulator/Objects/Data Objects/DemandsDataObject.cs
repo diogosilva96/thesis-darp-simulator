@@ -40,7 +40,7 @@ namespace Simulator.Objects.Data_Objects
 
         private string BuildKeyString(int stopId, int routeId, int hour)
         {
-            string keyString = stopId + "-" + routeId + "-" + hour;
+            string keyString = $"{stopId}-{routeId}-{hour}";
             return keyString;
         }
     }

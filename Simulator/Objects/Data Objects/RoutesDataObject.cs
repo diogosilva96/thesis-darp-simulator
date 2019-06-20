@@ -7,14 +7,14 @@ using System.Linq;
 namespace Simulator.Objects.Data_Objects
 {
     public class
-        RoutesDataObject //Class that contains the data for the Stops, trips and routes
+        RoutesDataObject //Class that contains the data for the Stops, trips, routes and demands
     {
         private List<Trip> Trips { get; set; }
         public List<Stop> Stops { get; internal set; }
         public List<Route> Routes { get; internal set; }
         public DemandsDataObject DemandsDataObject { get; internal set; }
 
-        private bool _urbanOnly;
+        private readonly bool _urbanOnly;
 
         public RoutesDataObject(bool urbanOnly)
         {
@@ -36,7 +36,7 @@ namespace Simulator.Objects.Data_Objects
 
         private Dictionary<int, int> _tripStartTimeDictionary;
 
-        public void Load()
+        private void Load()
         {
             var watch = Stopwatch.StartNew();
             Console.WriteLine(this+"Loading all the necessary data...");
