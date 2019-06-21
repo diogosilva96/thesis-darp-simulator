@@ -52,7 +52,7 @@ namespace Simulator.Events
         public List<Event> GenerateCustomerEnterVehicleEvents(Vehicle vehicle, Stop stop, int time, int lambda, int expectedDemand)
         {
             List<Event> events = new List<Event>();
-            Lambda = lambda; // remove??
+            //Lambda = lambda; // remove??
 
             if (vehicle.ServiceIterator.Current.Trip != null)
             { 
@@ -64,10 +64,10 @@ namespace Simulator.Events
                 //var sample = ((Poisson)_distribution).Sample();
                 //check if distribution will be used or the linear use of the inputs
                 
-
+                
                 int currentStopIndex = vehicle.ServiceIterator.Current.StopsIterator.CurrentIndex;
-                if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1
-                ) // generation of customers at each stop
+
+                if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1 && vehicle.ServiceIterator.Current.StopsIterator.CurrentStop == stop) // generation of customers at each stop
                 {
                     var enterTime = time;
                     for (int i = 1; i <= sample; i++)

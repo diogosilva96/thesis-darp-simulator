@@ -81,7 +81,7 @@ namespace Simulator
         {
             for (int index = 0; index < n; index++)
             {
-                var vehicle = new Vehicle(30, 22, StopsGraph);
+                var vehicle = new Vehicle(30, 53, StopsGraph);
                 VehicleFleet.Add(vehicle);
             }
             ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully generated.");

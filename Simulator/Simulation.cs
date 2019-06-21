@@ -27,7 +27,7 @@ namespace Simulator
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, TripId, StopId, Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(5); // Generates a vehicle for each route
+            GenerateVehicleFleet(12); // Generates a vehicle for each route
             _validationsCounter = 1;
         }
 
@@ -40,12 +40,13 @@ namespace Simulator
                 if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
                     break;
                 var v = VehicleFleet[ind];
+
                     var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= startHour && TimeSpan.FromSeconds(s.StartTime).Hours <= endHour);
                     if (allRouteServices.Count > 0)
                     {
                         foreach (var service in allRouteServices)
                             if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
-                            ) //if there is no service where the start time is lower than 30mins (1800seconds)
+                            ) //if there is no service within 30min window(1800seconds)
                             {
                                 v.AddService(service); //Adds the service
                             }
@@ -53,6 +54,7 @@ namespace Simulator
                     if (v.Services.Count > 0)
                         ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +v.Services[0].Trip.Route +") were assigned to Vehicle " +v.Id + ".");
                 ind++;
+                
             }
         }
 
@@ -153,7 +155,7 @@ namespace Simulator
                     : baseTime;
 
                 List<Event> customerEnterVehicleEvents = null;
-                if (vseEvt.Vehicle.ServiceIterator.Current != null)
+                if (vseEvt.Vehicle.ServiceIterator.Current != null && vseEvt.Vehicle.ServiceIterator.Current.HasStarted)
                 {
                     int expectedDemand = RoutesDataObject.DemandsDataObject.GetDemand(vseEvt.Stop.Id,
                         vseEvt.Vehicle.ServiceIterator.Current.Trip.Route.Id,

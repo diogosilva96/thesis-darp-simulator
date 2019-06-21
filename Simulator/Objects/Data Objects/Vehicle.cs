@@ -50,16 +50,12 @@ namespace Simulator.Objects.Data_Objects
         {
             if (customer == null) throw new ArgumentNullException();
 
-            if (!IsFull)
-            {
-                if (Customers.Contains(customer)) return false;
-                Customers.Add(customer);
-                ServiceIterator.Current.TotalRequests++;
-                return true;
-            }
-
             ServiceIterator.Current.TotalRequests++;
-            return false;
+            if (IsFull) return false;
+            if (Customers.Contains(customer)) return false;
+            Customers.Add(customer);
+                
+            return true;
         }
 
         public bool AddService(Service service)
@@ -85,6 +81,7 @@ namespace Simulator.Objects.Data_Objects
                     Console.WriteLine(" ");
                     Console.WriteLine(ToString() + ServiceIterator.Current + " STARTED at " +
                                       TimeSpan.FromSeconds(time) + ".");
+                    
                 }
 
                 Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
@@ -128,14 +125,11 @@ namespace Simulator.Objects.Data_Objects
         {
             if (customer == null) throw new ArgumentNullException();
 
-            if (Customers.Contains(customer))
-            {
-                Customers.Remove(customer);
-                ServiceIterator.Current.ServicedCustomers.Add(customer);
-                return true;
-            }
+            if (!Customers.Contains(customer)) return false;
+            Customers.Remove(customer);
+            ServiceIterator.Current.ServicedCustomers.Add(customer);
+            return true;
 
-            return false;
         }
 
         public bool TransverseToNextStop(double distance, int startTime)

@@ -15,7 +15,7 @@ namespace Simulator.Objects.Data_Objects
 
         public StopsIterator StopsIterator { get; internal set; }
 
-        public bool IsDone { get; set; }
+        public bool IsDone { get; set; } // true if the service has already been completed
 
         public int TotalRequests { get; set; }
         public int TotalServicedRequests => ServicedCustomers.Count;
@@ -26,6 +26,8 @@ namespace Simulator.Objects.Data_Objects
 
         public double TotalDistanceTraveled;
 
+        public bool HasStarted { get; set; } // true if the service has already started or been completed
+
         public Service(int id,Trip trip,int startTime)
         {
             Id = id;
@@ -35,6 +37,7 @@ namespace Simulator.Objects.Data_Objects
             StopsIterator = new StopsIterator(Trip.Stops);
             ServicedCustomers = new List<Customer>();
             TotalDistanceTraveled = 0;
+            HasStarted = false;
         }
 
         public bool Start(int time)
@@ -45,10 +48,12 @@ namespace Simulator.Objects.Data_Objects
                 ServicedCustomers = new List<Customer>();
                 StartTime = time;
                 StopsIterator.Reset();
+                HasStarted = true;
                 return true;
             }
             else
             {
+                HasStarted = false;
                 return false;
             }
         }
