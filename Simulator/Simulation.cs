@@ -24,10 +24,10 @@ namespace Simulator
         {
             IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
             _eventLogger = new Logger.Logger(fileRecorder);
-            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, TripId, StopId, Time");
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, StopId, Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(12); // Generates a vehicle for each route
+            GenerateVehicleFleet(15); // Generates a vehicle for each route
             _validationsCounter = 1;
         }
 
