@@ -5,16 +5,21 @@ using Simulator.Objects.Data_Objects;
 
 namespace Simulator.Objects
 {
-    public class VehicleServicesStatistics // contains the metrics for a set of completed services
+    public class RouteServicesStatistics // contains the metrics for a set of completed services
     {
         private readonly List<Service> _completedServices;
 
-        private readonly Vehicle _vehicle;
 
-        public VehicleServicesStatistics(Vehicle vehicle)
+        public RouteServicesStatistics(List<Vehicle> routeVehicles)
         {
-            _vehicle = vehicle;
-            _completedServices = vehicle.Services.FindAll(s => s.IsDone);
+            _completedServices = new List<Service>();
+            foreach (var vehicle in routeVehicles)
+            {
+                if (vehicle.ServiceIterator.Current.IsDone)
+                {
+                    _completedServices.Add(vehicle.ServiceIterator.Current);
+                }
+            }
         }
 
         public double AverageRouteDuration
@@ -125,23 +130,22 @@ namespace Simulator.Objects
         public List<string> GetOverallStatsPrintableList()
         {
             var toPrintList = new List<string>();
-            toPrintList.Add("Total number of completed services:" + _completedServices.Count + " out of " +
-                            _vehicle.Services.Count);
-            if (_vehicle.Services.Count > 0)
+            toPrintList.Add("Total number of completed services:" + _completedServices.Count);
+            if (_completedServices.Count > 0)
             {
                 toPrintList.Add("Service Trips:");
                 var serviceRoutes = new List<Trip>();
-                foreach (var service in _vehicle.Services)
+                foreach (var service in _completedServices)
                     if (!serviceRoutes.Contains(service.Trip))
                     {
                         serviceRoutes.Add(service.Trip);
-                        var completedServices = _vehicle.Services.FindAll(s => s.Trip == service.Trip && s.IsDone);
+                        var completedTripServices = _completedServices.FindAll(s => s.Trip == service.Trip && s.IsDone);
                         toPrintList.Add(" - " + service.Trip + " - Route Length:" +
-                                        Math.Round(_vehicle.Services.Find(s => s.Trip == service.Trip)
+                                        Math.Round(_completedServices.Find(s => s.Trip == service.Trip)
                                             .TotalDistanceTraveled) + " meters, Number of Stops: " +
-                                        _vehicle.Services.Find(s => s.Trip == service.Trip).StopsIterator.TotalStops +
+                                        _completedServices.Find(s => s.Trip == service.Trip).StopsIterator.TotalStops +
                                         ", Number of services completed:" +
-                                        completedServices.Count);
+                                        completedTripServices.Count);
                     }
             }
 
@@ -166,10 +170,9 @@ namespace Simulator.Objects
         public List<string> GetPerServiceStatsPrintableList()
         {
             var printableList = new List<string>();
-            printableList.Add("Vehicle:" + _vehicle.Id + " capacity:" + _vehicle.Capacity);
             foreach (var service in _completedServices)
             {
-                printableList.Add("Route:" + service.Trip.Route.Name + " Service Id: " + service.Id + " [" +
+                printableList.Add("Route:" + service.Trip.Route.Name + " , Route Id:"+service.Trip.Route.Id+" ServiceStartTime: " + service.StartTime + " [" +
                                   TimeSpan.FromSeconds(service.StartTime) + " - " +
                                   TimeSpan.FromSeconds(service.EndTime) + "]" + " Trip Id:" + service.Trip.Id);
                 printableList.Add("Route duration: " + service.RouteDuration);
@@ -182,7 +185,7 @@ namespace Simulator.Objects
                     printableList.Add(
                         "Average Customer Ride time:" + service.ServicedCustomers.Average(c => c.RideTime));
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     printableList.Add("Average Customer ride time: NaN");
                 }

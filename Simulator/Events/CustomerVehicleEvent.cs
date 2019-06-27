@@ -30,7 +30,7 @@ namespace Simulator.Events
             string message = "";
             if (Customer != null && Vehicle != null)
             {
-                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "ServiceId:" + Service.Id + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
+                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "Service StartTime:" + Service.StartTime + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
             }
 
             return message;
@@ -38,13 +38,13 @@ namespace Simulator.Events
 
         public string GetValidationsMessage(int validationId)
         {
-            //(CustomerId, Category,CategorySuccess (was the customer able to leave or enter vehicle (1 true, 0 false)), VehicleId, RouteId, TripId, Service.Id, StopId,Time)
+            //(CustomerId, Category,CategorySuccess (was the customer able to leave or enter vehicle (1 true, 0 false)), VehicleId, RouteId, TripId, ServiceStartTime, StopId,Time)
             string message = "";
             int stopId;
             stopId = Category == 2 ? Customer.PickupDelivery[0].Id : Customer.PickupDelivery[1].Id;
             var catSuccess = CategorySuccess == true ? 1 : 0;
 
-            message = validationId + "," + Customer.Id + "," + Category + ","+catSuccess+"," + Vehicle.Id + ","+Service.Trip.Route.Id+"," + Service.Trip.Id +","+ Service.Id+"," + stopId + "," +
+            message = validationId + "," + Customer.Id + "," + Category + ","+catSuccess+"," + Vehicle.Id + ","+Service.Trip.Route.Id+"," + Service.Trip.Id +","+ TimeSpan.FromSeconds(Service.StartTime).ToString()+"," + stopId + "," +
                       TimeSpan.FromSeconds(Time).ToString();
                        
             

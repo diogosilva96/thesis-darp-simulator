@@ -34,6 +34,12 @@ namespace Simulator
 
         protected string LoggerPath;
 
+        protected int SimulationStartHour;
+
+        protected int SimulationEndHour;
+
+        
+
         protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
@@ -77,42 +83,32 @@ namespace Simulator
             
         }
 
-        public void GenerateVehicleFleet(int n)
+        public void ConfigSimulation()
         {
-            for (int index = 0; index < n; index++)
-            {
-                var vehicle = new Vehicle(30, 53, StopsGraph);
-                VehicleFleet.Add(vehicle);
-            }
-            ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully generated.");
+
+                //for (int index = 0; index < numRoutes; index++)
+                //{
+                //}
+                //var vehicle = new Vehicle(30, 53, StopsGraph);
+                //VehicleFleet.Add(vehicle);
+                //ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully generated.");
         
             insertLabel:
-            int startHour = 0;
-            int endHour = 0;
-                try
+            try
                 {
-                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation.");
-                    startHour = int.Parse(Console.ReadLine());
-                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation.");
-                    endHour = int.Parse(Console.ReadLine());
+                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
+                    SimulationStartHour = int.Parse(Console.ReadLine());
+                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
+                    SimulationEndHour = int.Parse(Console.ReadLine());
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers.");
+                    ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
                     goto insertLabel;
                 }                
 
-
-            //int i = 1;
-            //foreach (var route in RoutesDataObject.Routes)
-            //{
-            //    ConsoleLogger.Log(i + " - " + route.Name);
-            //    i++;
-            //}
-            //ConsoleLogger.Log(this.ToString() + "Please select the route that you want to simulate.");
-            //int routeIndex = int.Parse(Console.ReadLine());
-            AssignVehicleServices(startHour,endHour);
-            GenerateVehicleServiceEvents();
+                GenerateVehicleServices();
+                GenerateVehicleServiceEvents();
         }
 
         public override string ToString()
@@ -120,7 +116,7 @@ namespace Simulator
             return "["+GetType().Name+"] ";
         }
 
-        public abstract void AssignVehicleServices(int startHour,int endHour);
+        public abstract void GenerateVehicleServices();
         public abstract void GenerateVehicleServiceEvents();
 
         public abstract void Handle(Event evt);

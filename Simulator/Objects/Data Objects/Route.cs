@@ -41,14 +41,12 @@ namespace Simulator.Objects.Data_Objects
         public void LoadRouteServices()
         {
             AllRouteServices = new List<Service>();
-            int id = 1;
             foreach (var trip in Trips)
             { 
                 foreach (var startTime in trip.StartTimes) //Generates a service for each trip and each start_time
                 {
-                    var service = new Service(id,trip, startTime);
+                    var service = new Service(trip, startTime);
                     AllRouteServices.Add(service);
-                    id++;
                 }
             }
             AllRouteServices = AllRouteServices.OrderBy(s => s.StartTime).ToList(); //Orders services by start_time

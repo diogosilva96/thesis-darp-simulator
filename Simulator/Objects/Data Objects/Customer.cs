@@ -73,6 +73,11 @@ namespace Simulator.Objects.Data_Objects
                         Console.WriteLine(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +
                                            TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
                         vehicle.ServiceIterator.MoveNext();
+                        if (vehicle.ServiceIterator.Current == null)
+                        {
+                            vehicle.ServiceIterator.Reset();
+                            vehicle.ServiceIterator.MoveNext();
+                        }
                     }
 
                 }

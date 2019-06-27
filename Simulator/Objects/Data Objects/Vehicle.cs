@@ -94,6 +94,11 @@ namespace Simulator.Objects.Data_Objects
                                       Math.Round(TimeSpan.FromSeconds(ServiceIterator.Current.RouteDuration)
                                           .TotalMinutes) + " minutes.");
                     ServiceIterator.MoveNext();
+                    if (ServiceIterator.Current == null)
+                    {
+                        ServiceIterator.Reset();
+                        ServiceIterator.MoveNext();
+                    }
                 }
 
                 return true;

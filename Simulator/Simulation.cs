@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
@@ -18,44 +19,54 @@ namespace Simulator
 
         private int _validationsCounter;
 
+        private int _vehicleSpeed = 30;
+
+        private int _vehicleCapacity = 53;
+
 
 
         public Simulation()
         {
             IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
             _eventLogger = new Logger.Logger(fileRecorder);
-            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId, CustomerId, Category, CategorySuccess, RouteId, TripId, ServiceId, VehicleId, StopId, Time");
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _routes = RoutesDataObject.Routes;
-            GenerateVehicleFleet(15); // Generates a vehicle for each route
+            ConfigSimulation(); // configures the simulation and Generates a vehicle for each route
             _validationsCounter = 1;
         }
 
-        public override void AssignVehicleServices(int startHour, int endHour)
+        public override void GenerateVehicleServices()
         {
-            var ind = 0;
+            var breakInd = 0;
             foreach (var route in _routes) // Each vehicle is responsible for a route
             {
 
-                if (ind > VehicleFleet.Count - 1) //if it reaches the last vehicle breaks the loop
+                if (breakInd == 3)
+                {
                     break;
-                var v = VehicleFleet[ind];
+                }
 
-                    var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= startHour && TimeSpan.FromSeconds(s.StartTime).Hours <= endHour);
+                var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(s.StartTime).Hours < SimulationEndHour);
                     if (allRouteServices.Count > 0)
                     {
-                        foreach (var service in allRouteServices)
-                            if (v.Services.FindAll(s => Math.Abs(s.StartTime - service.StartTime) < 60 * 30).Count == 0
-                            ) //if there is no service within 30min window(1800seconds)
-                            {
-                                v.AddService(service); //Adds the service
-                            }
+                        int serviceCount = 0;
+                        foreach (var service in allRouteServices) //Generates a new vehicle for each service
+                        {
+                            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, StopsGraph);
+                            v.AddService(service); //Adds the service
+                            VehicleFleet.Add(v);
+                            serviceCount++;
+
+                        }
+
+                        ConsoleLogger.Log(this.ToString()+"A total of "+serviceCount+" services were added for route"+route.ToString());
                     }
-                    if (v.Services.Count > 0)
-                        ConsoleLogger.Log(ToString() + v.Services.Count + " Services (" +v.Services[0].Trip.Route +") were assigned to Vehicle " +v.Id + ".");
-                ind++;
-                
+
+                    breakInd++;
             }
+            ConsoleLogger.Log(ToString() + "Vehicle average speed: " + _vehicleSpeed + " km/h.");
+            ConsoleLogger.Log(ToString() + "Vehicle capacity: " + _vehicleCapacity + " seats.");
         }
 
         public override void GenerateVehicleServiceEvents()
@@ -88,52 +99,69 @@ namespace Simulator
             toPrintList.Add(ToString() + "Total number of events handled: " +
                             Events.FindAll(e => e.AlreadyHandled).Count + " out of " + Events.Count + ".");
             toPrintList.Add(ToString() + "Vehicle Fleet Size: " + VehicleFleet.Count + " vehicle(s).");
+            toPrintList.Add("-------------------------------------");
+            toPrintList.Add("|   Overall Simulation statistics   |");
+            toPrintList.Add("-------------------------------------");
 
-            foreach (var vehicle in VehicleFleet)
+            foreach (var route in _routes)
             {
-                toPrintList.Add("-----------------------------------------------------");
-                toPrintList.Add("Vehicle " + vehicle.Id + ":");
-                toPrintList.Add("Average speed:" + vehicle.Speed + " km/h.");
-                toPrintList.Add("Capacity:" + vehicle.Capacity + " seats.");
-                toPrintList.Add("Service route:" + vehicle.Services[0].Trip.Route);
 
-                //For debug purposes---------------------------------------------------------------------------
-                if (vehicle.Services.Count != vehicle.Services.FindAll(s => s.IsDone).Count)
+                var allRouteVehicles = VehicleFleet.FindAll(v => v.ServiceIterator.Current.Trip.Route == route);
+            
+                if (allRouteVehicles.Count > 0)
                 {
-                    toPrintList.Add("Services Completed:");
-                    foreach (var service in vehicle.Services)
-                        if (service.IsDone)
-                            toPrintList.Add(" - " + service + " - [" +
-                                            TimeSpan.FromSeconds(service.StartTime) + " - " +
-                                            TimeSpan.FromSeconds(service.EndTime) + "]");
-                }
+                    
+                    toPrintList.Add(route.ToString());
+                    toPrintList.Add("Number of services:" + allRouteVehicles.Count);
+                    foreach (var v in allRouteVehicles)
+                    {
+                        //For debug purposes---------------------------------------------------------------------------
+                        if (v.Services.Count != v.Services.FindAll(s => s.IsDone).Count)
+                        {
+                            toPrintList.Add("Services Completed:");
+                            foreach (var service in v.Services)
+                                if (service.IsDone)
+                                    toPrintList.Add(" - " + service + " - [" +
+                                                    TimeSpan.FromSeconds(service.StartTime) + " - " +
+                                                    TimeSpan.FromSeconds(service.EndTime) + "]");
+                        }
 
-                if (vehicle.Customers.Count > 0)
-                {
-                    toPrintList.Add("Number of customers inside:" + vehicle.Customers.Count);
-                    foreach (var cust in vehicle.Customers)
-                        toPrintList.Add(
-                            cust + "Pickup:" + cust.PickupDelivery[0] + "Delivery:" + cust.PickupDelivery[1]);
-                }
+                        if (v.Customers.Count > 0)
+                        {
+                            toPrintList.Add("Number of customers inside:" + v.Customers.Count);
+                            foreach (var cust in v.Customers)
+                                toPrintList.Add(
+                                    cust + "Pickup:" + cust.PickupDelivery[0] + "Delivery:" + cust.PickupDelivery[1]);
+                        }
 
-                //End of debug purposes---------------------------------------------------------------------------
-
-                if (vehicle.ServiceIterator != null)
-                {
-                    var servicesMetricsObject = new VehicleServicesStatistics(vehicle);
-                    var list = servicesMetricsObject.GetOverallStatsPrintableList();
-                    var logList = servicesMetricsObject.GetPerServiceStatsPrintableList();
+                        //End of debug purposes---------------------------------------------------------------------------
+                     
+                    }
+                 
+                    var routeServicesStatistics = new RouteServicesStatistics(allRouteVehicles);
+                    var list = routeServicesStatistics.GetOverallStatsPrintableList();
+                    var logList = routeServicesStatistics.GetPerServiceStatsPrintableList();
 
                     foreach (var log in logList) myFileLogger.Log(log);
-                    foreach (var toPrint in list) toPrintList.Add(toPrint);
+
+                    foreach (var toPrint in list)
+                    {
+                        toPrintList.Add(toPrint);
+                    }
+
+                    toPrintList.Add("------------------------------------------");
                 }
             }
 
-            foreach (var printableMessage in toPrintList)
+            if (toPrintList.Count > 0)
             {
-                myFileLogger.Log(printableMessage);
-                ConsoleLogger.Log(printableMessage);
+                foreach (var print in toPrintList)
+                {
+                    myFileLogger.Log(print);
+                    ConsoleLogger.Log(print);
+                }
             }
+
         }
 
 
