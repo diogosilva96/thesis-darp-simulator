@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Simulator.Events;
+using Simulator.GraphLibrary;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
@@ -25,6 +26,7 @@ namespace Simulator
 
 
 
+
         public Simulation()
         {
             IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
@@ -42,25 +44,27 @@ namespace Simulator
             foreach (var route in _routes) // Each vehicle is responsible for a route
             {
 
-                if (breakInd == 3)
-                {
-                    break;
-                }
-
+                //if (breakInd == 3)
+                //{
+                //    break;
+                //}
+                var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
+                stopsNetworkGraph.LoadGraph();
+                var stopsGraph = stopsNetworkGraph.StopsGraph;
                 var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(s.StartTime).Hours < SimulationEndHour);
                     if (allRouteServices.Count > 0)
                     {
                         int serviceCount = 0;
                         foreach (var service in allRouteServices) //Generates a new vehicle for each service
                         {
-                            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, StopsGraph);
+                            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
                             v.AddService(service); //Adds the service
                             VehicleFleet.Add(v);
                             serviceCount++;
 
                         }
 
-                        ConsoleLogger.Log(this.ToString()+"A total of "+serviceCount+" services were added for route"+route.ToString());
+                        ConsoleLogger.Log(this.ToString()+ route.ToString()+" - total of services added:" +serviceCount);
                     }
 
                     breakInd++;

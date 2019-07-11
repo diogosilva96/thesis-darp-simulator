@@ -24,8 +24,6 @@ namespace Simulator
 
         protected Logger.Logger ConsoleLogger;
 
-        protected DirectedGraph<Stop, double> StopsGraph;
-
         protected RoutesDataObject RoutesDataObject;
 
         protected EventGenerator EventGenerator;
@@ -54,9 +52,6 @@ namespace Simulator
             VehicleFleet = new List<Vehicle>();
            
             RoutesDataObject = new RoutesDataObject(true);
-            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops,RoutesDataObject.Routes);
-            stopsNetworkGraph.LoadGraph();
-            StopsGraph = stopsNetworkGraph.StopsGraph;
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }
