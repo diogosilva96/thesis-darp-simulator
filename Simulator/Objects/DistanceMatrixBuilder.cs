@@ -14,7 +14,7 @@ namespace Simulator.Objects
             return "[" + this.GetType().Name + "] ";
         }
 
-        public long[,] Build(List<Stop> stops)
+        public long[,] Generate(List<Stop> stops)
         {
 
             long[,] distanceMatrix = new long[stops.Count, stops.Count];
@@ -43,39 +43,24 @@ namespace Simulator.Objects
             return distanceMatrix;
         }
 
-        public long[,] BuildFullMatrix(DirectedGraph<Stop, double> directedGraph)
+        public void Print(long[,] distanceMatrix)
         {
-            var i = 0;
-            var j = 0;
-            long[,] distanceMatrix = new long[directedGraph.VerticesNumber(), directedGraph.VerticesNumber()];
-            HaversineDistanceCalculator distanceCalculator = new HaversineDistanceCalculator();
-            Console.WriteLine(this.ToString() + "Generating Distance Matrix...");
-            foreach (var stopO in directedGraph.GetVertexSet())
+            var counter = 0;
+            foreach (var val in distanceMatrix)
             {
-                foreach (var stopD in directedGraph.GetVertexSet())
+                if (counter == distanceMatrix.GetLength(1)-1)
                 {
-
-                    if (stopD == stopO)
-                    {
-                        distanceMatrix[i, j] = 0;
-                    }
-                    else
-                    {
-                        var dist = Convert.ToInt32(distanceCalculator.Calculate(stopO.Latitude, stopO.Longitude,
-                            stopD.Latitude, stopD.Longitude));
-                        distanceMatrix[i, j] = dist;
-                    }
-
-                    j++;
+                    counter = 0;
+                    Console.WriteLine(val + " ");
                 }
-
-                j = 0;
-                i++;
+                else
+                {
+                    Console.Write(val + " ");
+                    counter++;
+                }
             }
-
-            Console.WriteLine(this.ToString() + "Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
-
-            return distanceMatrix;
         }
+
+
     }
 }
