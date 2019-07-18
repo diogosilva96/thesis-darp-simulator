@@ -78,41 +78,12 @@ namespace Simulator
             
         }
 
-        public void ConfigSimulation()
-        {
 
-                //for (int index = 0; index < numRoutes; index++)
-                //{
-                //}
-                //var vehicle = new Vehicle(30, 53, StopsGraph);
-                //VehicleFleet.Add(vehicle);
-                //ConsoleLogger.Log(this.ToString()+ VehicleFleet.Count+" vehicles were successfully generated.");
-        
-            insertLabel:
-            try
-                {
-                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
-                    SimulationStartHour = int.Parse(Console.ReadLine());
-                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
-                    SimulationEndHour = int.Parse(Console.ReadLine());
-                }
-                catch (Exception)
-                {
-                    ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
-                    goto insertLabel;
-                }                
-
-                GenerateVehicleServices();
-                GenerateVehicleServiceEvents();
-        }
 
         public override string ToString()
         {
             return "["+GetType().Name+"] ";
         }
-
-        public abstract void GenerateVehicleServices();
-        public abstract void GenerateVehicleServiceEvents();
 
         public abstract void Handle(Event evt);
 

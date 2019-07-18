@@ -34,46 +34,187 @@ namespace Simulator
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _routes = RoutesDataObject.Routes;
-            ConfigSimulation(); // configures the simulation and Generates a vehicle for each route
+            ConfigSimulation(); // configures the simulation
             _validationsCounter = 1;
         }
 
-        public override void GenerateVehicleServices()
+        public void ConfigSimulation()
         {
-            var breakInd = 0;
-            foreach (var route in _routes) // Each vehicle is responsible for a route
+            var numOptions = 2;
+            ConsoleLogger.Log("Please Select one of the options:");
+            ConsoleLogger.Log("1 - Standard Bus route simulation (static routing)");
+            ConsoleLogger.Log("2 - Single Bus route flexible simulation");
+            int key = 0;
+            wrongKeyLabel:
+            try
+            {
+                key = int.Parse(Console.ReadLine());
+                if (key <= 0 && key > numOptions)
+                {
+                    goto wrongKeyLabel;
+                }
+            }
+            catch (Exception)
             {
 
-                //if (breakInd == 3)
-                //{
-                //    break;
-                //}
-                var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
+            }
+
+            switch (key)
+            {
+                case 1: StandardBusRouteOption();
+                    break;
+                case 2:SingleBusRouteFlexibleOption();
+                    break;
+                default: StandardBusRouteOption();
+                    break;
+            }
+        }
+
+        public void SingleBusRouteFlexibleOption()
+        {
+            ConsoleLogger.Log("Please select the route that you wish to simulate:");
+            int ind = 0;
+            Route route;
+            foreach (var r in _routes)
+            {
+                ConsoleLogger.Log(ind+"-"+r.ToString());
+                ind++;
+            }
+            insertLabel:
+            try
+            {
+                route = _routes[int.Parse(Console.ReadLine())];
+            }
+            catch (Exception)
+            {
+                ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
+                goto insertLabel;
+            }
+            Random rand = new Random();
+            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
+            stopsNetworkGraph.LoadGraph();
+            var stopsGraph = stopsNetworkGraph.StopsGraph;
+            var service = route.AllRouteServices[rand.Next(0,route.AllRouteServices.Count-1)];
+            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
+            v.AddService(service); //Adds the service to the vehicle
+            VehicleFleet.Add(v);
+            GenerateVehicleServiceEvents();
+
+            var serviceStops = v.ServiceIterator.Current.Trip.Stops;
+            var stopList = new List<Stop>();
+            var depot = RoutesDataObject.Stops.Find(s => s.Id == 2183);
+            stopList.Add(depot);
+            // Initial route creation using long array instead of stop list
+            long[] initialRoute = new long[serviceStops.Count];
+            int index = 0;
+            foreach (var stop in serviceStops)
+            {
+                if (!stopList.Contains(stop))
+                {
+                    stopList.Add(stop);
+                }
+                initialRoute[index] =stopList.IndexOf(stop);
+                index++;
+            }
+            // Pickup and deliveries definition (to make the route flexible)
+            var numExecutions = 3;
+
+            int[][] pickupsDeliveriesStopId =
+            {
+                new int[] {438, 2430},
+                new int[] {1106, 1359},
+                new int[] {2270, 2018},
+                new int[] {2319, 1523},
+                new int[] {430, 1884},
+                new int[] {399, 555},
+            };
+            int[][] pickupsDeliveries = new int[pickupsDeliveriesStopId.Length][];
+            // transforms from stop id into index of distance matrix
+            int insertCounter = 0;
+            //Build stopList based on pickup and delivery in order to later build the distance matrix for only the necessary stops
+            foreach (var pickupDelivery in pickupsDeliveriesStopId)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    var stop = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[i]);
+
+                    if (!stopList.Contains(stop))
+                    {
+                        stopList.Add(stop);
+                    }
+                }
+
+                var pickup = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[0]);
+                var delivery = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[1]);
+                var pickupDeliveryInd = new int[] { stopList.IndexOf(pickup), stopList.IndexOf(delivery) };
+                pickupsDeliveries[insertCounter] = pickupDeliveryInd;
+                insertCounter++;
+            }
+           
+            ConsoleLogger.Log("Total stops:" + stopList.Count);
+
+            //GOOGLE OR TOOLS
+            //long[][] initialRoutes = {initialRoute};
+
+        executeLabel:
+            DarpDataModel dataM = new DarpDataModel(numExecutions, depot.Id, pickupsDeliveries, stopList);
+            dataM.PrintPickupDeliveries();
+            DarpSolver darpSolver = new DarpSolver(dataM);
+            darpSolver.Solve();
+
+            numExecutions--;
+            if (numExecutions != 0)
+            {
+                goto executeLabel;
+            }
+
+            Console.ReadKey();
+     
+        }
+        public void StandardBusRouteOption()
+        {
+            insertLabel:
+            try
+            {
+                ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
+                SimulationStartHour = int.Parse(Console.ReadLine());
+                ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
+                SimulationEndHour = int.Parse(Console.ReadLine());
+            }
+            catch (Exception)
+            {
+                ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
+                goto insertLabel;
+            }
+
+            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
+            foreach (var route in _routes) // Each vehicle is responsible for a route
+            {
                 stopsNetworkGraph.LoadGraph();
                 var stopsGraph = stopsNetworkGraph.StopsGraph;
                 var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(s.StartTime).Hours < SimulationEndHour);
-                    if (allRouteServices.Count > 0)
+                if (allRouteServices.Count > 0)
+                {
+                    int serviceCount = 0;
+                    foreach (var service in allRouteServices) //Generates a new vehicle for each service
                     {
-                        int serviceCount = 0;
-                        foreach (var service in allRouteServices) //Generates a new vehicle for each service
-                        {
-                            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
-                            v.AddService(service); //Adds the service
-                            VehicleFleet.Add(v);
-                            serviceCount++;
+                        var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
+                        v.AddService(service); //Adds the service
+                        VehicleFleet.Add(v);
+                        serviceCount++;
 
-                        }
-
-                        ConsoleLogger.Log(this.ToString()+ route.ToString()+" - total of services added:" +serviceCount);
                     }
 
-                    breakInd++;
+                    ConsoleLogger.Log(this.ToString() + route.ToString() + " - total of services added:" + serviceCount);
+                }
+
             }
             ConsoleLogger.Log(ToString() + "Vehicle average speed: " + _vehicleSpeed + " km/h.");
             ConsoleLogger.Log(ToString() + "Vehicle capacity: " + _vehicleCapacity + " seats.");
+            GenerateVehicleServiceEvents();
         }
 
-        public override void GenerateVehicleServiceEvents()
+        public void GenerateVehicleServiceEvents()
         {
             foreach (var vehicle in VehicleFleet)
                 if (vehicle.Services.Count > 0) //if the vehicle has services to be done

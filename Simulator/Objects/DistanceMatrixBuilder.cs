@@ -42,25 +42,5 @@ namespace Simulator.Objects
  
             return distanceMatrix;
         }
-
-        public void Print(long[,] distanceMatrix)
-        {
-            var counter = 0;
-            foreach (var val in distanceMatrix)
-            {
-                if (counter == distanceMatrix.GetLength(1)-1)
-                {
-                    counter = 0;
-                    Console.WriteLine(val + " ");
-                }
-                else
-                {
-                    Console.Write(val + " ");
-                    counter++;
-                }
-            }
-        }
-
-
     }
 }

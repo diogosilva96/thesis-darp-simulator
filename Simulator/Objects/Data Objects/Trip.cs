@@ -19,6 +19,7 @@ namespace Simulator.Objects.Data_Objects
 
         public List<Stop> Stops { get; set; }
 
+
         public List<int> StartTimes { get; set; }
 
         public override string ToString()
