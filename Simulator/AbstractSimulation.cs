@@ -6,10 +6,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
-using GraphLibrary;
-using GraphLibrary.GraphLibrary;
 using Simulator.Events;
-using Simulator.GraphLibrary;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
@@ -24,7 +21,7 @@ namespace Simulator
 
         protected Logger.Logger ConsoleLogger;
 
-        protected RoutesDataObject RoutesDataObject;
+        protected TransportationNetwork TransportationNetwork;
 
         protected EventGenerator EventGenerator;
 
@@ -51,7 +48,8 @@ namespace Simulator
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
            
-            RoutesDataObject = new RoutesDataObject(true);
+            var routesDataObject = new RoutesDataObject(true);
+            TransportationNetwork = new TransportationNetwork(routesDataObject.Stops,routesDataObject.Routes,routesDataObject.DemandsDataObject);
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }

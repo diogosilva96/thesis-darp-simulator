@@ -123,9 +123,9 @@ namespace Simulator.Events
                     }
                     else //otherwise adds the time to travel the distance from the the currentStop to the nextStop, which will give the next event startTime
                     {
-                        
-                            var distance =
-                                vehicle.StopsGraph.GetWeight(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop, vehicle.ServiceIterator.Current.StopsIterator.NextStop);
+                        var stopTuple = Tuple.Create(vehicle.ServiceIterator.Current.StopsIterator.CurrentStop,
+                            vehicle.ServiceIterator.Current.StopsIterator.NextStop);
+                        vehicle.ArcDictionary.TryGetValue(stopTuple,out var distance);
                         var travelTime = vehicle.TravelTime(distance);
                         time = Convert.ToInt32(time + travelTime);
                         vehicle.ServiceIterator.Current.StopsIterator.Next();                       

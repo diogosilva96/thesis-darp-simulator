@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Simulator.Events;
-using Simulator.GraphLibrary;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
@@ -12,8 +11,6 @@ namespace Simulator
 {
     public class Simulation : AbstractSimulation
     {
-        private readonly List<Route> _routes;
-
         private readonly Logger.Logger _eventLogger;
 
         private readonly Logger.Logger _validationsLogger;
@@ -24,16 +21,12 @@ namespace Simulator
 
         private int _vehicleCapacity = 53;
 
-
-
-
         public Simulation()
         {
             IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
             _eventLogger = new Logger.Logger(fileRecorder);
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
-            _routes = RoutesDataObject.Routes;
             ConfigSimulation(); // configures the simulation
             _validationsCounter = 1;
         }
@@ -74,83 +67,84 @@ namespace Simulator
         {
             ConsoleLogger.Log("Please select the route that you wish to simulate:");
             int ind = 0;
-            Route route;
-            foreach (var r in _routes)
+            Route route = null;
+            foreach (var r in TransportationNetwork.Routes)
             {
                 ConsoleLogger.Log(ind+"-"+r.ToString());
                 ind++;
             }
-            insertLabel:
-            try
+
+            bool canAdvance = false;
+            while (!canAdvance)
             {
-                route = _routes[int.Parse(Console.ReadLine())];
+                
+                try
+                {
+                    route = TransportationNetwork.Routes[int.Parse(Console.ReadLine())];
+                    canAdvance = true;
+                }
+                catch (Exception)
+                {
+                    ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert a route index number.");
+                    
+                    canAdvance = false;
+                }
             }
-            catch (Exception)
-            {
-                ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
-                goto insertLabel;
-            }
+
             Random rand = new Random();
-            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
-            stopsNetworkGraph.LoadGraph();
-            var stopsGraph = stopsNetworkGraph.StopsGraph;
+
             var service = route.AllRouteServices[rand.Next(0,route.AllRouteServices.Count-1)];
-            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
+            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary);
             v.AddService(service); //Adds the service to the vehicle
             VehicleFleet.Add(v);
             GenerateVehicleServiceEvents();
 
             var serviceStops = v.ServiceIterator.Current.Trip.Stops;
             var stopList = new List<Stop>();
-            var depot = RoutesDataObject.Stops.Find(s => s.Id == 2183);
+            var depot = TransportationNetwork.Stops.Find(s => s.Id == 2183);
             stopList.Add(depot);
             // Initial route creation using long array instead of stop list
             long[] initialRoute = new long[serviceStops.Count];
             int index = 0;
             foreach (var stop in serviceStops)
             {
-                if (!stopList.Contains(stop))
-                {
-                    stopList.Add(stop);
-                }
+                if (!stopList.Contains(stop)) stopList.Add(stop);
                 initialRoute[index] =stopList.IndexOf(stop);
                 index++;
             }
-            // Pickup and deliveries definition (to make the route flexible)
+            
             var numExecutions = 3;
-
-            int[][] pickupsDeliveriesStopId =
+            // Pickup and deliveries definition using static generated stops (to make the route flexible)
+            Stop[][] pickupsDeliveriesStop =
             {
-                new int[] {438, 2430},
-                new int[] {1106, 1359},
-                new int[] {2270, 2018},
-                new int[] {2319, 1523},
-                new int[] {430, 1884},
-                new int[] {399, 555},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id  == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359)},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018)},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523)},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884)},
+                new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555)},
             };
-            int[][] pickupsDeliveries = new int[pickupsDeliveriesStopId.Length][];
-            // transforms from stop id into index of distance matrix
-            int insertCounter = 0;
-            //Build stopList based on pickup and delivery in order to later build the distance matrix for only the necessary stops
-            foreach (var pickupDelivery in pickupsDeliveriesStopId)
+            //Adds the pickup and delivery stops to the stopList
+            foreach (var stop in pickupsDeliveriesStop)
             {
-                for (int i = 0; i < 2; i++)
-                {
-                    var stop = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[i]);
-
-                    if (!stopList.Contains(stop))
-                    {
-                        stopList.Add(stop);
-                    }
+                for (int x = 0; x < 2; x++)
+                { 
+                    if (!stopList.Contains(stop[x])) stopList.Add(stop[x]);
                 }
+            }
 
-                var pickup = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[0]);
-                var delivery = RoutesDataObject.Stops.Find(s => s.Id == pickupDelivery[1]);
+            int[][] pickupsDeliveries = new int[pickupsDeliveriesStop.Length][];
+            //Transforms the data from stop matrix into index matrix in order to use it in google Or tools
+            int insertCounter = 0;
+            foreach (var pickupDelivery in pickupsDeliveriesStop)
+            {
+
+                var pickup = pickupDelivery[0];
+                var delivery = pickupDelivery[1];
                 var pickupDeliveryInd = new int[] { stopList.IndexOf(pickup), stopList.IndexOf(delivery) };
                 pickupsDeliveries[insertCounter] = pickupDeliveryInd;
                 insertCounter++;
             }
-           
             ConsoleLogger.Log("Total stops:" + stopList.Count);
 
             //GOOGLE OR TOOLS
@@ -173,41 +167,40 @@ namespace Simulator
         }
         public void StandardBusRouteOption()
         {
-            insertLabel:
-            try
+            bool canAdvance = false;
+            while (!canAdvance)
             {
-                ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
-                SimulationStartHour = int.Parse(Console.ReadLine());
-                ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
-                SimulationEndHour = int.Parse(Console.ReadLine());
-            }
-            catch (Exception)
-            {
-                ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert integer numbers for the start and end hour.");
-                goto insertLabel;
+                try
+                {
+                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
+                    SimulationStartHour = int.Parse(Console.ReadLine());
+                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
+                    SimulationEndHour = int.Parse(Console.ReadLine());
+                    canAdvance = true;
+                }
+                catch (Exception)
+                {
+                    ConsoleLogger.Log(this.ToString() +
+                                      "Error Wrong input, please insert integer numbers for the start and end hour.");
+                    canAdvance = false;
+                }
             }
 
-            var stopsNetworkGraph = new StopsNetworkGraphLoader(RoutesDataObject.Stops, RoutesDataObject.Routes);
-            foreach (var route in _routes) // Each vehicle is responsible for a route
+            foreach (var route in TransportationNetwork.Routes) 
             {
-                stopsNetworkGraph.LoadGraph();
-                var stopsGraph = stopsNetworkGraph.StopsGraph;
                 var allRouteServices = route.AllRouteServices.FindAll(s => TimeSpan.FromSeconds(s.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(s.StartTime).Hours < SimulationEndHour);
                 if (allRouteServices.Count > 0)
                 {
                     int serviceCount = 0;
-                    foreach (var service in allRouteServices) //Generates a new vehicle for each service
+                    foreach (var service in allRouteServices) //Generates a new vehicle for each service, meaning that the number of services will be equal to the number of vehicles
                     {
-                        var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, stopsGraph);
+                        var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary);
                         v.AddService(service); //Adds the service
                         VehicleFleet.Add(v);
                         serviceCount++;
-
                     }
-
                     ConsoleLogger.Log(this.ToString() + route.ToString() + " - total of services added:" + serviceCount);
                 }
-
             }
             ConsoleLogger.Log(ToString() + "Vehicle average speed: " + _vehicleSpeed + " km/h.");
             ConsoleLogger.Log(ToString() + "Vehicle capacity: " + _vehicleCapacity + " seats.");
@@ -248,7 +241,7 @@ namespace Simulator
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
 
-            foreach (var route in _routes)
+            foreach (var route in TransportationNetwork.Routes)
             {
 
                 var allRouteVehicles = VehicleFleet.FindAll(v => v.ServiceIterator.Current.Trip.Route == route);
@@ -330,7 +323,7 @@ namespace Simulator
                 List<Event> customerEnterVehicleEvents = null;
                 if (vseEvt.Vehicle.ServiceIterator.Current != null && vseEvt.Vehicle.ServiceIterator.Current.HasStarted)
                 {
-                    int expectedDemand = RoutesDataObject.DemandsDataObject.GetDemand(vseEvt.Stop.Id,
+                    int expectedDemand = TransportationNetwork.DemandsDataObject.GetDemand(vseEvt.Stop.Id,
                         vseEvt.Vehicle.ServiceIterator.Current.Trip.Route.Id,
                         TimeSpan.FromSeconds(vseEvt.Time).Hours);
                     customerEnterVehicleEvents =
@@ -369,9 +362,9 @@ namespace Simulator
             //END OF INSERTION OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS--------------------------------------
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
-            var pickup = RoutesDataObject.Stops[rnd.Next(0, RoutesDataObject.Stops.Count)];
+            var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
             var delivery = pickup;
-            while (pickup == delivery) delivery = RoutesDataObject.Stops[rnd.Next(0, RoutesDataObject.Stops.Count)];
+            while (pickup == delivery) delivery = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
 
             var eventReq =
                 EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup,

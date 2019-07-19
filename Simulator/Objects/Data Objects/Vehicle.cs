@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Simulator.GraphLibrary;
+
 
 namespace Simulator.Objects.Data_Objects
 {
@@ -12,14 +12,14 @@ namespace Simulator.Objects.Data_Objects
 
         public IEnumerator<Service> ServiceIterator;
 
-        public Vehicle(int speed, int capacity, DirectedGraph<Stop, double> stopsGraph)
+        public Vehicle(int speed, int capacity, Dictionary<Tuple<Stop, Stop>, double> arcDictionary)
         {
             Id = Interlocked.Increment(ref _nextId);
             Speed = speed;
             Capacity = capacity;
-            StopsGraph = stopsGraph;
             Customers = new List<Customer>(Capacity);
             Services = new List<Service>();
+            ArcDictionary = arcDictionary;
         }
 
         public int Id { get; internal set; }
@@ -28,7 +28,7 @@ namespace Simulator.Objects.Data_Objects
 
         public string SeatsState => "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] ";
 
-        public DirectedGraph<Stop, double> StopsGraph { get; set; }
+        public Dictionary<Tuple<Stop,Stop>,double> ArcDictionary { get; internal set; }
 
         public bool IsFull => Customers.Count >= Capacity;
 
@@ -117,9 +117,10 @@ namespace Simulator.Objects.Data_Objects
             if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 Console.WriteLine(ToString() + "DEPARTED from " + stop + "at " + TimeSpan.FromSeconds(time) + ".");
-                TransverseToNextStop(
-                    StopsGraph.GetWeight(ServiceIterator.Current.StopsIterator.CurrentStop,
-                        ServiceIterator.Current.StopsIterator.NextStop), time);
+                var tuple = Tuple.Create(ServiceIterator.Current.StopsIterator.CurrentStop,
+                    ServiceIterator.Current.StopsIterator.NextStop);
+                ArcDictionary.TryGetValue(tuple, out var distance);
+                TransverseToNextStop(distance, time);
                 return true;
             }
 
