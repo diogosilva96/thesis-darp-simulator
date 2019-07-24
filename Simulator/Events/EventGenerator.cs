@@ -106,7 +106,29 @@ namespace Simulator.Events
 
             return evt;
         }
-        public List<Event> GenerateRouteEvents(Vehicle vehicle, int startTime)
+
+        public Event GenerateVehicleArriveEvent(Vehicle vehicle, int time)
+        {
+            var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
+            Event evt = _eventFactory.CreateEvent(0,time,vehicle,stop,null);
+            return evt;
+        }
+
+        public Event GenerateVehicleDepartEvent(Vehicle vehicle, int time)
+        {
+            if (vehicle.ServiceIterator.Current.StopsIterator.IsDone)
+            {
+                return null;
+            }
+            else
+            {
+                var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
+                var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
+                return evtDepart;
+            }
+        }
+
+        public List<Event> GenerateVehicleRouteArriveDepartEvents(Vehicle vehicle, int startTime)
         {
             Lambda = 1;
             var events = new List<Event>();
@@ -130,17 +152,15 @@ namespace Simulator.Events
                         time = Convert.ToInt32(time + travelTime);
                         vehicle.ServiceIterator.Current.StopsIterator.Next();                       
                     }
-                    var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
-                    var evtArrive = _eventFactory.CreateEvent(0, time, vehicle, stop, null);
+                    var evtArrive = GenerateVehicleArriveEvent(vehicle, time);
                     events.Add(evtArrive);
                     var waitTime = 1;
                     time = time + waitTime;
-                    if (!(vehicle.ServiceIterator.Current.StopsIterator.IsDone))//If stopIterator isn't done yet, creates new depart event
+                    var evtDepart = GenerateVehicleDepartEvent(vehicle, time);
+                    if (evtDepart != null)
                     {
-                        var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                         events.Add(evtDepart);
                     }
-
                     ind++;
                 }
                 vehicle.ServiceIterator.Current.StopsIterator.Reset();

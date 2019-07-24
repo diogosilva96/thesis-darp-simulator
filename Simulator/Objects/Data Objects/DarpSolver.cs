@@ -70,7 +70,7 @@ namespace Simulator.Objects.Data_Objects
            
         }
 
-        public void Solve()
+        public Assignment Solve()
         {
             // Setting first solution heuristic.
             RoutingSearchParameters searchParameters =
@@ -85,12 +85,10 @@ namespace Simulator.Objects.Data_Objects
             // Solve the problem.
             //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_dataModel.InitialRoutes, true);
             Assignment solution = _routing.SolveWithParameters(searchParameters);
-
-            //Prints the Solution
-            PrintSolution(solution);
+            return solution;
         }
 
-        public void PrintSolution(Assignment solution)
+        public void Print(Assignment solution)
         {
             // Inspect solution.
             long maxRouteDistance = 0;
@@ -120,7 +118,29 @@ namespace Simulator.Objects.Data_Objects
             }
             Console.WriteLine(this.ToString()+"Maximum distance of the routes: {0}m", maxRouteDistance);
             Console.WriteLine(this.ToString()+"Total distance traveled: {0}m", totalDistance);
+        }
 
+        public Dictionary<int,List<Stop>> SolutionToVehicleStopsDictionary(Assignment solution)
+        {
+            Dictionary<int, List<Stop>> vehicleStopsDictionary = new Dictionary<int, List<Stop>>();
+            for (int i = 0; i < _dataModel.VehicleNumber; ++i)
+            {
+                var vehicleSolutionStops = new List<Stop>();
+                var stopInd = 0;
+                var index = _routing.Start(i);
+                while (_routing.IsEnd(index) == false)
+                {
+                    stopInd = _manager.IndexToNode((int)index);
+                    vehicleSolutionStops.Add(_dataModel.GetStop(stopInd));
+                    index = solution.Value(_routing.NextVar(index));
+                }
+
+                stopInd = _manager.IndexToNode((int)index);
+                vehicleSolutionStops.Add(_dataModel.GetStop(stopInd));
+                vehicleStopsDictionary.Add(i,vehicleSolutionStops);
+            }
+
+            return vehicleStopsDictionary;
         }
     }
 }

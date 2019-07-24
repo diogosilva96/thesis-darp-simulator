@@ -53,9 +53,23 @@ namespace Simulator
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }
+
+        public void InitializeVehicleEvents()
+        {
+            foreach (var vehicle in VehicleFleet)
+                if (vehicle.Services.Count > 0) //if the vehicle has services to be done
+                {
+                    vehicle.ServiceIterator.Reset();
+                    vehicle.ServiceIterator.MoveNext();//initializes the serviceIterator
+                    var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.ServiceIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
+                    Events.Add(arriveEvt);
+                }
+
+            SortEvents();
+        }
         public void Simulate()
         {
-         
+            InitializeVehicleEvents();
             if (Events.Count > 0)
             {                
                 ConsoleLogger.Log(this.ToString()+"Press any key to start the simulation...");
@@ -76,16 +90,14 @@ namespace Simulator
             
         }
 
-
-
+        
+        public abstract void Append(Event evt);
         public override string ToString()
         {
             return "["+GetType().Name+"] ";
         }
 
         public abstract void Handle(Event evt);
-
-        public abstract void Append(Event evt);
 
         public void SortEvents()
         {

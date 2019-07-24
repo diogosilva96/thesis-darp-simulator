@@ -81,10 +81,11 @@ namespace Simulator.Objects.Data_Objects
                     Console.WriteLine(" ");
                     Console.WriteLine(ToString() + ServiceIterator.Current + " STARTED at " +
                                       TimeSpan.FromSeconds(time) + ".");
-                    
+
                 }
 
                 Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
+                
                 if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0
                 ) //this means that the service is complete
                 {
@@ -147,7 +148,7 @@ namespace Simulator.Objects.Data_Objects
                     ServiceIterator.Current.TotalDistanceTraveled + distance;
                 Console.WriteLine(ToString() + "started traveling to " +
                                   ServiceIterator.Current.StopsIterator.NextStop + " at " + t + ".");
-                ServiceIterator.Current.StopsIterator.Next();
+                
                 return true;
             }
 

@@ -31,6 +31,10 @@ namespace Simulator.Events
             return message;
         }
 
+        public Stop[] GetPickUpDelivery()
+        {
+            
+        }
         public override void Treat()
         {
             if (Customer != null && !AlreadyHandled)
