@@ -47,9 +47,8 @@ namespace Simulator
 
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-           
-            var routesDataObject = new RoutesDataObject(true);
-            TransportationNetwork = new TransportationNetwork(routesDataObject.Stops,routesDataObject.Routes,routesDataObject.DemandsDataObject);
+            
+            TransportationNetwork = new TransportationNetwork();
             EventGenerator = new EventGenerator();
             TotalEventsHandled = 0;
         }

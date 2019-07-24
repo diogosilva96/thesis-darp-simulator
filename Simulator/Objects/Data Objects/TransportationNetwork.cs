@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Simulator.Objects.Data_Objects
 {
-    public class TransportationNetwork
+    public class TransportationNetwork//Class that contains all data for the transportation network such as arc distances, all the routes, all the stops, the demands for each stop
     {
         public List<Route> Routes;
 
@@ -13,11 +13,13 @@ namespace Simulator.Objects.Data_Objects
         public Dictionary<Tuple<Stop, Stop>, double> ArcDictionary; //Dictionary with tuples of stops and its respective distance
 
         public DemandsDataObject DemandsDataObject;
-        public TransportationNetwork( List<Stop> stops, List<Route> routes, DemandsDataObject demandsDataObject)
+
+        public TransportationNetwork()
         {
-            Routes = routes;
-            Stops = stops;
-            DemandsDataObject = demandsDataObject;
+            var routesDataObject = new RoutesDataObject(true);
+            Routes = routesDataObject.Routes;
+            Stops = routesDataObject.Stops;
+            DemandsDataObject = routesDataObject.DemandsDataObject;
             ArcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
             LoadArcDictionary();
         }

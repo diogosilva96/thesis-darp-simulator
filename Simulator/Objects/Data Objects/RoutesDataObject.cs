@@ -23,7 +23,6 @@ namespace Simulator.Objects.Data_Objects
             Stops = new List<Stop>();
             Routes = new List<Route>();
             DemandsDataObject = new DemandsDataObject();
-
             Load();
         }
 
@@ -102,7 +101,7 @@ namespace Simulator.Objects.Data_Objects
         
         }
 
-        public void LoadStopDemands(List<string[]> demandsData)
+        private void LoadStopDemands(List<string[]> demandsData)
         {
             if (demandsData != null)
             {
@@ -126,7 +125,7 @@ namespace Simulator.Objects.Data_Objects
                                   " seconds.");
             }
         }
-        public void RemoveRedundantTrips() //simplifies trips removing all unnecessary trips from routes and adding the starttimes for each trip
+        private void RemoveRedundantTrips() //simplifies trips removing all unnecessary trips from routes and adding the starttimes for each trip
         {
 
             List<Trip> routeTrips = new List<Trip>();
@@ -190,7 +189,7 @@ namespace Simulator.Objects.Data_Objects
          
             Trips = routeTrips; 
         }
-        public void AssignUrbanStops()
+        private void AssignUrbanStops()
         {
             var urbanStops = new List<Stop>();
             if (Trips.Count > 0 && Trips != null)
@@ -215,7 +214,7 @@ namespace Simulator.Objects.Data_Objects
             Console.WriteLine(this.ToString()+urbanStops.Count+" urban stops were successfully assigned.");
         }
 
-        public void LoadTripStartTimeDictionary(List<string[]> tripStopTimesData)
+        private void LoadTripStartTimeDictionary(List<string[]> tripStopTimesData)
         {
 
             Console.WriteLine(this + "Loading Trip Start times dictionary...");
@@ -240,7 +239,7 @@ namespace Simulator.Objects.Data_Objects
                               " seconds.");
             _tripStartTimeDictionary = tripIdStartTimeDict;
         }
-        public void LoadRoutes(List<string[]> routesData)
+        private void LoadRoutes(List<string[]> routesData)
         {
             Console.WriteLine(this + "Loading Routes...");
             var watch = Stopwatch.StartNew();
@@ -260,7 +259,7 @@ namespace Simulator.Objects.Data_Objects
 
         }
 
-        public void LoadStops(List<string[]> stopsData)
+        private void LoadStops(List<string[]> stopsData)
         {
             Console.WriteLine(this + "Loading Stops...");
             var watch = Stopwatch.StartNew();
@@ -279,7 +278,7 @@ namespace Simulator.Objects.Data_Objects
             Console.WriteLine(this.ToString() + Stops.Count+" stops were successfully loaded in " + seconds +
                               " seconds.");
         }
-        public void LoadStopsIntoTrips(List<string[]> tripsStopData)
+        private void LoadStopsIntoTrips(List<string[]> tripsStopData)
         {
             
             if (tripsStopData != null)
@@ -319,7 +318,7 @@ namespace Simulator.Objects.Data_Objects
             }
         }
 
-        public List<string[]> GenerateListData(string path)
+        private List<string[]> GenerateListData(string path)
         {
             List<string[]> listData = null;  
             if (!File.Exists(path))
@@ -335,7 +334,7 @@ namespace Simulator.Objects.Data_Objects
             return listData;
         }
 
-    public void LoadTrips(List<string[]>tripsData)
+        private void LoadTrips(List<string[]>tripsData)
         {
             Console.WriteLine(this + "Loading Trips...");
                 var watch = Stopwatch.StartNew();

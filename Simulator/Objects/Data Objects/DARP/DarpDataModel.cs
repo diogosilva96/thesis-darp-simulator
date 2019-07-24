@@ -24,11 +24,20 @@ namespace Simulator.Objects.Data_Objects
             PickupsDeliveries = pickupsDeliveries;
         }
 
+        public DarpDataModel(int vehicleNumber, PickUpDeliveryDataObject pickUpDeliveryDataObject)
+        {
+            _stops = pickUpDeliveryDataObject.PickupDeliveryStops;
+            var distanceMatrixBuilder = new DistanceMatrixBuilder();
+            DistanceMatrix = distanceMatrixBuilder.Generate(_stops);
+            VehicleNumber = vehicleNumber;
+            DepotIndex = _stops.FindIndex(s => s.Id == pickUpDeliveryDataObject.Depot.Id);
+            PickupsDeliveries = pickUpDeliveryDataObject.GetPickupDeliveryIndexMatrix();
+        }
+
         public DarpDataModel(int vehicleNumber, int depotId, int[][] pickupsDeliveries, long[][] initialRoutes,
             List<Stop> stops)
         {
             _stops = stops;
-
             var distanceMatrixBuilder = new DistanceMatrixBuilder();
             DistanceMatrix = distanceMatrixBuilder.Generate(_stops);
             VehicleNumber = vehicleNumber;
