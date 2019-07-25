@@ -15,14 +15,20 @@ namespace Simulator.Objects.Data_Objects
 
         private bool _isInVehicle;
 
+        public bool AlreadyServed;
+
+        public int RequestTime;//request timestamp in seconds
+
         public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
-        public Customer(Stop pickUpStop,Stop deliveryStop)
+        public Customer(Stop pickUpStop,Stop deliveryStop, int requestTime)
         {
 
             PickupDelivery = new Stop[] {pickUpStop,deliveryStop};
             RealTimeWindow = new int[2];
             _isInVehicle = false;
+            RequestTime = requestTime;
+            AlreadyServed = false;
         }
 
         public override string ToString()
@@ -67,6 +73,7 @@ namespace Simulator.Objects.Data_Objects
                                        "at " + t.ToString() + ".");
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
+                    AlreadyServed = true;
                     if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
                     {
                         vehicle.ServiceIterator.Current.Finish(time); //Finishes the service

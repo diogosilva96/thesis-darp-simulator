@@ -38,6 +38,16 @@ namespace Simulator.Objects.Data_Objects
             HasStarted = false;
         }
 
+        public Service(int startTime)
+        {
+            StartTime = startTime;
+            IsDone = false;
+            StopsIterator = new StopsIterator(Trip.Stops);
+            ServicedCustomers = new List<Customer>();
+            TotalDistanceTraveled = 0;
+            HasStarted = false;
+        }
+
         public bool Start(int time)
         {
             if (!IsDone)

@@ -46,7 +46,7 @@ namespace Simulator.Objects.Data_Objects
             _routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
 
             // Add Distance constraint.
-            _routing.AddDimension(transitCallbackIndex, 0, 9999999,
+            _routing.AddDimension(transitCallbackIndex, 0, 99999999,
                 true,  // start cumul to zero
                 "Distance");
             RoutingDimension _distanceDimension = _routing.GetMutableDimension("Distance");
@@ -120,27 +120,45 @@ namespace Simulator.Objects.Data_Objects
             Console.WriteLine(this.ToString()+"Total distance traveled: {0}m", totalDistance);
         }
 
-        public Dictionary<int,List<Stop>> SolutionToVehicleStopsDictionary(Assignment solution)
+        public Dictionary<int, Tuple<List<Stop>, List<Customer>>> SolutionToVehicleStopSequenceCustomersDictionary(Assignment solution)
         {
-            Dictionary<int, List<Stop>> vehicleStopsDictionary = new Dictionary<int, List<Stop>>();
+            Dictionary<int,Tuple<List<Stop>,List<Customer>>> vehicleSolutionDictionary = new Dictionary<int, Tuple<List<Stop>, List<Customer>>>();
+            List<Customer> addedCustomers = new List<Customer>(); //auxiliary list to make sure that the same customer isn't assigned to more than one vehicle
             for (int i = 0; i < _dataModel.VehicleNumber; ++i)
             {
-                var vehicleSolutionStops = new List<Stop>();
+                List<Stop> stopSeq = new List<Stop>();
+                List<Customer> customers = new List<Customer>();
                 var stopInd = 0;
                 var index = _routing.Start(i);
                 while (_routing.IsEnd(index) == false)
                 {
                     stopInd = _manager.IndexToNode((int)index);
-                    vehicleSolutionStops.Add(_dataModel.GetStop(stopInd));
+                    stopSeq.Add(_dataModel.GetStop(stopInd));
                     index = solution.Value(_routing.NextVar(index));
                 }
 
                 stopInd = _manager.IndexToNode((int)index);
-                vehicleSolutionStops.Add(_dataModel.GetStop(stopInd));
-                vehicleStopsDictionary.Add(i,vehicleSolutionStops);
+                stopSeq.Add(_dataModel.GetStop(stopInd));
+                foreach (var customer in _dataModel.PickupDeliveryCustomers)
+                {
+                    var pickupIndex = stopSeq.FindIndex(s => s == customer.PickupDelivery[0]);
+                    var deliveryIndex = stopSeq.FindIndex(s => s == customer.PickupDelivery[1]);
+                    if (pickupIndex < deliveryIndex) //if pickup index is lower than the delivery index it means that this customer can be assigned to this vehicle.
+                    {
+                        if (!addedCustomers.Contains(customer)) //this check, makes sure that the same customer isn't assigned to more than one vehicle
+                        {
+                            customers.Add(customer);
+                            addedCustomers.Add(customer);
+                        }
+                    }
+                }
+
+                var stopSeqCustomersTuple = Tuple.Create(stopSeq, customers);
+                vehicleSolutionDictionary.Add(i,stopSeqCustomersTuple);
             }
 
-            return vehicleStopsDictionary;
+            return vehicleSolutionDictionary;
         }
+
     }
 }

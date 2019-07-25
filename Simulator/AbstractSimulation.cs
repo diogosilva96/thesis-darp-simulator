@@ -33,7 +33,11 @@ namespace Simulator
 
         protected int SimulationEndHour;
 
-        
+        protected int VehicleSpeed;
+
+        protected int VehicleCapacity;
+
+        protected DarpDataModel DarpDataModel;
 
         protected AbstractSimulation()
         {
@@ -53,21 +57,13 @@ namespace Simulator
             TotalEventsHandled = 0;
         }
 
-        public void InitializeVehicleEvents()
-        {
-            foreach (var vehicle in VehicleFleet)
-                if (vehicle.Services.Count > 0) //if the vehicle has services to be done
-                {
-                    vehicle.ServiceIterator.Reset();
-                    vehicle.ServiceIterator.MoveNext();//initializes the serviceIterator
-                    var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.ServiceIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
-                    Events.Add(arriveEvt);
-                }
+        public abstract void InitializeVehicleEvents();
 
-            SortEvents();
-        }
+        public abstract void PrintSimulationSettings();
+       
         public void Simulate()
         {
+            PrintSimulationSettings();
             InitializeVehicleEvents();
             if (Events.Count > 0)
             {                
@@ -89,7 +85,8 @@ namespace Simulator
             
         }
 
-        
+        public abstract void SimulationOptions();
+
         public abstract void Append(Event evt);
         public override string ToString()
         {

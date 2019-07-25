@@ -17,7 +17,7 @@ namespace Simulator.Objects
 
             long[,] distanceMatrix = new long[stops.Count, stops.Count];
             HaversineDistanceCalculator distanceCalculator = new HaversineDistanceCalculator();
-            Console.WriteLine(this.ToString()+"Generating Distance Matrix...");
+            //Console.WriteLine(this.ToString()+"Generating Distance Matrix...");
             for (int i = 0; i < stops.Count; i++)
             {
                 for (int j = 0; j < stops.Count; j++)
@@ -36,7 +36,7 @@ namespace Simulator.Objects
                     distanceMatrix[i, j] = distance;
                 }
             }
-            Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
+            //Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
  
             return distanceMatrix;
         }

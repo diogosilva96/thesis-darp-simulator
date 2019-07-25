@@ -97,6 +97,21 @@ namespace Simulator.Objects
             }
         }
 
+        public double LongestRouteDistance
+        {
+            get
+            {
+                try
+                {
+                    return _completedServices.Max(s => s.TotalDistanceTraveled);
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
+
         public double TotalDistanceTraveled
         {
             get
@@ -164,6 +179,7 @@ namespace Simulator.Objects
             toPrintList.Add("Average number of requests per stop:" + AverageNumberRequestsPerStop);
             toPrintList.Add("Longest route duration: " + TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes +
                             " minutes.");
+            toPrintList.Add("Longest route distance: "+ LongestRouteDistance+" meters.");
             return toPrintList;
         }
 

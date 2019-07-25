@@ -251,6 +251,8 @@ namespace Simulator.Objects.Data_Objects
                     Routes.Add(route);                    
                 }
             }
+            var r = new Route(1000,"FLEX","Flexible Route","Flexible routing",3);
+            Routes.Add(r);
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             var seconds = elapsedMs * 0.001;
