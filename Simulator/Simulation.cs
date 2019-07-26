@@ -18,7 +18,9 @@ namespace Simulator
 
         private int _validationsCounter;
 
-        private Dictionary<int, Tuple<List<Stop>, List<Customer>>> solutionVehicleCustomersDictionary;
+        private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> solutionVehicleCustomersDictionary;
+
+        public DarpSolver Solver = new DarpSolver();
 
 
         public Simulation()
@@ -49,7 +51,7 @@ namespace Simulator
 
         public override void SimulationOptions()
         {
-            DarpDataModel = new DarpDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 2);
+            DarpDataModel = new DarpDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183));
             var numOptions = 2;
             ConsoleLogger.Log("Please Select one of the options:");
             ConsoleLogger.Log("1 - Standard Bus route simulation (static routing)");
@@ -111,7 +113,7 @@ namespace Simulator
             var route = TransportationNetwork.Routes[0];
             Random rand = new Random();
             var service = route.AllRouteServices[0];
-            var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary);
+            var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddService(service); //Adds the service to the vehicle
             VehicleFleet.Add(v);
             
@@ -126,25 +128,31 @@ namespace Simulator
             //var serviceStops = service.Trip.Stops;
             //DarpDataModel.AddInitialRoute(serviceStops);
 
-            ConsoleLogger.Log("Initial solution:");
-            DarpDataModel.PrintPickupDeliveries();
-            DarpSolver darpSolver = new DarpSolver(DarpDataModel);
-            var solution = darpSolver.Solve();
-            darpSolver.Print(solution);
-            var vehicleStopSequence = darpSolver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
-            solutionVehicleCustomersDictionary = darpSolver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
-
-            foreach (var dictionary in vehicleStopSequence)
+            //Creates two available vehicles to be able to perform flexible routing
+            for (int i = 0; i < 2; i++)
             {
-                var trip = new Trip(10000 + dictionary.Key, "Flexible trip " + dictionary.Key);
-                trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
-                trip.Stops = dictionary.Value.Item1;
-                var s = new Service(trip, new Random().Next(1, 10000));
-                var vehicle = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary);
-                vehicle.AddService(s);
+                var vehicle = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, true);
+                DarpDataModel.AddVehicle(vehicle);
                 VehicleFleet.Add(vehicle);
             }
-        
+
+            ConsoleLogger.Log("Initial solution:");
+            DarpDataModel.PrintPickupDeliveries();
+            Solver.Init(DarpDataModel, 1);
+            var solution = Solver.Solve();
+            Solver.Print(solution);
+            solutionVehicleCustomersDictionary = Solver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
+
+            foreach (var dictionary in solutionVehicleCustomersDictionary)
+            {
+                var trip = new Trip(10000 + dictionary.Key.Id, "Flexible trip " + dictionary.Key.Id);
+                trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
+                trip.Stops = dictionary.Value.Item1;
+                var s = new Service(trip, new Random().Next(0, 60*60*24)); //random start time between hour 0 and 24
+                var vehicle = VehicleFleet.Find(v1 => v1.Id == dictionary.Key.Id); //finds the vehicle in the vehiclefleet
+                vehicle.AddService(s); //adds the new flexible service to the vehicle
+            }
+            
         }
 
 
@@ -177,7 +185,7 @@ namespace Simulator
                     var serviceCount = 0;
                     foreach (var service in allRouteServices) //Generates a new vehicle for each service, meaning that the number of services will be equal to the number of vehicles
                     {
-                        var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary);
+                        var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
                         v.AddService(service); //Adds the service
                         VehicleFleet.Add(v);
                         serviceCount++;
@@ -225,10 +233,10 @@ namespace Simulator
             {
                 ConsoleLogger.Log("Final DARP  solution:");
                 DarpDataModel.PrintPickupDeliveries();
-                DarpSolver darpSolver = new DarpSolver(DarpDataModel);
-                var solution = darpSolver.Solve();
-                darpSolver.Print(solution);
-                var solutionStops = darpSolver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
+                Solver.Init(DarpDataModel,1);
+                var solution = Solver.Solve();
+                Solver.Print(solution);
+                var solutionStops = Solver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
             }
             //end of darp solution
 
@@ -343,9 +351,8 @@ namespace Simulator
                 var maxInsertedTime = Math.Max(lastInsertedEnterTime, lastInsertedLeaveTime); ; //gets the highest value of the last insertion in order to maintain precedence constraints for the depart evt, meaning that the stop depart only happens after every customer has already entered and left the vehicle on that stop location
 
                 //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS
-                int vehicleInd = eventArrive.Vehicle.Id - 2; //change this in order to use the id of the vehicle instead of the index
-     
-                    solutionVehicleCustomersDictionary.TryGetValue(vehicleInd, out var solutionDictionaryValue); //Tries to get the customer dictionary for the current vehicle;
+
+                solutionVehicleCustomersDictionary.TryGetValue(eventArrive.Vehicle, out var solutionDictionaryValue); //Tries to get the customer dictionary for the current vehicle;
                     if (solutionDictionaryValue != null)
                     {
                         var customersToEnterAtCurrentStop =
@@ -386,7 +393,7 @@ namespace Simulator
                     var stopTuple = Tuple.Create(eventDepart.Vehicle.ServiceIterator.Current.StopsIterator.CurrentStop,
                         eventDepart.Vehicle.ServiceIterator.Current.StopsIterator.NextStop);
                     eventDepart.Vehicle.ArcDictionary.TryGetValue(stopTuple, out var distance);
-                    var travelTime = eventDepart.Vehicle.TravelTime(distance); //Gets the time it takes to travel from the currentStop to the nextStop
+                    var travelTime = new Calculator().CalculateTravelTime(eventDepart.Vehicle.Speed,distance);//Gets the time it takes to travel from the currentStop to the nextStop
                     var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
                     eventDepart.Vehicle.ServiceIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
                     var arriveEvent = EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle, nextArrivalTime); //generates the arrive event

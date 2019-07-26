@@ -3,9 +3,9 @@
 namespace Simulator.Objects
 {
     public class
-        HaversineDistanceCalculator //class to calculate the distance between two points using haversine formula (calculates the shortest distance between two latlong points over the earth surface - using as the crow-flies distance (ignoring hills,etc))
+        Calculator  
     {
-        public double Calculate(double lat1, double lon1, double lat2, double lon2)
+        public double CalculateHaversineDistance(double lat1, double lon1, double lat2, double lon2)//calculates the distance between two points using haversine formula(calculates the shortest distance between two latlong points over the earth surface - using as the crow-flies distance(ignoring hills, etc))
         {
             //Radian = (PI*Degree)/180
             double R = 6371000; //earth radius in meters
@@ -19,6 +19,15 @@ namespace Simulator.Objects
             var distance = R * c;
 
             return distance;
+        }
+
+        public double CalculateTravelTime(int speedInKilometerPerHour, double distance)
+        {
+            var speedInMetersPerSecond = speedInKilometerPerHour / 3.6; //speed in m/s
+            var timeToTravel =
+                distance /
+                speedInMetersPerSecond; // time it takes to travel the distance, travelTime [seconds] = (Distance [meters]/Speed [meters per second])
+            return timeToTravel;
         }
     }
 }

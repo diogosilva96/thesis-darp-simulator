@@ -17,17 +17,17 @@ namespace Simulator.Objects.Data_Objects
 
         public long[,] DistanceMatrix;
 
-        public int VehicleNumber;
+        public int VehicleNumber => Vehicles.Count;
 
-        public int[] VehiclesIds;
+        public List<Vehicle> Vehicles;
 
-        public long[][] InitialRoutes;
+        public long[][] InitialRoutes; 
 
         private readonly List<Stop> _pickupDeliveryStops; // a list with all the distinct stops for the pickup and deliveries
 
-        public DarpDataModel(Stop depot,int vehicleNumber)
+        public DarpDataModel(Stop depot)
         {
-            VehicleNumber = vehicleNumber;
+            Vehicles = new List<Vehicle>();
             PickupDeliveryCustomers = new List<Customer>();
             _depot = depot;
             _pickupDeliveryStops = new List<Stop>();
@@ -47,8 +47,9 @@ namespace Simulator.Objects.Data_Objects
 
         private void UpdateDistanceMatrix()
         {
-            DistanceMatrix = new DistanceMatrixBuilder().Generate(_pickupDeliveryStops);
+            DistanceMatrix = new MatrixBuilder().GetDistanceMatrix(_pickupDeliveryStops);
         }
+
         public void AddInitialRoute(List<Stop> stopSequence)
         {
             // Initial route creation
@@ -71,6 +72,14 @@ namespace Simulator.Objects.Data_Objects
             {
                 PickupDeliveryCustomers.Add(customer);
                 AddPickupDeliveryStops(customer);
+            }
+        }
+
+        public void AddVehicle(Vehicle vehicle)
+        {
+            if (!Vehicles.Contains(vehicle) && vehicle.FlexibleRouting)
+            {
+                Vehicles.Add(vehicle);
             }
         }
 

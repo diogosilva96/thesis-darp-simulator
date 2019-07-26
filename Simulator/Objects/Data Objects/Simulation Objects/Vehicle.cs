@@ -12,7 +12,7 @@ namespace Simulator.Objects.Data_Objects
 
         public IEnumerator<Service> ServiceIterator;
 
-        public Vehicle(int speed, int capacity, Dictionary<Tuple<Stop, Stop>, double> arcDictionary)
+        public Vehicle(int speed, int capacity, Dictionary<Tuple<Stop, Stop>, double> arcDictionary, bool flexibleRouting)
         {
             Id = Interlocked.Increment(ref _nextId);
             Speed = speed;
@@ -20,8 +20,10 @@ namespace Simulator.Objects.Data_Objects
             Customers = new List<Customer>(Capacity);
             Services = new List<Service>();
             ArcDictionary = arcDictionary;
+            FlexibleRouting = flexibleRouting;
         }
 
+        public bool FlexibleRouting; // true if the vehicle does flexible routing
         public int Id { get; internal set; }
         public int Speed { get; internal set; } // vehicle speed in km/h
         public int Capacity { get; internal set; }
@@ -35,16 +37,6 @@ namespace Simulator.Objects.Data_Objects
         public List<Service> Services { get; internal set; }
 
         public List<Customer> Customers { get; internal set; }
-
-
-        public double TravelTime(double distance)
-        {
-            var vehicleSpeed = Speed / 3.6; //vehicle speed in m/s
-            var timeToTravel =
-                distance /
-                vehicleSpeed; // time it takes for the vehicle to travel the distance = distance(m)/vehicleSpeed(m/s)
-            return timeToTravel;
-        }
 
         public bool AddCustomer(Customer customer)
         {
