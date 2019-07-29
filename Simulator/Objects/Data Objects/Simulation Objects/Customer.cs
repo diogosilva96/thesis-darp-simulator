@@ -74,16 +74,16 @@ namespace Simulator.Objects.Data_Objects
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
                     AlreadyServed = true;
-                    if (vehicle.ServiceIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
+                    if (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
                     {
-                        vehicle.ServiceIterator.Current.Finish(time); //Finishes the service
-                        Console.WriteLine(vehicle.ToString()+vehicle.ServiceIterator.Current + " FINISHED at " +
-                                           TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.ServiceIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
-                        vehicle.ServiceIterator.MoveNext();
-                        if (vehicle.ServiceIterator.Current == null)
+                        vehicle.TripIterator.Current.Finish(time); //Finishes the service
+                        Console.WriteLine(vehicle.ToString()+vehicle.TripIterator.Current + " FINISHED at " +
+                                           TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.TripIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
+                        vehicle.TripIterator.MoveNext();
+                        if (vehicle.TripIterator.Current == null)
                         {
-                            vehicle.ServiceIterator.Reset();
-                            vehicle.ServiceIterator.MoveNext();
+                            vehicle.TripIterator.Reset();
+                            vehicle.TripIterator.MoveNext();
                         }
                     }
 

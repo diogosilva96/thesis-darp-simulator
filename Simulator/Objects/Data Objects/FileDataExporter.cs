@@ -94,12 +94,9 @@ namespace Simulator.Objects.Data_Objects
                 {
                     foreach (var trip in route.Trips)
                     {
-                        foreach (var startTime in trip.StartTimes)
-                        {
-
-                            file.WriteLine(id + "," + trip.Id + "," + TimeSpan.FromSeconds(startTime).ToString());
+                       
+                            file.WriteLine(id + "," + trip.Id + "," + TimeSpan.FromSeconds(trip.StartTime).ToString());
                             id++;
-                        }
                     }
                 }
             }

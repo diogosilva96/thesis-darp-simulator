@@ -11,20 +11,20 @@ namespace Simulator.Events
         public Stop Stop { get;internal set; }
         public Vehicle Vehicle { get; internal set; }
 
-        public Service Service { get; internal set; }
+        public Trip Trip { get; internal set; }
         public VehicleStopEvent(int category, int time, Vehicle vehicle, Stop stop) : base(category, time)
         {
             Category = category;//category 0 = arrived stop, category 1 = left stop
             Time = time;
             Vehicle = vehicle;
             Stop = stop;
-            Service = vehicle.ServiceIterator.Current;
+            Trip = vehicle.TripIterator.Current;
         }
 
 
         public override void Treat()
         {
-            if (Vehicle != null && Stop != null && !AlreadyHandled && Vehicle.ServiceIterator.Current == Service)
+            if (Vehicle != null && Stop != null && !AlreadyHandled && Vehicle.TripIterator.Current == Trip)
             {
                 if (Category == 0)
                 {
@@ -49,7 +49,7 @@ namespace Simulator.Events
             string message = "";
             if (Stop != null && Vehicle != null)
             {
-                message = timestamp + splitter+ this.ToString() +splitter+"Vehicle:"+ Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "ServiceStartTime:" + Service.StartTime+splitter+Stop;
+                message = timestamp + splitter+ this.ToString() +splitter+"Vehicle:"+ Vehicle.Id+splitter+ "Trip:" + Trip.Id + splitter + "ServiceStartTime:" + Trip.StartTime+splitter+Stop;
             }
 
             return message;

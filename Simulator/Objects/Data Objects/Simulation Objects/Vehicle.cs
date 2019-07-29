@@ -10,7 +10,7 @@ namespace Simulator.Objects.Data_Objects
     {
         private static int _nextId;
 
-        public IEnumerator<Service> ServiceIterator;
+        public IEnumerator<Trip> TripIterator;
 
         public Vehicle(int speed, int capacity, Dictionary<Tuple<Stop, Stop>, double> arcDictionary, bool flexibleRouting)
         {
@@ -18,7 +18,7 @@ namespace Simulator.Objects.Data_Objects
             Speed = speed;
             Capacity = capacity;
             Customers = new List<Customer>(Capacity);
-            Services = new List<Service>();
+            ServiceTrips = new List<Trip>();
             ArcDictionary = arcDictionary;
             FlexibleRouting = flexibleRouting;
         }
@@ -34,7 +34,7 @@ namespace Simulator.Objects.Data_Objects
 
         public bool IsFull => Customers.Count >= Capacity;
 
-        public List<Service> Services { get; internal set; }
+        public List<Trip> ServiceTrips { get; internal set; }
 
         public List<Customer> Customers { get; internal set; }
 
@@ -42,7 +42,7 @@ namespace Simulator.Objects.Data_Objects
         {
             if (customer == null) throw new ArgumentNullException();
 
-            ServiceIterator.Current.TotalRequests++;
+            TripIterator.Current.TotalRequests++;
             if (IsFull) return false;
             if (Customers.Contains(customer)) return false;
             Customers.Add(customer);
@@ -50,13 +50,13 @@ namespace Simulator.Objects.Data_Objects
             return true;
         }
 
-        public bool AddService(Service service)
+        public bool AddTrip(Trip trip)
         {
-            if (!Services.Contains(service))
+            if (!ServiceTrips.Contains(trip))
             {
-                Services.Add(service);
-                Services = Services.OrderBy(s => s.StartTime).ToList(); //Orders services by service start_time
-                ServiceIterator = Services.GetEnumerator();
+                ServiceTrips.Add(trip);
+                ServiceTrips = ServiceTrips.OrderBy(s => s.StartTime).ToList(); //Orders services by trip start_time
+                TripIterator = ServiceTrips.GetEnumerator();
                 return true;
             }
 
@@ -65,32 +65,32 @@ namespace Simulator.Objects.Data_Objects
 
         public bool Arrive(Stop stop, int time)
         {
-            if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
+            if (TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                if (ServiceIterator.Current.StopsIterator.CurrentIndex == 0)
+                if (TripIterator.Current.StopsIterator.CurrentIndex == 0)
                 {
-                    ServiceIterator.Current.Start(time);
+                    TripIterator.Current.Start(time);
                     Console.WriteLine(" ");
-                    Console.WriteLine(ToString() + ServiceIterator.Current + " STARTED at " +
+                    Console.WriteLine(ToString() + TripIterator.Current + " STARTED at " +
                                       TimeSpan.FromSeconds(time) + ".");
 
                 }
 
                 Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
                 
-                if (ServiceIterator.Current.StopsIterator.IsDone && Customers.Count == 0
-                ) //this means that the service is complete
+                if (TripIterator.Current.StopsIterator.IsDone && Customers.Count == 0
+                ) //this means that the trip is complete
                 {
-                    ServiceIterator.Current.Finish(time); //Finishes the service
-                    Console.WriteLine(ToString() + ServiceIterator.Current + " FINISHED at " +
+                    TripIterator.Current.Finish(time); //Finishes the trip
+                    Console.WriteLine(ToString() + TripIterator.Current + " FINISHED at " +
                                       TimeSpan.FromSeconds(time) + ", Duration:" +
-                                      Math.Round(TimeSpan.FromSeconds(ServiceIterator.Current.RouteDuration)
+                                      Math.Round(TimeSpan.FromSeconds(TripIterator.Current.RouteDuration)
                                           .TotalMinutes) + " minutes.");
-                    ServiceIterator.MoveNext();
-                    if (ServiceIterator.Current == null)
+                    TripIterator.MoveNext();
+                    if (TripIterator.Current == null)
                     {
-                        ServiceIterator.Reset();
-                        ServiceIterator.MoveNext();
+                        TripIterator.Reset();
+                        TripIterator.MoveNext();
                     }
                 }
 
@@ -107,11 +107,11 @@ namespace Simulator.Objects.Data_Objects
 
         public bool Depart(Stop stop, int time)
         {
-            if (ServiceIterator.Current.StopsIterator.CurrentStop == stop)
+            if (TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 Console.WriteLine(ToString() + "DEPARTED from " + stop + "at " + TimeSpan.FromSeconds(time) + ".");
-                var tuple = Tuple.Create(ServiceIterator.Current.StopsIterator.CurrentStop,
-                    ServiceIterator.Current.StopsIterator.NextStop);
+                var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
+                    TripIterator.Current.StopsIterator.NextStop);
                 ArcDictionary.TryGetValue(tuple, out var distance);
                 TransverseToNextStop(distance, time);
                 return true;
@@ -126,20 +126,20 @@ namespace Simulator.Objects.Data_Objects
 
             if (!Customers.Contains(customer)) return false;
             Customers.Remove(customer);
-            ServiceIterator.Current.ServicedCustomers.Add(customer);
+            TripIterator.Current.ServicedCustomers.Add(customer);
             return true;
 
         }
 
         public bool TransverseToNextStop(double distance, int startTime)
         {
-            if (ServiceIterator.Current.StopsIterator != null && !ServiceIterator.Current.StopsIterator.IsDone)
+            if (TripIterator.Current.StopsIterator != null && !TripIterator.Current.StopsIterator.IsDone)
             {
                 var t = TimeSpan.FromSeconds(startTime);
-                ServiceIterator.Current.TotalDistanceTraveled =
-                    ServiceIterator.Current.TotalDistanceTraveled + distance;
+                TripIterator.Current.TotalDistanceTraveled =
+                    TripIterator.Current.TotalDistanceTraveled + distance;
                 Console.WriteLine(ToString() + "started traveling to " +
-                                  ServiceIterator.Current.StopsIterator.NextStop + " at " + t + ".");
+                                  TripIterator.Current.StopsIterator.NextStop + " at " + t + ".");
                 
                 return true;
             }

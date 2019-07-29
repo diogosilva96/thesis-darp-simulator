@@ -59,28 +59,28 @@ namespace Simulator.Events
             List<Event> events = new List<Event>();
             //Lambda = lambda; // remove??
 
-            if (vehicle.ServiceIterator.Current.Trip != null)
+            if (vehicle.TripIterator.Current != null)
             { 
                 var t = TimeSpan.FromSeconds(time);
                 int currentHour = t.Hours;
-                var currentRoute =vehicle.ServiceIterator.Current.Trip.Route;
+                var currentRoute =vehicle.TripIterator.Current.Route;
 
                 var sample = expectedDemand;
                 //var sample = ((Poisson)_distribution).Sample();
                 //check if distribution will be used or the linear use of the inputs
                 
                 
-                int currentStopIndex = vehicle.ServiceIterator.Current.StopsIterator.CurrentIndex;
+                int currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
 
-                if (sample > 0 && currentStopIndex < vehicle.ServiceIterator.Current.Trip.Stops.Count - 1 && vehicle.ServiceIterator.Current.StopsIterator.CurrentStop == stop) // generation of customers at each stop
+                if (sample > 0 && currentStopIndex < vehicle.TripIterator.Current.StopsIterator.TotalStops - 1 && vehicle.TripIterator.Current.StopsIterator.CurrentStop == stop) // generation of customers at each stop
                 {
                     var enterTime = time;
                     for (int i = 1; i <= sample; i++)
                     {
                         var rnd = new Random();
                         int dropOffStopIndex = rnd.Next(currentStopIndex + 1,
-                            vehicle.ServiceIterator.Current.Trip.Stops.Count - 1);
-                        Stop dropOffStop = vehicle.ServiceIterator.Current.Trip.Stops[dropOffStopIndex];
+                            vehicle.TripIterator.Current.StopsIterator.TotalStops - 1);
+                        Stop dropOffStop = vehicle.TripIterator.Current.Stops[dropOffStopIndex];
                         Customer customer = new Customer(stop, dropOffStop,time);
                         if (!vehicle.IsFull)
                         { 
@@ -113,20 +113,20 @@ namespace Simulator.Events
 
         public Event GenerateVehicleArriveEvent(Vehicle vehicle, int time)
         {
-            var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
+            var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
             Event evt = _eventFactory.CreateEvent(0,time,vehicle,stop,null);
             return evt;
         }
 
         public Event GenerateVehicleDepartEvent(Vehicle vehicle, int time)
         {
-            if (vehicle.ServiceIterator.Current.StopsIterator.IsDone)
+            if (vehicle.TripIterator.Current.StopsIterator.IsDone)
             {
                 return null;
             }
             else
             {
-                var stop = vehicle.ServiceIterator.Current.StopsIterator.CurrentStop;
+                var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                 var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                 return evtDepart;
             }

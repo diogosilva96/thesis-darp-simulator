@@ -10,7 +10,7 @@ namespace Simulator.Events
         //Event when a customer enters or leaves a vehicle
         public Customer Customer { get; internal set; }
         public Vehicle Vehicle { get; internal set; }
-        public Service Service { get; internal set; }
+        public Trip Trip { get; internal set; }
         private bool CategorySuccess { get; set; } //if true vehicle was not full and customer entered or left vehicle
 
         public CustomerVehicleEvent(int category, int time, Customer customer, Vehicle vehicle) : base(category, time)
@@ -19,7 +19,7 @@ namespace Simulator.Events
             Time = time;
             Customer = customer;
             Vehicle = vehicle;
-            Service = vehicle.ServiceIterator.Current;
+            Trip= vehicle.TripIterator.Current;
             CategorySuccess = false;
         }
 
@@ -30,7 +30,7 @@ namespace Simulator.Events
             string message = "";
             if (Customer != null && Vehicle != null)
             {
-                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Service.Trip.Id + splitter + "Service StartTime:" + Service.StartTime + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
+                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Trip.Id + splitter + "Trip StartTime:" + Trip.StartTime + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
             }
 
             return message;
@@ -44,7 +44,7 @@ namespace Simulator.Events
             stopId = Category == 2 ? Customer.PickupDelivery[0].Id : Customer.PickupDelivery[1].Id;
             var catSuccess = CategorySuccess == true ? 1 : 0;
 
-            message = validationId + "," + Customer.Id + "," + Category + ","+catSuccess+"," + Vehicle.Id + ","+Service.Trip.Route.Id+"," + Service.Trip.Id +","+ TimeSpan.FromSeconds(Service.StartTime).ToString()+"," + stopId + "," +
+            message = validationId + "," + Customer.Id + "," + Category + ","+catSuccess+"," + Vehicle.Id + ","+Trip.Route.Id+"," + Trip.Id +","+ TimeSpan.FromSeconds(Trip.StartTime).ToString()+"," + stopId + "," +
                       TimeSpan.FromSeconds(Time).ToString();
                        
             
@@ -54,7 +54,7 @@ namespace Simulator.Events
 
         public override void Treat()
         {
-            if (Vehicle != null && Customer != null && !AlreadyHandled && Vehicle.ServiceIterator.Current == Service)
+            if (Vehicle != null && Customer != null && !AlreadyHandled && Vehicle.TripIterator.Current == Trip)
             {
                 if (Category == 2)
                 {

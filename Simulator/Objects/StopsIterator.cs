@@ -30,7 +30,6 @@ namespace Simulator.Objects
             Reset();
         }
 
-        
         public void Reset()
         {
             if (_stops != null)

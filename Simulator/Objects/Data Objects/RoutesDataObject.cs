@@ -32,9 +32,6 @@ namespace Simulator.Objects.Data_Objects
         }
 
 
-
-        private Dictionary<int, int> _tripStartTimeDictionary;
-
         private void Load()
         {
             var watch = Stopwatch.StartNew();
@@ -68,9 +65,8 @@ namespace Simulator.Objects.Data_Objects
                 FileDataReader fdr = new FileDataReader();
                 var tripsStopData = fdr.ImportData(tripStopsPath, ',');
                 LoadStopsIntoTrips(tripsStopData);  
-                LoadTripStartTimeDictionary(tripsStopData);
+                LoadTripStartTimes(tripsStopData);
                 AssignUrbanStops();
-                RemoveRedundantTrips();
                 //dataExporter.ExportStops(Stops, Path.Combine(Environment.CurrentDirectory, @"stops.txt"));
                 //dataExporter.ExportTrips(Routes, Path.Combine(Environment.CurrentDirectory, @"trips.txt"));
                 //dataExporter.ExportTripStopSequence(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_stops.txt"));
@@ -90,17 +86,41 @@ namespace Simulator.Objects.Data_Objects
             }
 
             LoadStopDemands(demandsData);
+            ClearDuplicateTrips();
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine(this+"All the necessary data was successfully generated in "+elapsedMs*0.001+" seconds.");
             string str;
             str = _urbanOnly ? "Urban " : "";
             Console.WriteLine(this+"Total of "+str+"Routes:"+Routes.Count);
-            Console.WriteLine(this+"Total of "+str+"Route Trips:"+Routes.Sum(r=>r.Trips.Count));
+            Console.WriteLine(this+"Total of "+str+"Route ServiceTrips:"+Routes.Sum(r=>r.Trips.Count));
             Console.WriteLine(this+"Total of "+str+"Stops:"+Stops.Count);
         
         }
 
+        private void ClearDuplicateTrips()//Clears the duplicate trips (with the same start time and same stopsequence)
+        {
+            Console.WriteLine(this + "Clearing duplicate trips...");//REVER!!!
+            var watch = Stopwatch.StartNew();
+            var duplicateCount = 0;
+            foreach (var route in Routes)
+            {
+                foreach (var trip in route.Trips)
+                {
+                   var foundTrips = route.Trips.FindAll(t => t.Stops == trip.Stops && t.StartTime == trip.StartTime && t.Id != trip.Id);
+                   if (foundTrips.Count>0)
+                   {
+                       duplicateCount++;
+                   }
+                }
+                
+            }
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            var seconds = elapsedMs * 0.001;
+            Console.WriteLine(this.ToString() + "Duplicate trips (Total:"+duplicateCount+") were successfully cleared in " + seconds +
+                              " seconds.");
+        }
         private void LoadStopDemands(List<string[]> demandsData)
         {
             if (demandsData != null)
@@ -109,15 +129,16 @@ namespace Simulator.Objects.Data_Objects
                 var watch = Stopwatch.StartNew();
                 foreach (var demandData in demandsData)
                 {
-                    var route = Routes.Find(r=>r.Id == int.Parse(demandData[0]));
-                    var stop = Stops.Find(s=>s.Id==int.Parse(demandData[1]));
+                    var route = Routes.Find(r => r.Id == int.Parse(demandData[0]));
+                    var stop = Stops.Find(s => s.Id == int.Parse(demandData[1]));
                     var hour = int.Parse(demandData[2]);
-                    var demand = (int)Math.Round(Convert.ToDouble(double.Parse(demandData[3])));
+                    var demand = (int) Math.Round(Convert.ToDouble(double.Parse(demandData[3])));
                     if (stop != null && route != null)
                     {
                         DemandsDataObject.AddDemand(stop.Id, route.Id, hour, demand);
                     }
                 }
+
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
                 var seconds = elapsedMs * 0.001;
@@ -125,73 +146,10 @@ namespace Simulator.Objects.Data_Objects
                                   " seconds.");
             }
         }
-        private void RemoveRedundantTrips() //simplifies trips removing all unnecessary trips from routes and adding the starttimes for each trip
-        {
 
-            List<Trip> routeTrips = new List<Trip>();
-            int id = 1;
-            int totalTrips = Routes.Sum(r => r.Trips.Count);
-            Console.WriteLine(this+"Removing redundant trips...");
-            var watch = Stopwatch.StartNew();
-            foreach (var route in Routes)
-            {
-                    Trip newTrip = null;
-                    List<Trip> addedTripsList = new List<Trip>(); // auxiliary list to later add to the route.trips
-                    foreach (var trip in route.Trips)
-                    {
-                        var trips = route.Trips.FindAll(tr => tr.Stops.SequenceEqual(trip.Stops));
-                        var findTrip = routeTrips.Find(t => t.Stops.SequenceEqual(trip.Stops));
-                        if (findTrip == null)
-                        {
-                            newTrip = new Trip(id, trip.Headsign) {Stops = trip.Stops};
-                            newTrip.Route = trip.Route;
-
-                            
-                            foreach (var tr in trips)
-                            {
-                                if (_tripStartTimeDictionary.ContainsKey(tr.Id))
-                                {
-                                    newTrip.AddStartTime(_tripStartTimeDictionary[tr.Id]);
-                                }
-                            }
-                            routeTrips.Add(newTrip);
-                            addedTripsList.Add(newTrip);
-                            id++;
-                        }
-                    }
-
-                    foreach (var trip in addedTripsList)
-                    {
-                        route.Trips.Add(trip);
-                    }
-                    route.LoadRouteServices();
-            }
-
-            foreach (var route in Routes)
-            {
-                List<Trip> auxRemoveList = new List<Trip>(); //auxiliary list to later remove from the route.trips
-                foreach (var trip in route.Trips)
-                {
-                    if (!routeTrips.Contains(trip))
-                    {
-                        auxRemoveList.Add(trip); 
-                    }
-                }
-                foreach (var trip in auxRemoveList)
-                {
-                    route.Trips.Remove(trip);// removes the unnecessary trips
-                }
-
-            }
-            watch.Stop();
-            var elapsedMs = watch.ElapsedMilliseconds;
-            Console.WriteLine(this+"A total of "+(totalTrips - (id-1))+" redundant trips were successfully removed in "+elapsedMs*0.001+" seconds.");
-         
-            Trips = routeTrips; 
-        }
         private void AssignUrbanStops()
         {
-            var urbanStops = new List<Stop>();
+            var urbanStops = new List<Stop>(); //auxiliary list to know which stop has already been assigned as urban
             if (Trips.Count > 0 && Trips != null)
             {
                 var urbanRoutes =Routes.FindAll(r => r.UrbanRoute);
@@ -214,30 +172,35 @@ namespace Simulator.Objects.Data_Objects
             Console.WriteLine(this.ToString()+urbanStops.Count+" urban stops were successfully assigned.");
         }
 
-        private void LoadTripStartTimeDictionary(List<string[]> tripStopTimesData)
+        private void LoadTripStartTimes(List<string[]> tripStopTimesData)
         {
 
-            Console.WriteLine(this + "Loading Trip Start times dictionary...");
+            Console.WriteLine(this + "Loading Trip Start times...");
+            List<int> auxTripIdList = new List<int>(); // list to know which trips start time has already been added
             var watch = Stopwatch.StartNew();
-            Dictionary<int,int> tripIdStartTimeDict = new Dictionary<int,int>();
             foreach (var tripStopTime in tripStopTimesData)
             {
                 var tripId = int.Parse(tripStopTime[0]);
 
-                if (!tripIdStartTimeDict.ContainsKey(tripId))
+                //the checks below are used to improve the search performance
+                if (!auxTripIdList.Contains(tripId)) //if it doesn't contain in the list
                 {
-                        var tripStartTime = tripStopTime[2]; // start time in hour/minute/second
-                        var startTimeInSeconds = TimeSpan.Parse(tripStartTime).TotalSeconds;
-                        tripIdStartTimeDict.Add(tripId, Convert.ToInt32(startTimeInSeconds));
-                    
+                        var trip = Trips.Find(t => t.Id == tripId);//finds the trip
+                        if (trip != null) //if a trip was found adds the start time to that trip
+                        {
+                            var tripStartTime = tripStopTime[2]; // start time in hour/minute/second
+                            var startTimeInSeconds = TimeSpan.Parse(tripStartTime).TotalSeconds;
+
+                            trip.StartTime = Convert.ToInt32(startTimeInSeconds);
+                            auxTripIdList.Add(tripId); //adds to the auxiliary list
+                        }
                 }
             }
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             var seconds = elapsedMs * 0.001;
-            Console.WriteLine(this.ToString() + "Trip start times dictionary was successfully loaded in " + seconds +
+            Console.WriteLine(this.ToString() + "Trip start times were successfully loaded in " + seconds +
                               " seconds.");
-            _tripStartTimeDictionary = tripIdStartTimeDict;
         }
         private void LoadRoutes(List<string[]> routesData)
         {
@@ -251,7 +214,7 @@ namespace Simulator.Objects.Data_Objects
                     Routes.Add(route);                    
                 }
             }
-            var r = new Route(1000,"FLEX","Flexible Route","Flexible routing",3);
+            var r = new Route(1000,"FLEX","Flexible Route","Flexible routing",3); //Flexible route 
             Routes.Add(r);
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
@@ -289,6 +252,7 @@ namespace Simulator.Objects.Data_Objects
                 var watch = Stopwatch.StartNew();
                 int prevTripId = 0;
                 Trip tr = null;
+                List<Stop> tripStops = new List<Stop>();
                 foreach (var tripStopData in tripsStopData)
                 {
                         var tripId = int.Parse(tripStopData[0]);
@@ -296,7 +260,9 @@ namespace Simulator.Objects.Data_Objects
                         {
 
 
-                            tr = Trips.Find(t => t.Id == tripId); 
+                            tr = Trips.Find(t => t.Id == tripId);
+                            tr.Stops = tripStops;
+                            tripStops = new List<Stop>();
                         }
                         prevTripId = tripId;
                     if (tr != null)
@@ -306,7 +272,7 @@ namespace Simulator.Objects.Data_Objects
                             {
                                 var stopId = int.Parse(tripStopData[1]);
                                 Stop stop = Stops.Find(s => s.Id == stopId);
-                                tr.Stops.Add(stop);
+                                tripStops.Add(stop);
                             }
                         }        
                     }                       
