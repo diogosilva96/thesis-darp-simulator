@@ -50,12 +50,17 @@ namespace Simulator.Objects.Data_Objects
             Id = id;
             Headsign = headsign;
             Stops = new List<Stop>();
+            Reset();
+        }
+
+        public void Reset()
+        {
+            EndTime = 0;
             IsDone = false;
             ServicedCustomers = new List<Customer>();
             TotalDistanceTraveled = 0;
             HasStarted = false;
         }
-
         public bool Start(int time)
         {
             if (!IsDone)

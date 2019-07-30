@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Google.OrTools.Graph;
 using Simulator.Events;
@@ -112,9 +113,9 @@ namespace Simulator
             //}
             var route = TransportationNetwork.Routes[0];
             Random rand = new Random();
-            var service = route.Trips[0];
+            var serviceTrip = route.Trips[0]; //ADD assignvehicletrip function here!
             var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
-            v.AddTrip(service); //Adds the service to the vehicle
+            v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
             
             // Pickup and deliveries definition using static generated stops (to make the route flexible)
@@ -155,7 +156,6 @@ namespace Simulator
             
         }
 
-
         public void StandardBusRouteOption()
         {
             bool canAdvance = false;
@@ -176,8 +176,12 @@ namespace Simulator
                     canAdvance = false;
                 }
             }
+            AssignVehicleTrips();
+        }
 
-            foreach (var route in TransportationNetwork.Routes) 
+        private void AssignVehicleTrips()
+        {
+            foreach (var route in TransportationNetwork.Routes)
             {
                 var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(t.StartTime).Hours < SimulationEndHour);
                 if (allRouteTrips.Count > 0)
@@ -185,10 +189,14 @@ namespace Simulator
                     var tripCount = 0;
                     foreach (var trip in allRouteTrips) //Generates a new vehicle for each service, meaning that the number of services will be equal to the number of vehicles
                     {
-                        var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
+                        if (trip.IsDone == true)
+                        {
+                            trip.Reset();
+                        }
+                        var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, false);
                         v.AddTrip(trip); //Adds the service
                         VehicleFleet.Add(v);
-                        ConsoleLogger.Log(trip.ToString()+" added.");
+                        ConsoleLogger.Log(trip.ToString() + " added.");
                         tripCount++;
                     }
                     ConsoleLogger.Log(this.ToString() + route.ToString() + " - total of trips added:" + tripCount);

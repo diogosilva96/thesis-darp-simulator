@@ -73,52 +73,65 @@ namespace Simulator.Objects.Data_Objects
                 //dataExporter.ExportTripStartTimes(Routes, Path.Combine(Environment.CurrentDirectory, @"trip_start_times.txt"));
             if (_urbanOnly)
             {
-                Routes = Routes.FindAll(r => r.UrbanRoute);
-                List<Trip> Trips = new List<Trip>();
-                foreach (var route in Routes)
-                {
-                    foreach (var trip in route.Trips)
-                    {
-                        Trips.Add(trip);
-                    }
-                }
-                Stops = Stops.FindAll(s => s.IsUrban);
+                Routes = Routes.FindAll(r => r.UrbanRoute); // only urban routes
+                Trips = Trips.FindAll(t => t.Route.UrbanRoute == true); // only urban trips
+                Stops = Stops.FindAll(s => s.IsUrban); //only urban stops
             }
-
+            
             LoadStopDemands(demandsData);
-            ClearDuplicateTrips();
+            RemoveDuplicateTrips();
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine(this+"All the necessary data was successfully generated in "+elapsedMs*0.001+" seconds.");
             string str;
             str = _urbanOnly ? "Urban " : "";
             Console.WriteLine(this+"Total of "+str+"Routes:"+Routes.Count);
-            Console.WriteLine(this+"Total of "+str+"Route ServiceTrips:"+Routes.Sum(r=>r.Trips.Count));
+            Console.WriteLine(this+"Total of "+str+"Route Trips:"+Routes.Sum(r=>r.Trips.Count));
             Console.WriteLine(this+"Total of "+str+"Stops:"+Stops.Count);
         
         }
 
-        private void ClearDuplicateTrips()//Clears the duplicate trips (with the same start time and same stopsequence)
+        private void RemoveDuplicateTrips()//Clears the duplicate trips (with the same start time and same stopsequence)
         {
-            Console.WriteLine(this + "Clearing duplicate trips...");//REVER!!!
+            Console.WriteLine(this + "Removing duplicate trips...");//REVER!!!
             var watch = Stopwatch.StartNew();
             var duplicateCount = 0;
+            List<Trip> tripsToRemove = new List<Trip>();
+            //Searching for duplicates code
             foreach (var route in Routes)
             {
                 foreach (var trip in route.Trips)
                 {
-                   var foundTrips = route.Trips.FindAll(t => t.Stops == trip.Stops && t.StartTime == trip.StartTime && t.Id != trip.Id);
+                   var foundTrips = route.Trips.FindAll(t => t.StartTime == trip.StartTime && t.Id != trip.Id); //searches for trips with the same startTime and a trip which is not the current one (different id) in the foreach
                    if (foundTrips.Count>0)
                    {
-                       duplicateCount++;
+                       foreach (var foundTrip in foundTrips)
+                       {
+                           if (!tripsToRemove.Contains(foundTrip) && !tripsToRemove.Contains(trip)){ //if the searching trip and the found trip aren't yet in the tripsToRemove List it is added
+                               // the above check, enables to remove all the duplicate trips, while leaving one single trip of the duplicated trips
+                               tripsToRemove.Add(foundTrip);
+                           }
+                       }
                    }
                 }
-                
             }
+            //End of searching for duplicates
+            
+            foreach (var route in Routes)
+            {
+                foreach (var tripToRemove in tripsToRemove)
+                {
+                    if (route.Trips.Contains(tripToRemove))// if the trip is in route.Trips
+                    {
+                        route.Trips.Remove(tripToRemove); //Removes the trip
+                    }
+                }
+            }
+
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             var seconds = elapsedMs * 0.001;
-            Console.WriteLine(this.ToString() + "Duplicate trips (Total:"+duplicateCount+") were successfully cleared in " + seconds +
+            Console.WriteLine(this.ToString() + "Duplicate trips (Total:"+tripsToRemove.Count+") were successfully removed in " + seconds +
                               " seconds.");
         }
         private void LoadStopDemands(List<string[]> demandsData)

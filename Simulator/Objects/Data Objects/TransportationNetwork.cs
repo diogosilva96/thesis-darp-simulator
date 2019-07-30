@@ -10,7 +10,7 @@ namespace Simulator.Objects.Data_Objects
 
         public List<Stop> Stops;
 
-        public Dictionary<Tuple<Stop, Stop>, double> ArcDictionary; //Dictionary with tuples of stops and its respective distance
+        public Dictionary<Tuple<Stop, Stop>, double> ArcDictionary; //Dictionary with tuples of stops and its respective distances
 
         public DemandsDataObject DemandsDataObject;
 
