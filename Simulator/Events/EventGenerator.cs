@@ -81,7 +81,7 @@ namespace Simulator.Events
                         int dropOffStopIndex = rnd.Next(currentStopIndex + 1,
                             vehicle.TripIterator.Current.StopsIterator.TotalStops - 1);
                         Stop dropOffStop = vehicle.TripIterator.Current.Stops[dropOffStopIndex];
-                        Customer customer = new Customer(stop, dropOffStop,time);
+                        Customer customer = new Customer(new Stop[] { stop, dropOffStop},time);
                         if (!vehicle.IsFull)
                         { 
                             enterTime++;
@@ -104,7 +104,7 @@ namespace Simulator.Events
             Event evt = null;
             if (prob <= 0.03)
             {
-                Customer customer = new Customer(pickup, dropoff, time);
+                Customer customer = new Customer(new Stop[] { pickup, dropoff}, time);
                 evt = _eventFactory.CreateEvent(4, time, null, null, customer);
             }
 

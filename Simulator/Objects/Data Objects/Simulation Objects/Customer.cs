@@ -21,16 +21,29 @@ namespace Simulator.Objects.Data_Objects
 
         public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
-        public Customer(Stop pickUpStop,Stop deliveryStop, int requestTime)
+        public Customer(Stop[] pickupDelivery, int requestTime)
         {
+            PickupDelivery = pickupDelivery;
+           
 
-            PickupDelivery = new Stop[] {pickUpStop,deliveryStop};
-            RealTimeWindow = new int[2];
-            _isInVehicle = false;
             RequestTime = requestTime;
-            AlreadyServed = false;
+            Init();
+         
         }
 
+        public Customer(Stop[] pickupDelivery, int[] desiredTimeWindow, int requestTime)
+        {
+            PickupDelivery = pickupDelivery;
+            DesiredTimeWindow = desiredTimeWindow;
+            Init();
+        }
+
+        public void Init()
+        {
+            _isInVehicle = false;
+            AlreadyServed = false;
+            RealTimeWindow = new int[2];
+        }
         public override string ToString()
         {
             return "Customer "+Id+" ";

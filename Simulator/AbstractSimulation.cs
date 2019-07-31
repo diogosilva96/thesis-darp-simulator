@@ -10,6 +10,7 @@ using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.DARP;
 
 namespace Simulator
 {
@@ -37,7 +38,7 @@ namespace Simulator
 
         protected int VehicleCapacity;
 
-        protected DarpDataModel DarpDataModel;
+        protected PickupDeliveryDataModel PickupDeliveryDataModel;
 
         protected AbstractSimulation()
         {
@@ -85,7 +86,7 @@ namespace Simulator
             
         }
 
-        public abstract void SimulationOptions();
+        public abstract void PrintSimulationOptions();
 
         public abstract void Append(Event evt);
         public override string ToString()

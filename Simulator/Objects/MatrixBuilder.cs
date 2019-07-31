@@ -46,7 +46,7 @@ namespace Simulator.Objects
         public long[,] GetTimeMatrix(List<Stop> stops,int speedInKmHour)
         {
 
-            long[,] distanceMatrix = new long[stops.Count, stops.Count];
+            long[,] timeMatrix = new long[stops.Count, stops.Count];
             Calculator calculator = new Calculator();
             //Console.WriteLine(this.ToString()+"Generating Distance Matrix...");
             for (int i = 0; i < stops.Count; i++)
@@ -64,12 +64,12 @@ namespace Simulator.Objects
                         distance = (long)calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                     }
-                    distanceMatrix[i, j] = (long)calculator.CalculateTravelTime(speedInKmHour,distance);
+                    timeMatrix[i, j] = (long)calculator.CalculateTravelTime(speedInKmHour,distance);
                 }
             }
             //Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
 
-            return distanceMatrix;
+            return timeMatrix;
         }
 
     }

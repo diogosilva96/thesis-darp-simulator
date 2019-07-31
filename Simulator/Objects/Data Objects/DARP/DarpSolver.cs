@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using Google.OrTools.ConstraintSolver;
 using Google.Protobuf.WellKnownTypes;
+using Simulator.Objects.Data_Objects.DARP;
 
 namespace Simulator.Objects.Data_Objects
 {
     public class DarpSolver
     {
-        private DarpDataModel _dataModel;
+        private PickupDeliveryDataModel _dataModel;
         private RoutingIndexManager _manager;
         private RoutingModel _routing;
         private Solver _solver;
@@ -19,7 +20,7 @@ namespace Simulator.Objects.Data_Objects
             return "["+GetType().Name+"] ";
         }
 
-        public void Init(DarpDataModel dataModel, int type)
+        public void Init(PickupDeliveryDataModel dataModel, int type)
         {
             _type = type;
             _dataModel = dataModel;
@@ -27,7 +28,7 @@ namespace Simulator.Objects.Data_Objects
             {
                 // Create Routing Index Manager
                 _manager = new RoutingIndexManager(
-                    _dataModel.DistanceMatrix.GetLength(0),
+                    _dataModel.Matrix.GetLength(0),
                     _dataModel.VehicleNumber,
                     _dataModel.DepotIndex);
 
@@ -41,7 +42,7 @@ namespace Simulator.Objects.Data_Objects
                         // Convert from routing variable Index to distance matrix NodeIndex.
                         var fromNode = _manager.IndexToNode(fromIndex);
                         var toNode = _manager.IndexToNode(toIndex);
-                        return _dataModel.DistanceMatrix[fromNode, toNode];
+                        return _dataModel.Matrix[fromNode, toNode];
                     }
                 );
 
@@ -147,7 +148,7 @@ namespace Simulator.Objects.Data_Objects
                 stopSeq.Add(_dataModel.GetStop(stopInd));
 
 
-                foreach (var customer in _dataModel.PickupDeliveryCustomers)
+                foreach (var customer in _dataModel.Customers)
                 {
                     var pickupIndex = stopSeq.FindIndex(s => s == customer.PickupDelivery[0]);
                     var deliveryIndex = stopSeq.FindIndex(s => s == customer.PickupDelivery[1]);

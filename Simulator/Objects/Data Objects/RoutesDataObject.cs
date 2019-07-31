@@ -93,7 +93,7 @@ namespace Simulator.Objects.Data_Objects
 
         private void RemoveDuplicateTrips()//Clears the duplicate trips (with the same start time and same stopsequence)
         {
-            Console.WriteLine(this + "Removing duplicate trips...");//REVER!!!
+            Console.WriteLine(this + "Removing duplicate trips...");
             var watch = Stopwatch.StartNew();
             var duplicateCount = 0;
             List<Trip> tripsToRemove = new List<Trip>();
@@ -102,7 +102,7 @@ namespace Simulator.Objects.Data_Objects
             {
                 foreach (var trip in route.Trips)
                 {
-                   var foundTrips = route.Trips.FindAll(t => t.StartTime == trip.StartTime && t.Id != trip.Id); //searches for trips with the same startTime and a trip which is not the current one (different id) in the foreach
+                   var foundTrips = route.Trips.FindAll(t => t.StartTime == trip.StartTime && t.Stops.SequenceEqual(trip.Stops) && t.Id != trip.Id); //searches for trips with the same startTime and a trip which is not the current one (different id) in the foreach
                    if (foundTrips.Count>0)
                    {
                        foreach (var foundTrip in foundTrips)
