@@ -9,6 +9,9 @@ using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.DARP;
+using Simulator.Objects.Data_Objects.DARP.DataModels;
+using Simulator.Objects.Data_Objects.DARP.Solvers;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator
 {
@@ -22,7 +25,9 @@ namespace Simulator
 
         private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> solutionVehicleCustomersDictionary; //CHANGE THIS!
 
-        public DarpSolver Solver = new DarpSolver();
+        public PickupDeliverySolver PickupDeliverySolver = new PickupDeliverySolver();
+
+        protected DataModel DataModel;
 
 
         public Simulation()
@@ -34,7 +39,7 @@ namespace Simulator
             VehicleCapacity = 53;
             VehicleSpeed = 30;
             _validationsCounter = 1;
-            PickupDeliveryDataModel = new PickupDeliveryDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183));
+            DataModel = new PickupDeliveryDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183));
             PrintSimulationOptions();
 
         }
@@ -119,7 +124,7 @@ namespace Simulator
             var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            TimeWindowsDataModel twDM = new TimeWindowsDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183),VehicleSpeed);
+            TimeWindowDataModel twDM = new TimeWindowDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183),VehicleSpeed);
 
             twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3500, 4000 }, 0));
             twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 3400, 3600 }, 0));
@@ -127,34 +132,44 @@ namespace Simulator
             twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3220, 3700 }, 0));
             twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
             twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
+            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
             // Pickup and deliveries definition using static generated stops (to make the route flexible)
 
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[]{ TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)},new int[]{3500,4000}, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359)}, new int[] { 3400, 3600 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018)}, new int[] { 3250, 3550 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523)}, new int[] { 3220, 3700 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884)}, new int[] { 3100, 3900 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555)}, new int[] { 2900, 3300 },0));
+            DataModel.AddCustomer(new Customer(new Stop[]{ TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)}, 0));
+            DataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359)}, 0));
+            DataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018)}, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523)}, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884)}, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555)},0));
 
             //var serviceStops = service.Trip.Stops;
-            //PickupDeliveryDataModel.AddInitialRoute(serviceStops);
+            //DataModel.AddInitialRoute(serviceStops);
 
             //Creates two available vehicles to be able to perform flexible routing
             for (int i = 0; i < 2; i++)
             {
                 var vehicle = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, true);
-                PickupDeliveryDataModel.AddVehicle(vehicle);
+                DataModel.AddVehicle(vehicle);
                 twDM.AddVehicle(vehicle);
                 VehicleFleet.Add(vehicle);
             }
             twDM.PrintMatrix();
+            twDM.PrintPickupDeliveries();
             twDM.PrintTimeWindows();
+            TimeWindowSolver twS = new TimeWindowSolver();
+            twS.Init(twDM);
+            twS.Solve();
+            twS.PrintSolution();
             ConsoleLogger.Log("Initial solution:");
-            PickupDeliveryDataModel.PrintPickupDeliveries();
-            Solver.Init(PickupDeliveryDataModel, 1);
-            var solution = Solver.Solve();
-            Solver.Print(solution);
-            solutionVehicleCustomersDictionary = Solver.SolutionToVehicleStopSequenceCustomersDictionary(solution);
+            if (DataModel is PickupDeliveryDataModel pickupDeliveryDataModel)
+            {
+                pickupDeliveryDataModel.PrintPickupDeliveries();
+            }
+
+            PickupDeliverySolver.Init(DataModel);
+            PickupDeliverySolver.Solve();
+            PickupDeliverySolver.PrintSolution();
+            solutionVehicleCustomersDictionary = PickupDeliverySolver.SolutionToVehicleStopSequenceCustomersDictionary();
 
             foreach (var dictionary in solutionVehicleCustomersDictionary)
             {
@@ -250,13 +265,13 @@ namespace Simulator
         public override void PrintSolution()
         {
             //start of darp solution
-            //if (PickupDeliveryDataModel != null)
+            //if (DataModel != null)
             //{
             //    ConsoleLogger.Log("Final DARP  solution:");
-            //    PickupDeliveryDataModel.PrintPickupDeliveries();
-            //    Solver.Init(PickupDeliveryDataModel, 1);
-            //    var solution = Solver.Solve();
-            //    Solver.Print(solution);
+            //    DataModel.PrintPickupDeliveries();
+            //    PickupDeliverySolver.Init(DataModel, 1);
+            //    var solution = PickupDeliverySolver.GetSolution();
+            //    PickupDeliverySolver.Print(solution);
             //}
             //end of darp solution
 
@@ -412,20 +427,32 @@ namespace Simulator
             if (evt.Category == 1 && evt is VehicleStopEvent eventDepart)
             {
                     var departTime = eventDepart.Time; //the time the vehicle departed on the previous depart event
-                  
-                    var stopTuple = Tuple.Create(eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop,
-                        eventDepart.Vehicle.TripIterator.Current.StopsIterator.NextStop);
-                    eventDepart.Vehicle.ArcDictionary.TryGetValue(stopTuple, out var distance);
-                    var travelTime = new Calculator().CalculateTravelTime(eventDepart.Vehicle.Speed,distance);//Gets the time it takes to travel from the currentStop to the nextStop
-                    var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
-                    eventDepart.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
-                    var arriveEvent = EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle, nextArrivalTime); //generates the arrive event
-                    AddEvent(arriveEvent);
+
+                    if (eventDepart.Vehicle.TripIterator.Current != null)
+                    {
+                        var stopTuple = Tuple.Create(eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop,
+                            eventDepart.Vehicle.TripIterator.Current.StopsIterator.NextStop);
+                        eventDepart.Vehicle.ArcDictionary.TryGetValue(stopTuple, out var distance);
+
+
+                        var travelTime =
+                            new Calculator().CalculateTravelTime(eventDepart.Vehicle.Speed,
+                                distance); //Gets the time it takes to travel from the currentStop to the nextStop
+                        var nextArrivalTime =
+                            Convert.ToInt32(departTime +
+                                            travelTime); //computes the arrival time for the next arrive event
+                        eventDepart.Vehicle.TripIterator.Current.StopsIterator
+                            .Next(); //Moves the iterator to the next stop
+                        var arriveEvent =
+                            EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle,
+                                nextArrivalTime); //generates the arrive event
+                        AddEvent(arriveEvent);
+                    }
 
             }
             //END OF INSERTION OF VEHICLE NEXT STOP ARRIVE EVENT--------------------------------------
             //--------------------------------------------------------------------------------------------------------
-            //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
+            //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUESTS-----------------------------------------------------------
             var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
             var delivery = pickup;
             while (pickup == delivery) delivery = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
@@ -454,7 +481,7 @@ namespace Simulator
                     _validationsCounter++;
                     break;
                 case CustomerRequestEvent customerRequestEvent:
-                    PickupDeliveryDataModel.AddCustomer(customerRequestEvent.Customer);
+                    DataModel.AddCustomer(customerRequestEvent.Customer);
                     break;
             }
         }

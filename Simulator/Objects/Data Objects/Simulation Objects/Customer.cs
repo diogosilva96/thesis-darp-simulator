@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Simulator.Objects.Data_Objects
+namespace Simulator.Objects.Data_Objects.Simulation_Objects
 {
     public class Customer:Person
     {
@@ -9,23 +9,21 @@ namespace Simulator.Objects.Data_Objects
 
         public Stop[] PickupDelivery;
 
-        public int[] RealTimeWindow;
+        public int[] RealTimeWindow;//in seconds
 
-        public int[] DesiredTimeWindow;
+        public int[] DesiredTimeWindow; //in seconds
 
         private bool _isInVehicle;
 
         public bool AlreadyServed;
 
-        public int RequestTime;//request timestamp in seconds
+        public int RequestTime;//request time in seconds
 
         public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
             PickupDelivery = pickupDelivery;
-           
-
             RequestTime = requestTime;
             Init();
          
@@ -72,6 +70,16 @@ namespace Simulator.Objects.Data_Objects
             }
 
             return false;
+        }
+
+        public void PrintPickupDelivery()
+        {
+            string stringToBePrinted = this.ToString() + " - PickupDelivery: [" + PickupDelivery[0] + " -> " + PickupDelivery[1] + "]";
+            if (DesiredTimeWindow != null)
+            {
+                stringToBePrinted = stringToBePrinted + " - TimeWindows (in minutes): {" + (int)TimeSpan.FromSeconds(DesiredTimeWindow[0]).TotalMinutes + "," + (int)TimeSpan.FromSeconds(DesiredTimeWindow[1]).TotalMinutes + "}";
+            }
+            Console.WriteLine(stringToBePrinted);
         }
 
         public bool Leave(Vehicle vehicle, int time)

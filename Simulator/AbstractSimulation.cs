@@ -38,8 +38,6 @@ namespace Simulator
 
         protected int VehicleCapacity;
 
-        protected PickupDeliveryDataModel PickupDeliveryDataModel;
-
         protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();

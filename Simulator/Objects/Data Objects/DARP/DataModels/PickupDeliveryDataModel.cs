@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 
-namespace Simulator.Objects.Data_Objects.DARP
+namespace Simulator.Objects.Data_Objects.DARP.DataModels
 {
     public class PickupDeliveryDataModel:DataModel
     {
         public int[][] PickupsDeliveries => GetPickupDeliveryIndexMatrix();
 
+
         public PickupDeliveryDataModel(Stop depot) : base(depot)
         {
-
         }
 
         private int[][] GetPickupDeliveryIndexMatrix()//returns the pickupdelivery stop matrix using indexes (based on the pickupdeliverystop list) instead of stop id's
@@ -27,12 +26,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
 
             return pickupsDeliveries;
-        }
-        public void PrintPickupDeliveries()
-        {
-            Console.WriteLine(ToString() + "Pickups and deliveries (total: " + PickupsDeliveries.Length + "):");
-            foreach (var customer in Customers)
-                Console.WriteLine("Customer " + customer.Id + " - PickupDelivery: {" + customer.PickupDelivery[0].Id + " -> " + customer.PickupDelivery[1].Id + "} - Request Timestamp: " + TimeSpan.FromSeconds(customer.RequestTime).ToString());
         }
 
 

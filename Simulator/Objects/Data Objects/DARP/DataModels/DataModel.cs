@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.DARP
+namespace Simulator.Objects.Data_Objects.DARP.DataModels
 {
     public abstract class DataModel
     {
@@ -30,7 +30,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             Stops = new List<Stop>();
             Stops.Add(depot);
             InitialRoutes = new long[0][];
-
         }
 
         public void AddInitialRoute(List<Stop> stopSequence)
@@ -98,7 +97,16 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public void PrintMatrix()
         {
-            Console.WriteLine(ToString() + "Matrix:");
+            string matrixType;
+            if (this is PickupDeliveryDataModel)
+            {
+                matrixType = "Distance";
+            }
+            else
+            {
+                matrixType = "Time";
+            }
+            Console.WriteLine(ToString() + matrixType+" Matrix:");
             var counter = 0;
             foreach (var val in Matrix)
                 if (counter == Matrix.GetLength(1) - 1)
@@ -138,8 +146,22 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
         }
 
+        public void PrintPickupDeliveries()
+        {
+            string printString;
+            if (this is PickupDeliveryDataModel)
+            {
+                printString = ToString() + "Pickups and deliveries (total: " + Customers.Count + "):";
+            }
+            else
+            {
+                printString = ToString() + "Pickups and Deliveries with Time Windows (total: " + Customers.Count + "):";
+            }
 
-
+            Console.WriteLine(printString);
+            foreach (var customer in Customers)
+                customer.PrintPickupDelivery();
+        }
 
     }
 }

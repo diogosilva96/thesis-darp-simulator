@@ -2,6 +2,7 @@
 using System.Data.SqlTypes;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Events
 {

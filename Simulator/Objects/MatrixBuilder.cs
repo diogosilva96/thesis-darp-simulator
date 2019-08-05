@@ -64,7 +64,9 @@ namespace Simulator.Objects
                         distance = (long)calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                     }
-                    timeMatrix[i, j] = (long)calculator.CalculateTravelTime(speedInKmHour,distance);
+                     var timeInSeconds = (long)calculator.CalculateTravelTime(speedInKmHour,distance);
+                     var time = TimeSpan.FromSeconds(timeInSeconds);
+                     timeMatrix[i, j] = (long)time.TotalMinutes;
                 }
             }
             //Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);
