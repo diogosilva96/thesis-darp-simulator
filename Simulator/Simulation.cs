@@ -29,6 +29,8 @@ namespace Simulator
 
         protected DataModel DataModel;
 
+        private IDataModelFactory dataModelFactory;
+
 
         public Simulation()
         {
@@ -39,7 +41,8 @@ namespace Simulator
             VehicleCapacity = 53;
             VehicleSpeed = 30;
             _validationsCounter = 1;
-            DataModel = new PickupDeliveryDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183));
+            dataModelFactory = new DataModelFactory(VehicleSpeed);
+            DataModel = dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 1);// Pickup delivery data model
             PrintSimulationOptions();
 
         }
@@ -124,16 +127,16 @@ namespace Simulator
             var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            TimeWindowDataModel twDM = new TimeWindowDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183),VehicleSpeed);
-
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3500, 4000 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 3400, 3600 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3250, 3550 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3220, 3700 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
-            twDM.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
-            // Pickup and deliveries definition using static generated stops (to make the route flexible)
+            DataModel timeWindowDataModel = dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 2);
+            // Pickup and deliveries definition using static generated stop requests
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3500, 4000 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 3400, 3600 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3250, 3550 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3220, 3700 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
+            // Pickup and deliveries definition using static generated stop requests 
 
             DataModel.AddCustomer(new Customer(new Stop[]{ TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)}, 0));
             DataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359)}, 0));
@@ -150,26 +153,24 @@ namespace Simulator
             {
                 var vehicle = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, true);
                 DataModel.AddVehicle(vehicle);
-                twDM.AddVehicle(vehicle);
+                timeWindowDataModel.AddVehicle(vehicle);
                 VehicleFleet.Add(vehicle);
             }
-            twDM.PrintMatrix();
-            twDM.PrintPickupDeliveries();
-            twDM.PrintTimeWindows();
-            TimeWindowSolver twS = new TimeWindowSolver();
-            twS.Init(twDM);
-            twS.Solve();
-            twS.PrintSolution();
-            ConsoleLogger.Log("Initial solution:");
-            if (DataModel is PickupDeliveryDataModel pickupDeliveryDataModel)
+            timeWindowDataModel.PrintMatrix();
+            timeWindowDataModel.PrintPickupDeliveries();
+            if (timeWindowDataModel is TimeWindowDataModel twDataModel)
             {
-                pickupDeliveryDataModel.PrintPickupDeliveries();
+                twDataModel.PrintTimeWindows();
             }
+            TimeWindowSolver timeWindowSolver = new TimeWindowSolver();
+            var timeWindowSolution = timeWindowSolver.Solve(timeWindowDataModel);
+            timeWindowSolver.Print(timeWindowSolution);
+            ConsoleLogger.Log("Initial solution:");
+            DataModel.PrintPickupDeliveries();
 
-            PickupDeliverySolver.Init(DataModel);
-            PickupDeliverySolver.Solve();
-            PickupDeliverySolver.PrintSolution();
-            solutionVehicleCustomersDictionary = PickupDeliverySolver.SolutionToVehicleStopSequenceCustomersDictionary();
+            var pdSolution = PickupDeliverySolver.Solve(DataModel);
+            PickupDeliverySolver.Print(pdSolution);
+            solutionVehicleCustomersDictionary = PickupDeliverySolver.GetVehicleStopSequenceCustomersDictionary(pdSolution);
 
             foreach (var dictionary in solutionVehicleCustomersDictionary)
             {

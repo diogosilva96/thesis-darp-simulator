@@ -9,16 +9,11 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
     public class PickupDeliverySolver:Solver
     {
 
-
-
-        public override void PrintSolution()
+        public override void Print(Assignment solution)
         {
-            if (Solution == null)
+            if (solution != null)
             {
-                this.Solve();
-            }
-
-            // Inspect solution.
+                // Inspect solution.
                 long maxRouteDistance = 0;
                 long totalDistance = 0;
                 Console.WriteLine("-----------------------------------------------------------------------");
@@ -33,7 +28,7 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
                         stopInd = Manager.IndexToNode((int) index);
                         Console.Write("{0} -> ", DataModel.GetStop(stopInd).Id);
                         var previousIndex = index;
-                        index = Solution.Value(Routing.NextVar(index));
+                        index = solution.Value(Routing.NextVar(index));
                         var distance = Routing.GetArcCostForVehicle(previousIndex, index, 0);
                         routeDistance += distance;
                     }
@@ -47,16 +42,18 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
 
                 Console.WriteLine(this.ToString() + "Maximum distance of the routes: {0}m", maxRouteDistance);
                 Console.WriteLine(this.ToString() + "Total distance traveled: {0}m", totalDistance);
+            }
+            else
+            {
+                throw new ArgumentNullException("solution is null");
+            }
         }
 
-        public Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> SolutionToVehicleStopSequenceCustomersDictionary()
+        public Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> GetVehicleStopSequenceCustomersDictionary(Assignment solution)
         {
-            if (Solution == null)
+            if (solution != null)
             {
-                this.Solve();//if solution is null, solves the problem
-            }
-
-            Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> vehicleSolutionDictionary =
+                Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> vehicleSolutionDictionary =
                     new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>>();
                 List<Customer>
                     addedCustomers =
@@ -72,7 +69,7 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
                     {
                         stopInd = Manager.IndexToNode((int) index);
                         stopSeq.Add(DataModel.GetStop(stopInd));
-                        index = Solution.Value(Routing.NextVar(index));
+                        index = solution.Value(Routing.NextVar(index));
                     }
 
                     stopInd = Manager.IndexToNode((int) index);
@@ -98,7 +95,13 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
                     var stopSeqCustomersTuple = Tuple.Create(stopSeq, customers);
                     vehicleSolutionDictionary.Add(DataModel.Vehicles[i], stopSeqCustomersTuple);
                 }
+
                 return vehicleSolutionDictionary;
+            }
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
 
         public override void InitHookMethod()
@@ -132,21 +135,5 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
             }
         }
 
-        public override void Solve()
-        {
-            // Setting first solution heuristic.
-            RoutingSearchParameters searchParameters =
-                operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy =
-                FirstSolutionStrategy.Types.Value.PathCheapestArc;
-            //searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
-            //searchParameters.TimeLimit = new Duration { Seconds = 10 };
-            //searchParameters.LogSearch = true; //logs the search
-
-
-            // GetSolution the problem.
-            //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_dataModel.InitialRoutes, true);
-            Solution = Routing.SolveWithParameters(searchParameters);
-        }
     }
 }

@@ -78,7 +78,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
             }
             return timeWindows;
         }
-        public void PrintTimeWindows()
+        public void PrintTimeWindows() //For debug purposes
         {
             Console.WriteLine(this.ToString()+"Time Windows:");
             for (int i = 0; i < TimeWindows.GetLength(0); i++)

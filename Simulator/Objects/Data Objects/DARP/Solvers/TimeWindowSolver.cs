@@ -51,47 +51,44 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
             }
         }
 
-        public override void Solve()
-        {
-            RoutingSearchParameters searchParameters =
-                operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy =
-                FirstSolutionStrategy.Types.Value.PathCheapestArc;
-            Solution = Routing.SolveWithParameters(searchParameters);
-        }
 
-        public override void PrintSolution()
+        public override void Print(Assignment solution)
         {
-            if (Solution == null)
+            if (solution != null)
             {
-                Solve();
-            }
-            RoutingDimension timeDimension = Routing.GetMutableDimension("Time");
-            // Inspect solution.
-            long totalTime = 0;
-            for (int i = 0; i < DataModel.VehicleNumber; ++i)
-            {
-                int stopInd = 0;
-                Console.WriteLine("Route for Vehicle {0}:", i);
-                var index = Routing.Start(i);
-                while (Routing.IsEnd(index) == false)
+                RoutingDimension timeDimension = Routing.GetMutableDimension("Time");
+                // Inspect solution.
+                long totalTime = 0;
+                for (int i = 0; i < DataModel.VehicleNumber; ++i)
                 {
-                    var timeVar = timeDimension.CumulVar(index);
+                    int stopInd = 0;
+                    Console.WriteLine("Route for Vehicle {0}:", i);
+                    var index = Routing.Start(i);
+                    while (Routing.IsEnd(index) == false)
+                    {
+                        var timeVar = timeDimension.CumulVar(index);
+                        stopInd = Manager.IndexToNode(index);
+                        Console.Write(DataModel.GetStop(stopInd) + " Time({0},{1}) -> ",
+                            solution.Min(timeVar),
+                            solution.Max(timeVar));
+                        index = solution.Value(Routing.NextVar(index));
+                    }
+
+                    var endTimeVar = timeDimension.CumulVar(index);
                     stopInd = Manager.IndexToNode(index);
-                    Console.Write(DataModel.GetStop(stopInd)+" Time({0},{1}) -> ",
-                        Solution.Min(timeVar),
-                        Solution.Max(timeVar));
-                    index = Solution.Value(Routing.NextVar(index));
+                    Console.WriteLine(DataModel.GetStop(stopInd) + "Time({0},{1})",
+                        solution.Min(endTimeVar),
+                        solution.Max(endTimeVar));
+                    Console.WriteLine("Time of the route: {0}min", solution.Min(endTimeVar));
+                    totalTime += solution.Min(endTimeVar);
                 }
-                var endTimeVar = timeDimension.CumulVar(index);
-                stopInd = Manager.IndexToNode(index);
-                Console.WriteLine(DataModel.GetStop(stopInd) + "Time({0},{1})",
-                    Solution.Min(endTimeVar),
-                    Solution.Max(endTimeVar));
-                Console.WriteLine("Time of the route: {0}min", Solution.Min(endTimeVar));
-                totalTime += Solution.Min(endTimeVar);
+
+                Console.WriteLine("Total time of all routes: {0}min", totalTime);
             }
-            Console.WriteLine("Total time of all routes: {0}min", totalTime);
+            else
+            {
+                throw new ArgumentNullException();
+            }
         }
     }
 }
