@@ -25,10 +25,9 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
             //Loop to initialize each cell of the timewindow array at the maximum minutes value (1440minutes - 24 hours)
             for (int i = 0; i < timeWindows.GetLength(0); i++)
             {
-                for (int j = 0; j < timeWindows.GetLength(1); j++)
-                {
-                    timeWindows[i, j] = _dayInMinutes; //Initializes each cell of the array with the maximum value possible, 1440 minutes which translates to 24 hours
-                }
+                timeWindows[i, 0] = 0; //lower bound of the timewindow is initialized with 0
+                timeWindows[i, 1] = long.MaxValue; //Upper bound of the timewindow with a max long value
+                
             }
 
             return timeWindows;
@@ -41,16 +40,27 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
 
             foreach (var customer in Customers)
             {
+                //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var  customerMinTimeWindow = TimeSpan.FromSeconds(customer.DesiredTimeWindow[0]).TotalMinutes; //customer min time window in minutes
                 var arrayMinTimeWindow = timeWindows[Stops.IndexOf(customer.PickupDelivery[0]), 0]; //gets current min timewindow for the pickupstop in minutes
-                timeWindows[Stops.IndexOf(customer.PickupDelivery[0]), 0] = Math.Min((long)arrayMinTimeWindow,(long) customerMinTimeWindow);//the mintimewindow (lower bound) is the minimum value between the current  timewindow in the array and the customer timewindow
+                //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
+                //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
+                timeWindows[Stops.IndexOf(customer.PickupDelivery[0]), 0] =
+                        Math.Max((long) arrayMinTimeWindow, (long) customerMinTimeWindow); //the mintimewindow (lower bound) is the maximum value between the current timewindow in the array and the current customer timewindow
+  
 
+                //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMaxTimeWindow = TimeSpan.FromSeconds(customer.DesiredTimeWindow[1]).TotalMinutes; //customer max time window in minutes
                 var arrayMaxTimeWindow = timeWindows[Stops.IndexOf(customer.PickupDelivery[1]), 1]; //gets curent max timewindow for the delivery stop in minutes
-                timeWindows[Stops.IndexOf(customer.PickupDelivery[1]), 1] = Math.Min((long)arrayMaxTimeWindow,(long)customerMaxTimeWindow);//the maxtimewindow (upper bound) is the minimum value between the current  timewindow in the array and the customer timewindow
+                //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
+                //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
+                timeWindows[Stops.IndexOf(customer.PickupDelivery[1]), 1] = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the maxtimewindow (upper bound) is the minimum value between the current  timewindow in the array and the current customer timewindow
+                    
+
+                
             }
 
-            timeWindows = ClearTimeWindowsArray(timeWindows);
+           // timeWindows = ClearTimeWindowsArray(timeWindows);
            
             return timeWindows;
         }

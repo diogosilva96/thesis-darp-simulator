@@ -21,6 +21,7 @@ namespace Simulator
         {
             
             AbstractSimulation sim = new Simulation();
+            sim.Init();
             Console.Read();
 
         }

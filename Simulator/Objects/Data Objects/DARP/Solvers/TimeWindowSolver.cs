@@ -15,6 +15,28 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
             {
                 Routing.SetArcCostEvaluatorOfAllVehicles(TransitCallbackIndex);
 
+                //// Add Distance constraint.
+                //Routing.AddDimension(TransitCallbackIndex, 0, 99999999,
+                //    true, // start cumul to zero
+                //    "Distance");
+                //RoutingDimension = Routing.GetMutableDimension("Distance");
+                //RoutingDimension.SetGlobalSpanCostCoefficient(100);
+
+                //// Define Transportation Requests.
+                //ConstraintSolver = Routing.solver();
+                //for (int i = 0; i < DataModel.PickupsDeliveries.GetLength(0); i++)
+                //{
+                //    long pickupIndex = Manager.NodeToIndex(DataModel.PickupsDeliveries[i][0]);
+                //    long deliveryIndex = Manager.NodeToIndex(DataModel.PickupsDeliveries[i][1]);
+                //    Routing.AddPickupAndDelivery(pickupIndex, deliveryIndex);
+                //    ConstraintSolver.Add(ConstraintSolver.MakeEquality(
+                //        Routing.VehicleVar(pickupIndex),
+                //        Routing.VehicleVar(deliveryIndex)));
+                //    ConstraintSolver.Add(ConstraintSolver.MakeLessOrEqual(
+                //        RoutingDimension.CumulVar(pickupIndex),
+                //        RoutingDimension.CumulVar(deliveryIndex)));
+                //}
+
                 Routing.AddDimension(
                     TransitCallbackIndex, // transit callback
                     30, // allow waiting time

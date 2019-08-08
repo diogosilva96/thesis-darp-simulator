@@ -30,14 +30,6 @@ namespace Simulator
 
         protected string LoggerPath;
 
-        protected int SimulationStartHour;
-
-        protected int SimulationEndHour;
-
-        protected int VehicleSpeed;
-
-        protected int VehicleCapacity;
-
         protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
@@ -52,18 +44,23 @@ namespace Simulator
             VehicleFleet = new List<Vehicle>();
             
             TransportationNetwork = new TransportationNetwork();
-            EventGenerator = new EventGenerator();
+            EventGenerator = EventGenerator.GetEventGenerator();
             TotalEventsHandled = 0;
         }
 
-        public abstract void InitializeVehicleEvents();
+        public abstract void InitVehicleEvents();
 
         public abstract void PrintSimulationSettings();
        
+        public void Init()
+        {
+            PrintOptionsMenu();
+            PrintSimulationSettings();
+            InitVehicleEvents();
+            Simulate();
+        }
         public void Simulate()
         {
-            PrintSimulationSettings();
-            InitializeVehicleEvents();
             if (Events.Count > 0)
             {                
                 ConsoleLogger.Log(this.ToString()+"Press any key to start the simulation...");
@@ -84,7 +81,7 @@ namespace Simulator
             
         }
 
-        public abstract void PrintSimulationOptions();
+        public abstract void PrintOptionsMenu();
 
         public abstract void Append(Event evt);
         public override string ToString()

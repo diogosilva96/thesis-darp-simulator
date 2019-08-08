@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.Design;
+using MathNet.Numerics.LinearAlgebra.Factorization;
 using Simulator.Objects.Data_Objects.DARP.Solvers;
 
 namespace Simulator.Objects.Data_Objects.DARP.DataModels
@@ -14,16 +15,17 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
         public DataModel CreateDataModel(Stop depot,int type)
         {
             DataModel dataModel = null;
-            if (depot != null)
+            switch (type)
             {
-                if (type == 1)
-                {
+                case 1:
                     dataModel = new PickupDeliveryDataModel(depot);
-                }
-                else if (type == 2)
-                {
-                    dataModel = new TimeWindowDataModel(depot,_vehicleSpeed);
-                }
+                    break;
+                case 2:
+                    dataModel = new TimeWindowDataModel(depot, _vehicleSpeed);
+                    break;
+                default:
+                    dataModel = new PickupDeliveryDataModel(depot);
+                    break;
             }
             return dataModel;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Google.OrTools.ConstraintSolver;
+using Google.Protobuf.WellKnownTypes;
 using Simulator.Objects.Data_Objects.DARP.DataModels;
 
 namespace Simulator.Objects.Data_Objects.DARP.Solvers
@@ -12,11 +13,11 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
         protected Google.OrTools.ConstraintSolver.Solver ConstraintSolver;
         protected RoutingDimension RoutingDimension;
         protected int TransitCallbackIndex;
-        public override string ToString()
+        protected RoutingSearchParameters SearchParameters;
+            public override string ToString()
         {
             return "[" + GetType().Name + "] ";
         }
-
 
         public void Init()
         {
@@ -40,31 +41,45 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
                 }
             );
 
-            InitHookMethod();
-            
+            InitHookMethod(); //for the subclasses to define
+            InitSearchParameters();
         }
 
         public abstract void InitHookMethod();
 
-        public Assignment Solve(DataModel dataModel)
+        public void InitSearchParameters()
+        {
+            // Setting first solution heuristic.
+            SearchParameters =
+                operations_research_constraint_solver.DefaultRoutingSearchParameters();
+            SearchParameters.FirstSolutionStrategy =
+                FirstSolutionStrategy.Types.Value.PathCheapestArc;
+        }
+
+        public Assignment GetSolution(DataModel dataModel)
         {
             DataModel = dataModel;
             Init();
-            // Setting first solution heuristic.
-            RoutingSearchParameters searchParameters =
-                operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy =
-                FirstSolutionStrategy.Types.Value.PathCheapestArc;
-            //searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
-            //searchParameters.TimeLimit = new Duration { Seconds = 10 };
-            //searchParameters.LogSearch = true; //logs the search
-
-
             //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_dataModel.InitialRoutes, true);
 
             //Get the solution of the problem
-            Assignment solution = Routing.SolveWithParameters(searchParameters);
+            Assignment solution = Routing.SolveWithParameters(SearchParameters);
             return solution;
+        }
+
+        public Assignment GetSolution(DataModel dataModel,int searchTimeLimit)
+        {
+            DataModel = dataModel;
+            Init();
+            SetSearchStrategy(searchTimeLimit); //sets a search strategy with a time limit
+            Assignment solution = Routing.SolveWithParameters(SearchParameters); //solves the problem
+            return solution;
+        }
+        public void SetSearchStrategy(int searchTimeLimit)
+        {
+            SearchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+            SearchParameters.TimeLimit = new Duration { Seconds = searchTimeLimit };
+            SearchParameters.LogSearch = false; //logs the search if true
         }
 
         public abstract void Print(Assignment solution);

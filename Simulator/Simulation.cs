@@ -29,7 +29,13 @@ namespace Simulator
 
         protected DataModel DataModel;
 
-        private IDataModelFactory dataModelFactory;
+        private readonly IDataModelFactory _dataModelFactory;
+
+        private readonly int[] _simulationStartEndTime;
+
+        private readonly int _vehicleSpeed;
+
+        private readonly int _vehicleCapacity;
 
 
         public Simulation()
@@ -38,16 +44,16 @@ namespace Simulator
             _eventLogger = new Logger.Logger(fileRecorder);
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
-            VehicleCapacity = 53;
-            VehicleSpeed = 30;
+            _vehicleCapacity = 53;
+            _vehicleSpeed = 30;
             _validationsCounter = 1;
-            dataModelFactory = new DataModelFactory(VehicleSpeed);
-            DataModel = dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 1);// Pickup delivery data model
-            PrintSimulationOptions();
+            _dataModelFactory = new DataModelFactory(_vehicleSpeed);
+            _simulationStartEndTime = new int[2];
+            DataModel = _dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 1);// Pickup delivery data model
 
         }
 
-        public override void InitializeVehicleEvents()
+        public override void InitVehicleEvents()
         {
             foreach (var vehicle in VehicleFleet)
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
@@ -61,7 +67,7 @@ namespace Simulator
             SortEvents();
         }
 
-        public override void PrintSimulationOptions()
+        public override void PrintOptionsMenu()
         {
             var numOptions = 2;
             ConsoleLogger.Log("Please Select one of the options:");
@@ -91,7 +97,6 @@ namespace Simulator
                 default: StandardBusRouteOption();
                     break;
             }
-            Simulate();
         }
 
         public void SingleBusRouteFlexibleOption()
@@ -124,10 +129,10 @@ namespace Simulator
             var route = TransportationNetwork.Routes[0];
             Random rand = new Random();
             var serviceTrip = route.Trips[0]; //ADD assignvehicletrip function here!
-            var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary,false);
+            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            DataModel timeWindowDataModel = dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 2);
+            DataModel timeWindowDataModel = _dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 2);
             // Pickup and deliveries definition using static generated stop requests
             timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3500, 4000 }, 0));
             timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 3400, 3600 }, 0));
@@ -136,6 +141,7 @@ namespace Simulator
             timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
             timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
             timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
+            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
             // Pickup and deliveries definition using static generated stop requests 
 
             DataModel.AddCustomer(new Customer(new Stop[]{ TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)}, 0));
@@ -151,7 +157,7 @@ namespace Simulator
             //Creates two available vehicles to be able to perform flexible routing
             for (int i = 0; i < 2; i++)
             {
-                var vehicle = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, true);
+                var vehicle = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, true);
                 DataModel.AddVehicle(vehicle);
                 timeWindowDataModel.AddVehicle(vehicle);
                 VehicleFleet.Add(vehicle);
@@ -163,12 +169,16 @@ namespace Simulator
                 twDataModel.PrintTimeWindows();
             }
             TimeWindowSolver timeWindowSolver = new TimeWindowSolver();
-            var timeWindowSolution = timeWindowSolver.Solve(timeWindowDataModel);
+            var timeWindowSolution = timeWindowSolver.GetSolution(timeWindowDataModel);
+            ConsoleLogger.Log("Initial tw solution:");
             timeWindowSolver.Print(timeWindowSolution);
+            //var searchSolution = timeWindowSolver.GetSolution(timeWindowDataModel, 10);
+            //ConsoleLogger.Log("Tw solution with search strategy:");
+            //timeWindowSolver.Print(searchSolution);
             ConsoleLogger.Log("Initial solution:");
             DataModel.PrintPickupDeliveries();
 
-            var pdSolution = PickupDeliverySolver.Solve(DataModel);
+            var pdSolution = PickupDeliverySolver.GetSolution(DataModel);
             PickupDeliverySolver.Print(pdSolution);
             solutionVehicleCustomersDictionary = PickupDeliverySolver.GetVehicleStopSequenceCustomersDictionary(pdSolution);
 
@@ -192,9 +202,9 @@ namespace Simulator
                 try
                 {
                     ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
-                    SimulationStartHour = int.Parse(Console.ReadLine());
+                    _simulationStartEndTime[0] = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
                     ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
-                    SimulationEndHour = int.Parse(Console.ReadLine());
+                    _simulationStartEndTime[1] = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
                     canAdvance = true;
                 }
                 catch (Exception)
@@ -211,7 +221,7 @@ namespace Simulator
         {
             foreach (var route in TransportationNetwork.Routes)
             {
-                var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= SimulationStartHour && TimeSpan.FromSeconds(t.StartTime).Hours < SimulationEndHour);
+                var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= _simulationStartEndTime[0] && TimeSpan.FromSeconds(t.StartTime).Hours < _simulationStartEndTime[1]);
                 if (allRouteTrips.Count > 0)
                 {
                     var tripCount = 0;
@@ -221,7 +231,7 @@ namespace Simulator
                         {
                             trip.Reset();
                         }
-                        var v = new Vehicle(VehicleSpeed, VehicleCapacity, TransportationNetwork.ArcDictionary, false);
+                        var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, false);
                         v.AddTrip(trip); //Adds the service
                         VehicleFleet.Add(v);
                         ConsoleLogger.Log(trip.ToString() + " added.");
@@ -238,8 +248,8 @@ namespace Simulator
             ConsoleLogger.Log("|     Simulation Settings     |");
             ConsoleLogger.Log("-------------------------------");
             ConsoleLogger.Log("Number of vehicles:" + VehicleFleet.Count);
-            ConsoleLogger.Log("Vehicle average speed: " + VehicleSpeed + " km/h.");
-            ConsoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
+            ConsoleLogger.Log("Vehicle average speed: " + _vehicleSpeed + " km/h.");
+            ConsoleLogger.Log("Vehicle capacity: " + _vehicleCapacity + " seats.");
             List<Route> distinctRoutes = new List<Route>();
             foreach (var vehicle in VehicleFleet)
             {
@@ -255,9 +265,9 @@ namespace Simulator
                 }
             }
             ConsoleLogger.Log("Number of distinct routes:"+distinctRoutes.Count);
-            if (SimulationStartHour == 0 && SimulationEndHour == 0) return;
-            ConsoleLogger.Log("Start hour:" + SimulationStartHour);
-            ConsoleLogger.Log(  "End Hour:" + SimulationEndHour);
+            if (_simulationStartEndTime[0] == 0 && _simulationStartEndTime[1] == 0) return;
+            ConsoleLogger.Log("Start hour:" + _simulationStartEndTime[0]);
+            ConsoleLogger.Log(  "End Hour:" + _simulationStartEndTime[1]);
 
         }
 
@@ -345,7 +355,7 @@ namespace Simulator
                     ConsoleLogger.Log(print);
                 }
             }
-            PrintSimulationOptions();
+            PrintOptionsMenu();
 
         }
         public override void Append(Event evt)

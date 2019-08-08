@@ -22,6 +22,8 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
 
         public long[][] InitialRoutes;
 
+        public int[][] PickupsDeliveries => GetPickupDeliveryIndexMatrix();
+
         protected DataModel(Stop depot)
         {
             Customers = new List<Customer>();
@@ -30,6 +32,22 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
             Stops = new List<Stop>();
             Stops.Add(depot);
             InitialRoutes = new long[0][];
+        }
+        private int[][] GetPickupDeliveryIndexMatrix()//returns the pickupdelivery stop matrix using indexes (based on the pickupdeliverystop list) instead of stop id's
+        {
+            int[][] pickupsDeliveries = new int[Customers.Count][];
+            //Transforms the data from stop the list into index matrix list in order to use it in google Or tools
+            int insertCounter = 0;
+            foreach (var customer in Customers)
+            {
+                var pickup = customer.PickupDelivery[0];
+                var delivery = customer.PickupDelivery[1];
+                var pickupDeliveryInd = new int[] { Stops.IndexOf(pickup), Stops.IndexOf(delivery) };
+                pickupsDeliveries[insertCounter] = pickupDeliveryInd;
+                insertCounter++;
+            }
+
+            return pickupsDeliveries;
         }
 
         public void AddInitialRoute(List<Stop> stopSequence)

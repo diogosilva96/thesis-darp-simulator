@@ -11,9 +11,31 @@ namespace Simulator.Events
 {
     public class EventGenerator
     {
+        private static EventGenerator _instance; //Singleton pattern
+
         private EventFactory _eventFactory;
+
         private IDistribution _distribution;
 
+        //Lock syncronization object for multithreading (might not be needed)
+        private static object syncLock = new object();
+
+        public static EventGenerator GetEventGenerator() //Singleton
+        {
+            // Support multithreaded apps through Double checked locking pattern which (once the instance exists) avoids locking each time the method is invoked
+
+            if (_instance == null)
+            {
+                lock (syncLock)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = new EventGenerator();
+                    }
+                }
+            }
+            return _instance;
+        }
         public EventGenerator()
         {
             _eventFactory= new EventFactory();
