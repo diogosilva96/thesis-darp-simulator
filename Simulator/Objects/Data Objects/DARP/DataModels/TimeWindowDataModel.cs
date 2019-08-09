@@ -93,7 +93,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
             Console.WriteLine(this.ToString()+"Time Windows:");
             for (int i = 0; i < TimeWindows.GetLength(0); i++)
             {
-                Console.Write(GetStop(i)+"{");
+                Console.Write(IndexToStop(i)+"{");
                 for (int j = 0; j < TimeWindows.GetLength(1); j++)
                 {
                     if (j == 0)

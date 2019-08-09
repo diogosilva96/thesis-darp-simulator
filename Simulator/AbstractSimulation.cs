@@ -76,7 +76,7 @@ namespace Simulator
                 watch.Stop();
                 ConsoleLogger.Log("-----------------------------------------------------");
                 ConsoleLogger.Log(this.ToString()+"Simulation finished after "+TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds+" seconds.");
-                PrintSolution();
+                PrintSimulationStatistics();
             }
             
         }
@@ -121,6 +121,6 @@ namespace Simulator
             }
             return true;
         }
-        public abstract void PrintSolution();
+        public abstract void PrintSimulationStatistics();
     }
 }

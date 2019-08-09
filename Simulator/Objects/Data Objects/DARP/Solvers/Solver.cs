@@ -8,62 +8,60 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
     public abstract class Solver
     {
         protected DataModel DataModel;
-        protected RoutingIndexManager Manager;
-        protected RoutingModel Routing;
+        protected RoutingIndexManager RoutingIndexManager;
+        protected RoutingModel RoutingModel;
         protected Google.OrTools.ConstraintSolver.Solver ConstraintSolver;
-        protected RoutingDimension RoutingDimension;
         protected int TransitCallbackIndex;
-        protected RoutingSearchParameters SearchParameters;
-            public override string ToString()
+        public override string ToString()
         {
             return "[" + GetType().Name + "] ";
         }
 
         public void Init()
         {
-            // Create Routing Index Manager
-            Manager = new RoutingIndexManager(
+            // Create RoutingModel Index RoutingIndexManager
+            RoutingIndexManager = new RoutingIndexManager(
                 DataModel.Matrix.GetLength(0),
                 DataModel.VehicleNumber,
                 DataModel.DepotIndex);
 
             //Create routing model
-            Routing = new RoutingModel(Manager);
+            RoutingModel = new RoutingModel(RoutingIndexManager);
 
             // Create and register a transit callback.
-            TransitCallbackIndex = Routing.RegisterTransitCallback(
+            TransitCallbackIndex = RoutingModel.RegisterTransitCallback(
                 (long fromIndex, long toIndex) =>
                 {
                     // Convert from routing variable Index to time matrix or distance matrix NodeIndex.
-                    var fromNode = Manager.IndexToNode(fromIndex);
-                    var toNode = Manager.IndexToNode(toIndex);
+                    var fromNode = RoutingIndexManager.IndexToNode(fromIndex);
+                    var toNode = RoutingIndexManager.IndexToNode(toIndex);
                     return DataModel.Matrix[fromNode, toNode];
                 }
             );
-
             InitHookMethod(); //for the subclasses to define
-            InitSearchParameters();
         }
 
         public abstract void InitHookMethod();
 
-        public void InitSearchParameters()
+        public RoutingSearchParameters GetSearchParameters()
         {
             // Setting first solution heuristic.
-            SearchParameters =
+            RoutingSearchParameters searchParameters =
                 operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            SearchParameters.FirstSolutionStrategy =
+            searchParameters.FirstSolutionStrategy =
                 FirstSolutionStrategy.Types.Value.PathCheapestArc;
+
+            return searchParameters;
         }
 
         public Assignment GetSolution(DataModel dataModel)
         {
             DataModel = dataModel;
             Init();
+            var searchParameters = GetSearchParameters();
             //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_dataModel.InitialRoutes, true);
-
             //Get the solution of the problem
-            Assignment solution = Routing.SolveWithParameters(SearchParameters);
+            Assignment solution = RoutingModel.SolveWithParameters(searchParameters);
             return solution;
         }
 
@@ -71,15 +69,18 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
         {
             DataModel = dataModel;
             Init();
-            SetSearchStrategy(searchTimeLimit); //sets a search strategy with a time limit
-            Assignment solution = Routing.SolveWithParameters(SearchParameters); //solves the problem
+
+            var searchParameters = GetSearchParameters();
+            SetSearchStrategy(searchParameters,searchTimeLimit); //sets a search strategy with a time limit
+            Assignment solution = RoutingModel.SolveWithParameters(searchParameters); //solves the problem
             return solution;
         }
-        public void SetSearchStrategy(int searchTimeLimit)
+        public void SetSearchStrategy(RoutingSearchParameters searchParam,int searchTimeLimit)
         {
-            SearchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
-            SearchParameters.TimeLimit = new Duration { Seconds = searchTimeLimit };
-            SearchParameters.LogSearch = false; //logs the search if true
+            searchParam.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+            searchParam.TimeLimit = new Duration { Seconds = searchTimeLimit };
+            searchParam.LogSearch = false; //logs the search if true
+
         }
 
         public abstract void Print(Assignment solution);

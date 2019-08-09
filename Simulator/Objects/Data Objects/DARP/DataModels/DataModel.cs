@@ -103,7 +103,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
 
         protected abstract void UpdateMatrix();
 
-        public Stop GetStop(int index)
+        public Stop IndexToStop(int index)
         {
             return Stops[index];
         }
@@ -116,15 +116,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
         public void PrintMatrix()
         {
             string matrixType;
-            if (this is PickupDeliveryDataModel)
-            {
-                matrixType = "Distance";
-            }
-            else
-            {
-                matrixType = "Time";
-            }
-            Console.WriteLine(ToString() + matrixType+" Matrix:");
+            Console.WriteLine(ToString() + "Matrix:");
             var counter = 0;
             foreach (var val in Matrix)
                 if (counter == Matrix.GetLength(1) - 1)
@@ -152,11 +144,11 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
                     {
                         if (i != initialRoute.Length - 1)
                         {
-                            Console.Write(GetStop((int)initialRoute[i]).Id + " -> ");
+                            Console.Write(IndexToStop((int)initialRoute[i]).Id + " -> ");
                         }
                         else
                         {
-                            Console.WriteLine(GetStop((int)initialRoute[i]).Id);
+                            Console.WriteLine(IndexToStop((int)initialRoute[i]).Id);
                         }
                     }
                     count++;
@@ -166,17 +158,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
 
         public void PrintPickupDeliveries()
         {
-            string printString;
-            if (this is PickupDeliveryDataModel)
-            {
-                printString = ToString() + "Pickups and deliveries (total: " + Customers.Count + "):";
-            }
-            else
-            {
-                printString = ToString() + "Pickups and Deliveries with Time Windows (total: " + Customers.Count + "):";
-            }
-
-            Console.WriteLine(printString);
+            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows (total: " + Customers.Count + "):");
             foreach (var customer in Customers)
                 customer.PrintPickupDelivery();
         }

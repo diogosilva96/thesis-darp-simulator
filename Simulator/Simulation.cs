@@ -25,11 +25,10 @@ namespace Simulator
 
         private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> solutionVehicleCustomersDictionary; //CHANGE THIS!
 
-        public PickupDeliverySolver PickupDeliverySolver = new PickupDeliverySolver();
+        public TimeWindowSolver TimeWindowSolver = new TimeWindowSolver();
 
         protected DataModel DataModel;
 
-        private readonly IDataModelFactory _dataModelFactory;
 
         private readonly int[] _simulationStartEndTime;
 
@@ -47,9 +46,8 @@ namespace Simulator
             _vehicleCapacity = 53;
             _vehicleSpeed = 30;
             _validationsCounter = 1;
-            _dataModelFactory = new DataModelFactory(_vehicleSpeed);
             _simulationStartEndTime = new int[2];
-            DataModel = _dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 1);// Pickup delivery data model
+            DataModel = new TimeWindowDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), _vehicleSpeed);// timeWindow delivery data model
 
         }
 
@@ -132,24 +130,17 @@ namespace Simulator
             var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            DataModel timeWindowDataModel = _dataModelFactory.CreateDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), 2);
             // Pickup and deliveries definition using static generated stop requests
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3500, 4000 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 3400, 3600 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3250, 3550 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3220, 3700 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
-            timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 5500 }, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 2000, 5000 }, 0));
+            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 2500, 4200 }, 0));
+            //DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3220, 3700 }, 0));
+            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3100, 3900 }, 0));
+            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
+            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
+            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
             // Pickup and deliveries definition using static generated stop requests 
 
-            DataModel.AddCustomer(new Customer(new Stop[]{ TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430)}, 0));
-            DataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359)}, 0));
-            DataModel.AddCustomer(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018)}, 0));
-            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523)}, 0));
-            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884)}, 0));
-            DataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555)},0));
 
             //var serviceStops = service.Trip.Stops;
             //DataModel.AddInitialRoute(serviceStops);
@@ -159,38 +150,32 @@ namespace Simulator
             {
                 var vehicle = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, true);
                 DataModel.AddVehicle(vehicle);
-                timeWindowDataModel.AddVehicle(vehicle);
+                DataModel.AddVehicle(vehicle);
                 VehicleFleet.Add(vehicle);
             }
-            timeWindowDataModel.PrintMatrix();
-            timeWindowDataModel.PrintPickupDeliveries();
-            if (timeWindowDataModel is TimeWindowDataModel twDataModel)
+            DataModel.PrintMatrix();
+            DataModel.PrintPickupDeliveries();
+            if (DataModel is TimeWindowDataModel twDataModel)
             {
                 twDataModel.PrintTimeWindows();
             }
             TimeWindowSolver timeWindowSolver = new TimeWindowSolver();
-            var timeWindowSolution = timeWindowSolver.GetSolution(timeWindowDataModel);
+            var timeWindowSolution = timeWindowSolver.GetSolution(DataModel);
             ConsoleLogger.Log("Initial tw solution:");
-            timeWindowSolver.Print(timeWindowSolution);
-            //var searchSolution = timeWindowSolver.GetSolution(timeWindowDataModel, 10);
-            //ConsoleLogger.Log("Tw solution with search strategy:");
-            //timeWindowSolver.Print(searchSolution);
+            timeWindowSolver.PrintSol(timeWindowSolution);
+
             ConsoleLogger.Log("Initial solution:");
             DataModel.PrintPickupDeliveries();
 
-            var pdSolution = PickupDeliverySolver.GetSolution(DataModel);
-            PickupDeliverySolver.Print(pdSolution);
-            solutionVehicleCustomersDictionary = PickupDeliverySolver.GetVehicleStopSequenceCustomersDictionary(pdSolution);
-
-            foreach (var dictionary in solutionVehicleCustomersDictionary)
-            {
-                var trip = new Trip(20000 + dictionary.Key.Id, "Flexible trip " + dictionary.Key.Id);
-                trip.StartTime = new Random().Next(0, 60 * 60 * 24);//random start time between hour 0 and 24
-                trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
-                trip.Stops = dictionary.Value.Item1;
-                var vehicle = VehicleFleet.Find(v1 => v1.Id == dictionary.Key.Id); //finds the vehicle in the vehiclefleet
-                vehicle.AddTrip(trip); //adds the new flexible service to the vehicle
-            }
+            //foreach (var dictionary in solutionVehicleCustomersDictionary)
+            //{
+            //    var trip = new Trip(20000 + dictionary.Key.Id, "Flexible trip " + dictionary.Key.Id);
+            //    trip.StartTime = new Random().Next(0, 60 * 60 * 24);//random start time between hour 0 and 24
+            //    trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
+            //    trip.Stops = dictionary.Value.Item1;
+            //    var vehicle = VehicleFleet.Find(v1 => v1.Id == dictionary.Key.Id); //finds the vehicle in the vehiclefleet
+            //    vehicle.AddTrip(trip); //adds the new flexible service to the vehicle
+            //}
             
         }
 
@@ -253,14 +238,17 @@ namespace Simulator
             List<Route> distinctRoutes = new List<Route>();
             foreach (var vehicle in VehicleFleet)
             {
-                vehicle.TripIterator.Reset();
-
-                while (vehicle.TripIterator.MoveNext())//iterates over each vehicle service
+                if (vehicle.TripIterator != null)
                 {
-                    var route = vehicle.TripIterator.Current.Route;
-                    if (!distinctRoutes.Contains(route)) //if the route isn't in distinct routes list adds it
+                    vehicle.TripIterator.Reset();
+
+                    while (vehicle.TripIterator.MoveNext()) //iterates over each vehicle service
                     {
-                        distinctRoutes.Add(route);
+                        var route = vehicle.TripIterator.Current.Route;
+                        if (!distinctRoutes.Contains(route)) //if the route isn't in distinct routes list adds it
+                        {
+                            distinctRoutes.Add(route);
+                        }
                     }
                 }
             }
@@ -273,7 +261,7 @@ namespace Simulator
 
 
 
-        public override void PrintSolution()
+        public override void PrintSimulationStatistics()
         {
             //start of darp solution
             //if (DataModel != null)
@@ -300,7 +288,7 @@ namespace Simulator
             foreach (var route in TransportationNetwork.Routes)
             {
 
-                var allRouteVehicles = VehicleFleet.FindAll(v => v.TripIterator.Current.Route == route);
+                var allRouteVehicles = VehicleFleet.FindAll(v => v.TripIterator != null && v.TripIterator.Current.Route == route );
             
                 if (allRouteVehicles.Count > 0)
                 {
@@ -396,33 +384,33 @@ namespace Simulator
 
                 var maxInsertedTime = Math.Max(lastInsertedEnterTime, lastInsertedLeaveTime); ; //gets the highest value of the last insertion in order to maintain precedence constraints for the depart evt, meaning that the stop depart only happens after every customer has already entered and left the vehicle on that stop location
 
-                //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS
-                if (solutionVehicleCustomersDictionary != null)
-                {
-                    solutionVehicleCustomersDictionary.TryGetValue(eventArrive.Vehicle,
-                        out var solutionDictionaryValue); //Tries to get the customer dictionary for the current vehicle;
-                    if (solutionDictionaryValue != null)
-                    {
-                        var customersToEnterAtCurrentStop =
-                            solutionDictionaryValue.Item2?.FindAll(c =>
-                                c.PickupDelivery[0] ==
-                                eventArrive
-                                    .Stop); //gets all the customers that have the current stop as the pickup stop
-                        if (customersToEnterAtCurrentStop != null)
-                        {
-                            var count = 1;
-                            foreach (var customer in customersToEnterAtCurrentStop
-                            ) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
-                            {
-                                var customerEnterVehicleEvt =
-                                    EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle,
-                                        maxInsertedTime + count, customer); //generates the enter event
-                                AddEvent(customerEnterVehicleEvt); //adds to the event list
-                                count++;
-                            }
-                        }
-                    }
-                }
+                //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS CHANGE!
+                //if (solutionVehicleCustomersDictionary != null)
+                //{
+                //    solutionVehicleCustomersDictionary.TryGetValue(eventArrive.Vehicle,
+                //        out var solutionDictionaryValue); //Tries to get the customer dictionary for the current vehicle;
+                //    if (solutionDictionaryValue != null)
+                //    {
+                //        var customersToEnterAtCurrentStop =
+                //            solutionDictionaryValue.Item2?.FindAll(c =>
+                //                c.PickupDelivery[0] ==
+                //                eventArrive
+                //                    .Stop); //gets all the customers that have the current stop as the pickup stop
+                //        if (customersToEnterAtCurrentStop != null)
+                //        {
+                //            var count = 1;
+                //            foreach (var customer in customersToEnterAtCurrentStop
+                //            ) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
+                //            {
+                //                var customerEnterVehicleEvt =
+                //                    EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle,
+                //                        maxInsertedTime + count, customer); //generates the enter event
+                //                AddEvent(customerEnterVehicleEvt); //adds to the event list
+                //                count++;
+                //            }
+                //        }
+                //    }
+                //}
 
                 // END OF INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS
 
