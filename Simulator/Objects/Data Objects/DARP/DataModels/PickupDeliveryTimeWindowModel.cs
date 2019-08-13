@@ -2,7 +2,7 @@
 
 namespace Simulator.Objects.Data_Objects.DARP.DataModels
 {
-    public class TimeWindowDataModel:DataModel
+    public class PickupDeliveryTimeWindowModel:DataModel //Vehicle routing problem with pickup and delivery time windows data model
     {
         public long[,] TimeWindows => GetTimeWindowsArray();
 
@@ -10,7 +10,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
 
         private readonly int _dayInMinutes = 1440; //24hours = 1440minutes
 
-        public TimeWindowDataModel(Stop depot,int vehicleSpeed) : base(depot)
+        public PickupDeliveryTimeWindowModel(Stop depot,int vehicleSpeed) : base(depot)
         {
             _vehicleSpeed = vehicleSpeed;
         }
@@ -26,7 +26,7 @@ namespace Simulator.Objects.Data_Objects.DARP.DataModels
             for (int i = 0; i < timeWindows.GetLength(0); i++)
             {
                 timeWindows[i, 0] = 0; //lower bound of the timewindow is initialized with 0
-                timeWindows[i, 1] = long.MaxValue; //Upper bound of the timewindow with a max long value
+                timeWindows[i, 1] = _dayInMinutes; //Upper bound of the timewindow with a max long value
                 
             }
 

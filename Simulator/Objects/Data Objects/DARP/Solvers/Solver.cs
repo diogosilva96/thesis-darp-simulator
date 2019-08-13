@@ -10,7 +10,6 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
         protected DataModel DataModel;
         protected RoutingIndexManager RoutingIndexManager;
         protected RoutingModel RoutingModel;
-        protected Google.OrTools.ConstraintSolver.Solver ConstraintSolver;
         protected int TransitCallbackIndex;
         public override string ToString()
         {
@@ -69,9 +68,9 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
         {
             DataModel = dataModel;
             Init();
-
             var searchParameters = GetSearchParameters();
-            SetSearchStrategy(searchParameters,searchTimeLimit); //sets a search strategy with a time limit
+            //Get the solution of the problem
+            SetSearchStrategy(searchParameters, 20);
             Assignment solution = RoutingModel.SolveWithParameters(searchParameters); //solves the problem
             return solution;
         }
@@ -79,10 +78,10 @@ namespace Simulator.Objects.Data_Objects.DARP.Solvers
         {
             searchParam.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
             searchParam.TimeLimit = new Duration { Seconds = searchTimeLimit };
-            searchParam.LogSearch = false; //logs the search if true
+            searchParam.LogSearch = true; //logs the search if true
 
         }
 
-        public abstract void Print(Assignment solution);
+        public abstract void PrintSolution(Assignment solution);
     }
 }
