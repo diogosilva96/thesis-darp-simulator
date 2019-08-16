@@ -21,13 +21,23 @@ namespace Simulator.Objects
             return distance;
         }
 
-        public double CalculateTravelTime(int speedInKilometerPerHour, double distance)
+        public double DistanceToTravelTime(int speedInKMH, double distance)
         {
-            var speedInMetersPerSecond = speedInKilometerPerHour / 3.6; //speed in m/s
+            var speedInMetersPerSecond = speedInKMH / 3.6; //transforms speed in km/h to speed in m/s
             var timeToTravel =
                 distance /
                 speedInMetersPerSecond; // time it takes to travel the distance, travelTime [seconds] = (Distance [meters]/Speed [meters per second])
-            return timeToTravel;
+            return timeToTravel; //time to travel in seconds
+        }
+
+        public double TravelTimeToDistance(int timeToTravelInSeconds, int speedInKMH) //timetotravel in seconds, vehicle speed in km/h
+        {
+            double distance = 0;
+            var speedInMetersPerSecond = speedInKMH / 3.6; //transforms speed in km/h to speed in m/s
+            distance = timeToTravelInSeconds * speedInMetersPerSecond;
+            return distance;
+
+
         }
     }
 }

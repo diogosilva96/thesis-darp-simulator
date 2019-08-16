@@ -17,7 +17,7 @@ namespace Simulator.Objects
 
             long[,] distanceMatrix = new long[stops.Count, stops.Count];
             Calculator calculator = new Calculator();
-            //Console.WriteLine(this.ToString()+"Generating Distance Matrix...");
+            //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
             for (int i = 0; i < stops.Count; i++)
             {
                 for (int j = 0; j < stops.Count; j++)
@@ -48,7 +48,7 @@ namespace Simulator.Objects
 
             long[,] timeMatrix = new long[stops.Count, stops.Count];
             Calculator calculator = new Calculator();
-            //Console.WriteLine(this.ToString()+"Generating Distance Matrix...");
+            //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
             for (int i = 0; i < stops.Count; i++)
             {
                 for (int j = 0; j < stops.Count; j++)
@@ -64,9 +64,9 @@ namespace Simulator.Objects
                         distance = (long)calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                     }
-                     var timeInSeconds = (long)calculator.CalculateTravelTime(speedInKmHour,distance);
-                     var time = TimeSpan.FromSeconds(timeInSeconds);
-                     timeMatrix[i, j] = (long)time.TotalMinutes;
+                     var timeInSeconds = (long)calculator.DistanceToTravelTime(speedInKmHour,distance);
+                     //timeMatrix[i, j] = (long)TimeSpan.FromSeconds(timeInSeconds).TotalMinutes; // time in minutes
+                     timeMatrix[i, j] = (long) timeInSeconds;
                 }
             }
             //Console.WriteLine(this.ToString()+"Distance matrix successfully generated, matrix size:" + distanceMatrix.Length);

@@ -77,7 +77,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             string stringToBePrinted = this.ToString() + " - PickupDelivery: [" + PickupDelivery[0] + " -> " + PickupDelivery[1] + "]";
             if (DesiredTimeWindow != null)
             {
-                stringToBePrinted = stringToBePrinted + " - TimeWindows (in minutes): {" + (int)TimeSpan.FromSeconds(DesiredTimeWindow[0]).TotalMinutes + "," + (int)TimeSpan.FromSeconds(DesiredTimeWindow[1]).TotalMinutes + "}";
+                stringToBePrinted = stringToBePrinted + " - TimeWindows (in seconds): {"+DesiredTimeWindow[0]+","+DesiredTimeWindow[1]+"}";
             }
             Console.WriteLine(stringToBePrinted);
         }
@@ -95,7 +95,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     RealTimeWindow[1] = time;
                     _isInVehicle = false;
                     AlreadyServed = true;
-                    if (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the service is complete
+                    if (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the trip is complete
                     {
                         vehicle.TripIterator.Current.Finish(time); //Finishes the service
                         Console.WriteLine(vehicle.ToString()+vehicle.TripIterator.Current + " FINISHED at " +
