@@ -21,11 +21,11 @@ namespace Simulator
 
         private int _validationsCounter;
 
-        private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>>> solutionVehicleCustomersDictionary; //CHANGE THIS!
+        private PickupDeliverySolutionObject solutionObject; //CHANGE THIS!
 
         public PickupDeliveryTimeWindowSolver PickupDeliveryTimeWindowSolver = new PickupDeliveryTimeWindowSolver();
 
-        protected PickupDeliveryDataModel PickupDeliveryDataModel;
+        public PickupDeliveryDataModel PickupDeliveryDataModel;
 
 
         private readonly int[] _simulationStartEndTime;
@@ -159,17 +159,22 @@ namespace Simulator
             var timeWindowSolution = pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.GetSolution(PickupDeliveryDataModel);
             ConsoleLogger.Log("Initial tw solution:");
             pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.PrintSolution(timeWindowSolution);
+            solutionObject =
+                pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.GetSolutionObject(
+                    timeWindowSolution);
 
-            //foreach (var dictionary in solutionVehicleCustomersDictionary)
-            //{
-            //    var trip = new Trip(20000 + dictionary.Key.Id, "Flexible trip " + dictionary.Key.Id);
-            //    trip.StartTime = new Random().Next(0, 60 * 60 * 24);//random start time between hour 0 and 24
-            //    trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
-            //    trip.Stops = dictionary.Value.Item1;
-            //    var vehicle = VehicleFleet.Find(v1 => v1.Id == dictionary.Key.Id); //finds the vehicle in the vehiclefleet
-            //    vehicle.AddTrip(trip); //adds the new flexible service to the vehicle
-            //}
-            
+            for(int j=0;j<solutionObject.VehicleNumber;j++) //Initializes the flexible trips
+            {
+                var solutionVehicle = solutionObject.GetVehicle(j);
+                var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
+                trip.StartTime = new Random().Next(0, 60 * 60 * 24);//random start time between hour 0 and 24
+                trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
+                trip.Stops = solutionObject.GetVehicleRoute(solutionVehicle);
+                
+                var vehicle = VehicleFleet.Find(v1 => v1.Id == solutionVehicle.Id); //finds the vehicle in the vehiclefleet
+                vehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
+            }
+
         }
 
         public void StandardBusRouteOption()
@@ -378,32 +383,29 @@ namespace Simulator
                 var maxInsertedTime = Math.Max(lastInsertedEnterTime, lastInsertedLeaveTime); ; //gets the highest value of the last insertion in order to maintain precedence constraints for the depart evt, meaning that the stop depart only happens after every customer has already entered and left the vehicle on that stop location
 
                 //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS CHANGE!
-                //if (solutionVehicleCustomersDictionary != null)
-                //{
-                //    solutionVehicleCustomersDictionary.TryGetValue(eventArrive.Vehicle,
-                //        out var solutionDictionaryValue); //Tries to get the customer dictionary for the current vehicle;
-                //    if (solutionDictionaryValue != null)
-                //    {
-                //        var customersToEnterAtCurrentStop =
-                //            solutionDictionaryValue.Item2?.FindAll(c =>
-                //                c.PickupDelivery[0] ==
-                //                eventArrive
-                //                    .Stop); //gets all the customers that have the current stop as the pickup stop
-                //        if (customersToEnterAtCurrentStop != null)
-                //        {
-                //            var count = 1;
-                //            foreach (var customer in customersToEnterAtCurrentStop
-                //            ) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
-                //            {
-                //                var customerEnterVehicleEvt =
-                //                    EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle,
-                //                        maxInsertedTime + count, customer); //generates the enter event
-                //                AddEvent(customerEnterVehicleEvt); //adds to the event list
-                //                count++;
-                //            }
-                //        }
-                //    }
-                //}
+                if (solutionObject != null)
+                {
+                    if (solutionObject.ContainsVehicle(eventArrive.Vehicle))//Checks if the current vehicle is contained on the solution object;
+                    {
+                        var customersToEnterAtCurrentStop = solutionObject.GetVehicleCustomers(eventArrive.Vehicle).FindAll(c =>
+                                c.PickupDelivery[0] ==
+                                eventArrive
+                                    .Stop); //gets all the customers that have the current stop as the pickup stop
+                        if (customersToEnterAtCurrentStop.Count > 0) //check if there is customers to enter at current stop
+                        {
+                            var count = 1;
+                            foreach (var customer in customersToEnterAtCurrentStop
+                            ) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
+                            {
+                                var customerEnterVehicleEvt =
+                                    EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle,
+                                        maxInsertedTime + count, customer); //generates the enter event
+                                AddEvent(customerEnterVehicleEvt); //adds to the event list
+                                count++;
+                            }
+                        }
+                    }
+                }
 
                 // END OF INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS
 

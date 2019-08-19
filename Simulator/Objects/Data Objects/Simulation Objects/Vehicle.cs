@@ -110,7 +110,7 @@ namespace Simulator.Objects.Data_Objects
         {
             if (TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
-                Console.WriteLine(ToString() + "DEPARTED from " + stop + "at " + TimeSpan.FromSeconds(time) + ".");
+                Console.WriteLine(ToString() + "DEPARTED from " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
                 var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
                     TripIterator.Current.StopsIterator.NextStop);
                 ArcDictionary.TryGetValue(tuple, out var distance);

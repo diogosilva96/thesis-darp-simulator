@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Google.OrTools.ConstraintSolver;
 using Google.Protobuf.WellKnownTypes;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.DARP
 {
@@ -170,6 +172,94 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         }
 
+        public PickupDeliverySolutionObject GetSolutionObject(Assignment solution)
+        {
+            PickupDeliverySolutionObject pickupDeliverySolutionObject = null;
+            if (solution != null) { 
+
+                var solutionDictionary = SolutionToVehicleStopTimeWindowsDictionary(solution);
+                if (solutionDictionary != null)
+                {
+                    pickupDeliverySolutionObject = new PickupDeliverySolutionObject(solutionDictionary);
+                }
+            }
+            return pickupDeliverySolutionObject;
+        }
+
+        private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> SolutionToVehicleStopTimeWindowsDictionary(Assignment solution)
+        {
+            Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>
+                vehicleStopCustomerTimeWindowsDictionary = null;
+            if (solution != null)
+            {
+                List<Customer> allCustomers = _pickupDeliveryDataModel.Customers;
+                vehicleStopCustomerTimeWindowsDictionary =
+                    new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
+                var timeDim = _routingModel.GetMutableDimension("Time");
+                var distanceDim = _routingModel.GetMutableDimension("Distance");
+                for (int i = 0; i < _pickupDeliveryDataModel.VehicleNumber; ++i)
+                {
+                    List<Stop> routeStops = new List<Stop>();
+                    List<Customer> routeCustomers = new List<Customer>();
+                    List<Customer> customersToBeRemove = new List<Customer>();
+                    List<long[]> routeTimeWindows = new List<long[]>();
+                    int stopIndex = 0;
+                    long[] timeWindow;
+                    Stop currentStop = null;
+                    var index = _routingModel.Start(i);
+                    while (_routingModel.IsEnd(index) == false) //while the iterator isn't done
+                    {
+
+                        stopIndex = _routingIndexManager.IndexToNode(index); //Gets current stop index
+                        //routeStops add
+                        currentStop = _pickupDeliveryDataModel.IndexToStop(stopIndex);
+                        routeStops.Add(currentStop); //adds the current stop
+                        //timeWindow add
+                        var timeVar = timeDim.CumulVar(index);
+                        timeWindow = new[] { solution.Min(timeVar), solution.Max(timeVar) };
+                        routeTimeWindows.Add(timeWindow); //adds the timewindow to the list
+
+                        index = solution.Value(_routingModel.NextVar(index)); //increments the iterator
+                    }
+                    //timeWindow add
+                    var endTimeVar = timeDim.CumulVar(index);
+                    timeWindow = new[] { solution.Min(endTimeVar), solution.Max(endTimeVar) };
+                    routeTimeWindows.Add(timeWindow);
+
+                    stopIndex = _routingIndexManager.IndexToNode(index); //Gets current stop index
+                    //routeStops add
+                    currentStop = _pickupDeliveryDataModel.IndexToStop(stopIndex);
+                    routeStops.Add(currentStop); //adds the current stop
+                    foreach (var customer in allCustomers) //loop to add the customers to the routecustomers
+                    {
+                        var pickupStop = customer.PickupDelivery[0];
+                        var deliveryStop = customer.PickupDelivery[1];
+                        if (routeStops.Contains(pickupStop) &&
+                            routeStops.Contains(deliveryStop)) //If the route contains the pickup and delivery stop
+                        {
+                            if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop)
+                            ) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                            {
+                                routeCustomers.Add(customer);
+                                customersToBeRemove.Add(customer);
+                            }
+                        }
+                    }
+                    //customer removal (for the already added to the solution object)
+                    foreach (var customer in customersToBeRemove)
+                    {
+                        allCustomers.Remove(customer); //removes the already added customers from the list
+                    }
+
+                    var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
+                    vehicleStopCustomerTimeWindowsDictionary.Add(_pickupDeliveryDataModel.Vehicles[i],
+                        tuple); //adds the vehicle index + tuple with the customer and routestop list
+                }
+            }
+
+            return vehicleStopCustomerTimeWindowsDictionary;
+
+        }
         public void PrintSolution(Assignment solution)
         {
 
