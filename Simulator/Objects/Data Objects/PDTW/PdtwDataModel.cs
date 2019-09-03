@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.PDTW
@@ -9,6 +10,8 @@ namespace Simulator.Objects.Data_Objects.PDTW
         public int DepotIndex;
 
         public int VehicleNumber => Vehicles.Count; // number of vehicles
+
+        public long[] VehicleCapacities;
 
         public long[,] TimeMatrix; //time window matrix
 
@@ -20,7 +23,9 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
         public long[][] InitialRoutes;
 
-        public long[,] TimeWindows => GetTimeWindowsArray();
+        public long[,] TimeWindows => GetTimeWindows();
+
+        public long[] Demands => GetDemands();
 
         public int VehicleSpeed;
 
@@ -39,7 +44,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
             InitialRoutes = new long[0][];
         }
 
-        public PdtwDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed)
+        public PdtwDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed) //if different end and start depot
         {
 
         }
@@ -56,7 +61,6 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 pickupsDeliveries[insertCounter] = pickupDeliveryInd;
                 insertCounter++;
             }
-
             return pickupsDeliveries;
         }
 
@@ -71,10 +75,37 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 initialRoute[index] = Stops.IndexOf(stop);
                 index++;
             }
-
             Array.Resize(ref InitialRoutes, InitialRoutes.Length + 1);
             InitialRoutes[InitialRoutes.Length - 1] = initialRoute;
         }
+
+        private long[] GetDemands()
+        {
+            long[] demands = null;
+            if (Stops.Count > 0)
+            {
+                demands = new long[Stops.Count];
+                //loop that initializes demands
+                for (int i = 0; i < Stops.Count; i++)
+                {
+                    demands[i] = 0; //init demand at 0 at each index
+                }
+
+                if (Customers.Count > 0)
+                {
+                    foreach (var customer in Customers)
+                    {
+                        var pickupIndex = StopToIndex(customer.PickupDelivery[0]); //gets the index of the pickup stop
+                        var deliveryIndex = StopToIndex(customer.PickupDelivery[1]); //gets the index of the delivery stop
+                        demands[pickupIndex] += 1; //adds 1 to the demand of the pickup index
+                        demands[deliveryIndex] -= 1; //subtracts 1  to the demand of the delivery index
+                    }
+                }
+            }
+
+            return demands;
+        }
+
 
         public void AddCustomer(Customer customer)
         {
@@ -91,9 +122,23 @@ namespace Simulator.Objects.Data_Objects.PDTW
             if (!Vehicles.Contains(vehicle))
             {
                 Vehicles.Add(vehicle);
+                UpdateVehicleCapacities();
             }
         }
 
+        private void UpdateVehicleCapacities()
+        {
+            VehicleCapacities = null;
+            if (Vehicles.Count > 0)
+            {
+                VehicleCapacities = new long[Vehicles.Count];
+                for (int i = 0; i < Vehicles.Count; i++)
+                {
+                    VehicleCapacities[i] = Vehicles[i].Capacity;
+                }
+            }
+        }
+        
         private void AddPickupDeliveryStops(Customer customer)
         {
             bool valueChanged = false;
@@ -120,6 +165,11 @@ namespace Simulator.Objects.Data_Objects.PDTW
         public Stop IndexToStop(int index)
         {
             return Stops[index];
+        }
+
+        public int StopToIndex(Stop stop)
+        {
+           return Stops.FindIndex(s=> s==stop);
         }
 
         public override string ToString()
@@ -189,7 +239,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return timeWindows;
         }
 
-        public long[,] GetTimeWindowsArray()
+        public long[,] GetTimeWindows()
         {
             long[,] timeWindows = new long[Stops.Count, 2];
             timeWindows = GetInitialTimeWindowsArray(timeWindows);

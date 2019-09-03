@@ -13,6 +13,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
         private RoutingIndexManager _routingIndexManager;
         private RoutingModel _routingModel;
         private int _transitCallbackIndex;
+        private int _demandCallbackIndex;
         public int MaxUpperBound;
 
         public override string ToString()
@@ -30,7 +31,6 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
             //Create routing model
             _routingModel = new RoutingModel(_routingIndexManager);
-
             // Create and register a transit callback.
             _transitCallbackIndex = _routingModel.RegisterTransitCallback(
                 (long fromIndex, long toIndex) =>
@@ -41,6 +41,15 @@ namespace Simulator.Objects.Data_Objects.PDTW
                     return _pdtwDataModel.TimeMatrix[fromNode, toNode];
                 }
             );
+
+            //Create and register demand callback
+            _demandCallbackIndex = _routingModel.RegisterUnaryTransitCallback(
+                (long fromIndex) => {
+                    // Convert from routing variable Index to demand NodeIndex.
+                    var fromNode = _routingIndexManager.IndexToNode(fromIndex);
+                    return _pdtwDataModel.Demands[fromNode];
+                }
+            );
             //// Allow to drop nodes.
             //long penalty = 999999;
             //for (int i = 1; i < _pdtwDataModel.TimeMatrix.GetLength(0); ++i)
@@ -49,8 +58,15 @@ namespace Simulator.Objects.Data_Objects.PDTW
             //}
 
             _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
+            //Adds capacity constraints
+            _routingModel.AddDimensionWithVehicleCapacity(
+                _demandCallbackIndex, 0,  // null capacity slack
+                _pdtwDataModel.VehicleCapacities,   // vehicle maximum capacities
+                true,                      // start cumul to zero
+                "Capacity");
             AddPickupDeliveryDimension(); //Adds the pickup delivery dimension, which contains the pickup and delivery constraints
             AddTimeWindowDimension(maxUpperBoundLimitInMinutes*60); //Adds the time window dimension, which contains the timewindow constraints, 5min upper bound limit
+        
         }
 
         private void AddPickupDeliveryDimension()
@@ -283,33 +299,37 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("| PDTW Solver Solution Printer |");
                 Console.WriteLine("--------------------------------");
+                Console.WriteLine("T - Time Windows");
+                Console.WriteLine("L - Load of the vehicle");
                 for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
                 {
-                    int stopInd = 0;
+                    int nodeIndex = 0;
+                    long routeLoad = 0;
                     Console.WriteLine("Vehicle {0} Route:", i);
                     var index = _routingModel.Start(i);
                     while (_routingModel.IsEnd(index) == false)
                     {
                         var timeVar = timeDim.CumulVar(index);
-                        
-                        stopInd = _routingIndexManager.IndexToNode(index);
+                        nodeIndex = _routingIndexManager.IndexToNode(index);
+                        routeLoad += _pdtwDataModel.Demands[nodeIndex];
                         var previousIndex = index;
                         index = solution.Value(_routingModel.NextVar(index));
                         var timeToTravel = _routingModel.GetArcCostForVehicle(previousIndex, index, 0); //Gets the travel time between the previousNode and the NextNode
                         var distance =
                             calculator.TravelTimeToDistance((int)timeToTravel, _pdtwDataModel.VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        Console.Write(_pdtwDataModel.IndexToStop(stopInd) + " Time({0},{1}) -[{2}m]-> ",
+                        Console.Write(_pdtwDataModel.IndexToStop(nodeIndex) + ":T({0},{1}), L({2}) --[{3}m]--> ",
                             solution.Min(timeVar),
-                            solution.Max(timeVar),
+                            solution.Max(timeVar), routeLoad,
                             (int)distance);
 
                     }
                     var endDistanceVar = distanceDim.CumulVar(index);
                     var endTimeVar = timeDim.CumulVar(index);
-                    stopInd = _routingIndexManager.IndexToNode(index);
-                    Console.WriteLine(_pdtwDataModel.IndexToStop(stopInd) + "Time({0},{1})",
+                    nodeIndex = _routingIndexManager.IndexToNode(index);
+                    routeLoad += _pdtwDataModel.Demands[nodeIndex];
+                    Console.WriteLine(_pdtwDataModel.IndexToStop(nodeIndex) + ":T({0},{1}), L({2})",
                         solution.Min(endTimeVar),
-                        solution.Max(endTimeVar));
+                        solution.Max(endTimeVar),routeLoad);
                     Console.WriteLine("Time of the route: {0} minutes", TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes);
                     long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar), _pdtwDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     Console.WriteLine("Distance of the route: {0} meters",routeDistance); 
