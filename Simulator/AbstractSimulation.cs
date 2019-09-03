@@ -10,7 +10,6 @@ using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
-using Simulator.Objects.Data_Objects.DARP;
 
 namespace Simulator
 {

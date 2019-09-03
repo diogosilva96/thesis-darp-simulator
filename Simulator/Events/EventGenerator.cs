@@ -71,7 +71,7 @@ namespace Simulator.Events
 
             return events;
         }
-
+        
         public Event GenerateCustomerEnterVehicleEvent(Vehicle vehicle, int time, Customer customer)
         {
             Event evt = _eventFactory.CreateEvent(2, time, vehicle, null, customer);
@@ -136,8 +136,12 @@ namespace Simulator.Events
 
         public Event GenerateVehicleArriveEvent(Vehicle vehicle, int time)
         {
-            var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
-            Event evt = _eventFactory.CreateEvent(0,time,vehicle,stop,null);
+            Event evt = null;
+            if (vehicle.TripIterator.Current != null)
+            {
+                var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
+                evt = _eventFactory.CreateEvent(0,time,vehicle,stop,null);
+            }
             return evt;
         }
 

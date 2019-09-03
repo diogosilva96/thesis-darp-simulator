@@ -178,7 +178,7 @@ namespace Simulator.Objects
             toPrintList.Add("Average Serviced Requests ratio: " + AverageServicedRequestsRatio);
             toPrintList.Add("Average Denied Requests Ratio: " + AverageDeniedRequestsRatio);
             toPrintList.Add("Average customer ride time: " + AverageCustomerRideTime + " seconds.");
-            toPrintList.Add("Average Distance traveled: " + AverageDistanceTraveled);
+            toPrintList.Add("Average Distance traveled: " + AverageDistanceTraveled + " meters.");
             toPrintList.Add("Average number of requests per stop:" + AverageNumberRequestsPerStop);
             toPrintList.Add("Longest route duration: " + TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes +
                             " minutes.");

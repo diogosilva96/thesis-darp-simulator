@@ -16,10 +16,10 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         private bool _isInVehicle;
 
         public bool AlreadyServed;
-
+        
         public int RequestTime;//request time in seconds
 
-        public int WaitingTime => RealTimeWindow[0] - DesiredTimeWindow[0];
+        public int WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
@@ -55,10 +55,16 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (customerAdded)
                 {
-                    Console.WriteLine(v.SeatsState +this.ToString()+"ENTERED at " + PickupDelivery[0] +
-                                       " at " + t.ToString()+ ".");
-                    RealTimeWindow[0] = time;
+                    RealTimeWindow[0] = time; //assigns the real enter time of the timewindow
                     _isInVehicle = true;
+                    var waitTimeStr = "";
+                    if (DesiredTimeWindow != null && RealTimeWindow != null)
+                    {
+                        waitTimeStr = "(Wait time: " + WaitTime + " seconds.)";
+                    }
+                    Console.WriteLine(v.SeatsState + this.ToString() + waitTimeStr+ " ENTERED at " + PickupDelivery[0] +
+                                      " at " + t.ToString() + ".");
+                    
                 }
                 else
                 {
@@ -90,12 +96,12 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 if (customerLeft)
                 {
                     TimeSpan t = TimeSpan.FromSeconds(time);
-                    Console.WriteLine(vehicle.SeatsState+this.ToString() + "LEFT at " + PickupDelivery[1] +
-                                       "at " + t.ToString() + ".");
-                    RealTimeWindow[1] = time;
+                    RealTimeWindow[1] = time; //assigns the real leave time of the time window
                     _isInVehicle = false;
                     AlreadyServed = true;
-                    if (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0)//this means that the trip is complete
+                    Console.WriteLine(vehicle.SeatsState + this.ToString() + "(Ride time:" + this.RideTime + " seconds) LEFT at " + PickupDelivery[1] +
+                                      " at " + t.ToString()+".");
+                    if (vehicle.TripIterator.Current != null && (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0))//this means that the trip is complete
                     {
                         vehicle.TripIterator.Current.Finish(time); //Finishes the service
                         Console.WriteLine(vehicle.ToString()+vehicle.TripIterator.Current + " FINISHED at " +

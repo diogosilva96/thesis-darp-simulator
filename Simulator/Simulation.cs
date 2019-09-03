@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
-using Google.OrTools.Graph;
+using Google.OrTools.ConstraintSolver;
 using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
-using Simulator.Objects.Data_Objects.DARP;
+using Simulator.Objects.Data_Objects.PDTW;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator
@@ -21,11 +19,11 @@ namespace Simulator
 
         private int _validationsCounter;
 
-        private PickupDeliverySolutionObject solutionObject; //CHANGE THIS!
+        private PdtwSolutionObject _pdtwSolutionObject; //CHANGE THIS!
 
-        public PickupDeliveryTimeWindowSolver PickupDeliveryTimeWindowSolver = new PickupDeliveryTimeWindowSolver();
+        public PdtwSolver PdtwSolver = new PdtwSolver();
 
-        public PickupDeliveryDataModel PickupDeliveryDataModel;
+        public PdtwDataModel PdtwDataModel;
 
 
         private readonly int[] _simulationStartEndTime;
@@ -45,7 +43,7 @@ namespace Simulator
             _vehicleSpeed = 30;
             _validationsCounter = 1;
             _simulationStartEndTime = new int[2];
-            PickupDeliveryDataModel = new PickupDeliveryDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), _vehicleSpeed);//data model
+            PdtwDataModel = new PdtwDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183),_vehicleSpeed);//data model
 
         }
 
@@ -56,8 +54,11 @@ namespace Simulator
                 {
                     vehicle.TripIterator.Reset();
                     vehicle.TripIterator.MoveNext();//initializes the serviceIterator
-                    var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.TripIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
-                    Events.Add(arriveEvt);
+                    if (vehicle.TripIterator.Current != null)
+                    {
+                        var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.TripIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
+                        Events.Add(arriveEvt);
+                    }
                 }
 
             SortEvents();
@@ -97,86 +98,71 @@ namespace Simulator
 
         public void SingleBusRouteFlexibleOption()
         {
-            //ConsoleLogger.Log("Please select the route that you wish to simulate:");
-            //int ind = 0;
-            //Route route = null;
-            //foreach (var r in TransportationNetwork.Routes)
-            //{
-            //    ConsoleLogger.Log(ind+"-"+r.ToString());
-            //    ind++;
-            //}
-
-            //bool canAdvance = false;
-            //while (!canAdvance)
-            //{
-                
-            //    try
-            //    {
-            //        route = TransportationNetwork.Routes[int.Parse(Console.ReadLine())];
-            //        canAdvance = true;
-            //    }
-            //    catch (Exception)
-            //    {
-            //        ConsoleLogger.Log(this.ToString() + "Error Wrong input, please insert a route index number.");
-                    
-            //        canAdvance = false;
-            //    }
-            //}
-            var route = TransportationNetwork.Routes[0];
+        
+            var route = TransportationNetwork.Routes[1];
             Random rand = new Random();
             var serviceTrip = route.Trips[0]; //ADD assignvehicletrip function here!
             var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            // Pickup and deliveries definition using static generated stop requests
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 2000, 3700 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 2500, 4000 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3000, 3900 }, 0));
-            PickupDeliveryDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
-            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
-            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270) }, new int[] { 2900, 3500 }, 0));
-            //timeWindowDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
-            // Pickup and deliveries definition using static generated stop requests 
 
-
-            //var serviceStops = service.Trip.Stops;
-            //PickupDeliveryDataModel.AddInitialRoute(serviceStops);
-
-            //Creates two available vehicles to be able to perform flexible routing
+            //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
             for (int i = 0; i < 2; i++)
             {
+
                 var vehicle = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, true);
-                PickupDeliveryDataModel.AddVehicle(vehicle);
-                PickupDeliveryDataModel.AddVehicle(vehicle);
-                VehicleFleet.Add(vehicle);
-            }
-            PickupDeliveryDataModel.PrintMatrix();
-            PickupDeliveryDataModel.PrintPickupDeliveries();
-            PickupDeliveryDataModel.PrintTimeWindows();
-            
-            PickupDeliveryTimeWindowSolver pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver = new PickupDeliveryTimeWindowSolver();
-            var timeWindowSolution = pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.GetSolution(PickupDeliveryDataModel);
-            ConsoleLogger.Log("Initial tw solution:");
-            pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.PrintSolution(timeWindowSolution);
-            solutionObject =
-                pickupDeliveryTimeWindowPickupDeliveryTimeWindowSolver.GetSolutionObject(
-                    timeWindowSolution);
-
-            for(int j=0;j<solutionObject.VehicleNumber;j++) //Initializes the flexible trips
-            {
-                var solutionVehicle = solutionObject.GetVehicle(j);
-                var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
-                trip.StartTime = new Random().Next(0, 60 * 60 * 24);//random start time between hour 0 and 24
-                trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
-                trip.Stops = solutionObject.GetVehicleRoute(solutionVehicle);
-                
-                var vehicle = VehicleFleet.Find(v1 => v1.Id == solutionVehicle.Id); //finds the vehicle in the vehiclefleet
-                vehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
+                PdtwDataModel.AddVehicle(vehicle);
             }
 
+
+            // Pickup and deliveries definition using static generated stop requests
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 2000, 3700 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3200, 5000 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3000, 3900 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
+            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
+            //PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
+
+            //PdtwDataModel.AddInitialRoute(serviceStops);
+
+
+            PdtwDataModel.PrintMatrix();
+            PdtwDataModel.PrintPickupDeliveries();
+            PdtwDataModel.PrintTimeWindows();
+            AssignVehicleFlexibleTrips(PdtwDataModel); //assigns the flexible trips
         }
 
+        private void AssignVehicleFlexibleTrips(PdtwDataModel pdtwDataModel)
+        {
+            PdtwSolver pdtwSolver = new PdtwSolver();
+            Assignment timeWindowSolution = null;
+            timeWindowSolution = pdtwSolver.GetSolution(PdtwDataModel);
+            if (timeWindowSolution != null)
+            {
+                ConsoleLogger.Log("Initial PDTW solution (Max Upper Bound:" + pdtwSolver.MaxUpperBound + " minutes)");
+                pdtwSolver.PrintSolution(timeWindowSolution);
+                _pdtwSolutionObject = pdtwSolver.GetSolutionObject(timeWindowSolution);
+
+                //Adds the flexible trip vehicles to the vehicleFleet
+                for (int j = 0; j < _pdtwSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
+                {
+                    var solutionVehicle = _pdtwSolutionObject.GetVehicle(j);
+                    var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
+                    trip.StartTime =
+                        (int)_pdtwSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time
+                    trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
+                    trip.Stops = _pdtwSolutionObject.GetVehicleStops(solutionVehicle);
+                    solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
+                    VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
+                }
+            }
+            else
+            {
+                ConsoleLogger.Log("No solution was found.");
+            }
+        }
         public void StandardBusRouteOption()
         {
             bool canAdvance = false;
@@ -242,10 +228,13 @@ namespace Simulator
 
                     while (vehicle.TripIterator.MoveNext()) //iterates over each vehicle service
                     {
-                        var route = vehicle.TripIterator.Current.Route;
-                        if (!distinctRoutes.Contains(route)) //if the route isn't in distinct routes list adds it
+                        if (vehicle.TripIterator.Current != null)
                         {
-                            distinctRoutes.Add(route);
+                            var route = vehicle.TripIterator.Current.Route;
+                            if (!distinctRoutes.Contains(route)) //if the route isn't in distinct routes list adds it
+                            {
+                                distinctRoutes.Add(route);
+                            }
                         }
                     }
                 }
@@ -261,17 +250,6 @@ namespace Simulator
 
         public override void PrintSimulationStatistics()
         {
-            //start of darp solution
-            //if (PickupDeliveryDataModel != null)
-            //{
-            //    ConsoleLogger.Log("Final DARP  solution:");
-            //    PickupDeliveryDataModel.PrintPickupDeliveries();
-            //    PickupDeliverySolver.Init(PickupDeliveryDataModel, 1);
-            //    var solution = PickupDeliverySolver.GetSolution();
-            //    PickupDeliverySolver.Print(solution);
-            //}
-            //end of darp solution
-
             IRecorder fileRecorder =
                 new FileRecorder(Path.Combine(Environment.CurrentDirectory, @"Logger/stats_logs.txt"));
             var myFileLogger = new Logger.Logger(fileRecorder);
@@ -342,7 +320,6 @@ namespace Simulator
                 }
             }
             PrintOptionsMenu();
-
         }
         public override void Append(Event evt)
         {
@@ -353,13 +330,13 @@ namespace Simulator
             if (evt.Category == 0 && evt is VehicleStopEvent eventArrive)
             {
                 var arrivalTime = evt.Time;
-                var custLeaveVehicleEvents = EventGenerator.GenerateCustomerLeaveVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, arrivalTime); //Generates customer leave vehicle event
+                var customerLeaveVehicleEvents = EventGenerator.GenerateCustomerLeaveVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, arrivalTime); //Generates customer leave vehicle event
                 var lastInsertedLeaveTime = 0;
                 var lastInsertedEnterTime = 0;
-                lastInsertedLeaveTime = custLeaveVehicleEvents.Count > 0 ? custLeaveVehicleEvents[custLeaveVehicleEvents.Count - 1].Time : arrivalTime;
+                lastInsertedLeaveTime = customerLeaveVehicleEvents.Count > 0 ? customerLeaveVehicleEvents[customerLeaveVehicleEvents.Count - 1].Time : arrivalTime;
 
-                List<Event> custEnterVehicleEvents = null;
-                if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.TripIterator.Current.HasStarted)
+                List<Event> customersEnterVehicleEvents = null;
+                if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.TripIterator.Current.HasStarted && !_pdtwSolutionObject.ContainsVehicle(eventArrive.Vehicle))
                 {
                     int expectedDemand = 0;
                     try
@@ -371,37 +348,36 @@ namespace Simulator
                         expectedDemand = 0;
                     }
 
-                    custEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, lastInsertedLeaveTime, rnd.Next(1, 7), expectedDemand);
-                    if (custEnterVehicleEvents.Count > 0)
-                        lastInsertedEnterTime = custEnterVehicleEvents[custEnterVehicleEvents.Count - 1].Time;
+                    customersEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, lastInsertedLeaveTime, rnd.Next(1, 7), expectedDemand);
+                    if (customersEnterVehicleEvents.Count > 0)
+                        lastInsertedEnterTime = customersEnterVehicleEvents[customersEnterVehicleEvents.Count - 1].Time;
                 }
        
-                AddEvent(custEnterVehicleEvents);
-                AddEvent(custLeaveVehicleEvents);
+                AddEvent(customersEnterVehicleEvents);
+                AddEvent(customerLeaveVehicleEvents);
 
 
                 var maxInsertedTime = Math.Max(lastInsertedEnterTime, lastInsertedLeaveTime); ; //gets the highest value of the last insertion in order to maintain precedence constraints for the depart evt, meaning that the stop depart only happens after every customer has already entered and left the vehicle on that stop location
 
-                //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS CHANGE!
-                if (solutionObject != null)
+                //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS!
+                if (_pdtwSolutionObject != null)
                 {
-                    if (solutionObject.ContainsVehicle(eventArrive.Vehicle))//Checks if the current vehicle is contained on the solution object;
+                    if (_pdtwSolutionObject.ContainsVehicle(eventArrive.Vehicle))//Checks if the current event vehicle is contained on the solution object;
                     {
-                        var customersToEnterAtCurrentStop = solutionObject.GetVehicleCustomers(eventArrive.Vehicle).FindAll(c =>
+                        var customersToEnterAtCurrentStop = _pdtwSolutionObject.GetVehicleCustomers(eventArrive.Vehicle).FindAll(c =>
                                 c.PickupDelivery[0] ==
                                 eventArrive
                                     .Stop); //gets all the customers that have the current stop as the pickup stop
                         if (customersToEnterAtCurrentStop.Count > 0) //check if there is customers to enter at current stop
                         {
-                            var count = 1;
-                            foreach (var customer in customersToEnterAtCurrentStop
-                            ) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
+                            foreach (var customer in customersToEnterAtCurrentStop) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
                             {
+                                var enterTime = maxInsertedTime > customer.DesiredTimeWindow[0] ? maxInsertedTime +1: customer.DesiredTimeWindow[0]; //case maxinserted time is greather than desired time window the maxinserted time +1 will be the new enterTime of the customer, othersie it is the customer's desiredtimewindow
                                 var customerEnterVehicleEvt =
                                     EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle,
-                                        maxInsertedTime + count, customer); //generates the enter event
+                                        enterTime, customer); //generates the enter event
                                 AddEvent(customerEnterVehicleEvt); //adds to the event list
-                                count++;
+                                maxInsertedTime = enterTime; //updates the maxInsertedTime
                             }
                         }
                     }
@@ -410,6 +386,15 @@ namespace Simulator
                 // END OF INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS
 
                 //VEHICLE DEPART STOP EVENT
+                if (_pdtwSolutionObject != null)
+                {
+                    if (_pdtwSolutionObject.ContainsVehicle(eventArrive.Vehicle))
+                    {
+                        var newDepartTime = (int)_pdtwSolutionObject.GetVehicleStopTimeWindow(eventArrive.Vehicle, eventArrive.Stop)[1];//gets the solution depart time
+                        maxInsertedTime = newDepartTime != 0 ? Math.Max(maxInsertedTime, newDepartTime) : maxInsertedTime; //if new depart time != 0,new maxInsertedTime will be the max between maxInsertedtime and the newDepartTime, else the value stays the same.
+                        //If maxInsertedTime is still max value between the previous maxInsertedTime and newDepartTime, this means that there has been a delay in the flexible trip (compared to the model generated by the solver)
+                    }
+                }
                 var departEvent = EventGenerator.GenerateVehicleDepartEvent(eventArrive.Vehicle, maxInsertedTime + 1);
                 AddEvent(departEvent);
 
@@ -432,15 +417,16 @@ namespace Simulator
                         var travelTime =
                             new Calculator().DistanceToTravelTime(eventDepart.Vehicle.Speed,
                                 distance); //Gets the time it takes to travel from the currentStop to the nextStop
-                        var nextArrivalTime =
-                            Convert.ToInt32(departTime +
-                                            travelTime); //computes the arrival time for the next arrive event
-                        eventDepart.Vehicle.TripIterator.Current.StopsIterator
-                            .Next(); //Moves the iterator to the next stop
-                        var arriveEvent =
-                            EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle,
-                                nextArrivalTime); //generates the arrive event
+                        var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
+                        eventDepart.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
+                        var arriveEvent = EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle, nextArrivalTime); //generates the arrive event
                         AddEvent(arriveEvent);
+                        //DEBUG!
+                        if (_pdtwSolutionObject.ContainsVehicle(eventDepart.Vehicle))
+                        {
+                            ConsoleLogger.Log("Event arrival time:"+nextArrivalTime+", Scheduled arrival time:"+_pdtwSolutionObject.GetVehicleStopTimeWindow(eventDepart.Vehicle,eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop)[0]);
+                        }
+                        //END DEBUG
                     }
 
             }
@@ -475,7 +461,7 @@ namespace Simulator
                     _validationsCounter++;
                     break;
                 case CustomerRequestEvent customerRequestEvent:
-                    PickupDeliveryDataModel.AddCustomer(customerRequestEvent.Customer);
+                    PdtwDataModel.AddCustomer(customerRequestEvent.Customer);
                     break;
             }
         }
