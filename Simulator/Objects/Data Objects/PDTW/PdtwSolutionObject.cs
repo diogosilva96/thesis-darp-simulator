@@ -8,12 +8,28 @@ namespace Simulator.Objects.Data_Objects.PDTW
     public class PdtwSolutionObject //pickup delivery with time windows solution object
     {
 
-        private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
+        private readonly Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
 
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
 
-        public PdtwSolutionObject(
-            Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary)
+        public int CustomerNumber
+        {
+            get
+            {
+                var customerNumber = 0;
+                if (_vehicleSolutionDictionary != null)
+                {
+                    
+                    foreach (var dictTuple in _vehicleSolutionDictionary)
+                    {
+                        customerNumber += dictTuple.Value.Item2.Count;
+                    }
+                }
+                return customerNumber;
+            }
+        }
+
+        public PdtwSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary)
         {
             _vehicleSolutionDictionary = solutionDictionary;
         }

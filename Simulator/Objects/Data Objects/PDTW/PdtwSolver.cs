@@ -14,14 +14,19 @@ namespace Simulator.Objects.Data_Objects.PDTW
         private RoutingModel _routingModel;
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
-        public int MaxUpperBound;
+        private readonly int _maxUpperBoundLimit; //the maximum upperbound limit, a solution maxUpperBound cannot be greater than this value
+        public int MaxUpperBound; //the current upper bound limit of the found solution, which is lesser or equal than _maxUpperBoundLimit
 
+        public PdtwSolver()
+        {
+
+        }
         public override string ToString()
         {
             return "[" + GetType().Name + "] ";
         }
 
-        public void Init(int maxUpperBoundLimitInMinutes)
+        public void Init()
         {
             // Create RoutingModel Index RoutingIndexManager
             _routingIndexManager = new RoutingIndexManager(
@@ -58,17 +63,74 @@ namespace Simulator.Objects.Data_Objects.PDTW
             //}
 
             _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
-            //Adds capacity constraints
-            _routingModel.AddDimensionWithVehicleCapacity(
-                _demandCallbackIndex, 0,  // null capacity slack
-                _pdtwDataModel.VehicleCapacities,   // vehicle maximum capacities
-                true,                      // start cumul to zero
-                "Capacity");
             AddPickupDeliveryDimension(); //Adds the pickup delivery dimension, which contains the pickup and delivery constraints
-            AddTimeWindowDimension(maxUpperBoundLimitInMinutes*60); //Adds the time window dimension, which contains the timewindow constraints, 5min upper bound limit
-        
+            AddTimeWindowDimension(MaxUpperBound*60); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
+            AddCapacityDimension();
+
         }
 
+        private void AddCapacityDimension()
+        {
+            if (_pdtwDataModel != null)
+            {
+                //Adds capacity constraints
+                _routingModel.AddDimensionWithVehicleCapacity(
+                    _demandCallbackIndex, 0,  // null capacity slack
+                    _pdtwDataModel.VehicleCapacities,   // vehicle maximum capacities
+                    true,                      // start cumul to zero
+                    "Capacity");
+                RoutingDimension capacityDimension = _routingModel.GetMutableDimension("Capacity");
+                RoutingDimension distanceDimension = _routingModel.GetMutableDimension("Distance");
+                var solver = _routingModel.solver();
+
+                for (int i = 0; i < _routingModel.Size(); i++)
+                {
+                 
+                    if (_routingModel.IsStart(i))
+                    {
+                        capacityDimension.CumulVar(i).SetValue(0);
+
+                    }
+                    //Console.WriteLine("Is pickup node ind:"+i+" - "+_pdtwDataModel.IndexToStop(i)+":"+_pdtwDataModel.IsPickupStop(i));
+                    //Console.WriteLine("Is delivery node ind:"+i+" - " + _pdtwDataModel.IndexToStop(i) + ":" + _pdtwDataModel.IsDeliveryStop(i));
+                    //if (_pdtwDataModel.IsDeliveryStop(i))
+                    //{
+                    //    var deliveryStop= _pdtwDataModel.IndexToStop(i);
+                    //    var deliveryIndex = i;
+                    //    var foundCustomers = _pdtwDataModel.Customers.FindAll(c => c.PickupDelivery[1] == deliveryStop);
+                    //    var numDeliveries = 0;
+                    //    foreach (var customer in foundCustomers)
+                    //    {
+                    //        //put this in the demand callback!
+                    //        var pickupIndex = _pdtwDataModel.StopToIndex(customer.PickupDelivery[0]);
+                    //        var checkPrecedenceConstraint = solver.CheckConstraint(solver.MakeLessOrEqual(
+                    //            distanceDimension.CumulVar(pickupIndex), distanceDimension.CumulVar(deliveryIndex)));
+                    //        var checkSameVehicleConstraint = solver.CheckConstraint(
+                    //            solver.MakeEquality(_routingModel.VehicleVar(pickupIndex),
+                    //                _routingModel.VehicleVar(deliveryIndex)));
+                    //        Console.WriteLine("Pairs:" + customer.PickupDelivery[0] + "->" + deliveryStop);
+                    //        Console.WriteLine("Vehicle Prec const (pickup / delivery):" + _routingModel.VehicleVar(pickupIndex).Index()+ " <= "+ _routingModel.VehicleVar(deliveryIndex).Index()+" = "+checkPrecedenceConstraint);
+                    //        Console.WriteLine("Same Vehicle const (pickup / delivery):"+_routingModel.VehicleIndex(pickupIndex)+"=="+_routingModel.VehicleIndex(deliveryIndex)+" = "+checkSameVehicleConstraint);
+                    //        if (checkPrecedenceConstraint && checkSameVehicleConstraint)
+                    //        {
+                    //            numDeliveries++;
+                                
+                    //        }
+                    //    }
+
+                    //    var demands = _pdtwDataModel.Demands;
+                    //    var currentDemand = demands[i];
+                    //    //_pdtwDataModel.UpdateDemands(i, currentDemand-numDeliveries);
+                    //    demands = _pdtwDataModel.Demands;
+                    //}
+
+                    //_routingModel.AddVariableMinimizedByFinalizer(capacityDimension.CumulVar(i));
+                }
+              
+
+              
+            }
+        }
         private void AddPickupDeliveryDimension()
         {
             if (_pdtwDataModel != null)
@@ -81,14 +143,14 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 distanceDimension.SetGlobalSpanCostCoefficient(100);
 
                 // Define Transportation Requests.
-                var constraintSolver = _routingModel.solver(); //Gets the underlying constraint solver
+                var solver = _routingModel.solver(); //Gets the underlying constraint solver
                 for (int i = 0; i < _pdtwDataModel.PickupsDeliveries.GetLength(0); i++)
                 {
                     long pickupIndex = _routingIndexManager.NodeToIndex(_pdtwDataModel.PickupsDeliveries[i][0]); //pickup index
                     long deliveryIndex = _routingIndexManager.NodeToIndex(_pdtwDataModel.PickupsDeliveries[i][1]); //delivery index
                     _routingModel.AddPickupAndDelivery(pickupIndex, deliveryIndex); //Notifies that the pickupIndex and deliveryIndex form a pair of nodes which should belong to the same route.
-                    constraintSolver.Add(constraintSolver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
-                    constraintSolver.Add(constraintSolver.MakeLessOrEqual(distanceDimension.CumulVar(pickupIndex), distanceDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
+                    solver.Add(solver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
+                    solver.Add(solver.MakeLessOrEqual(distanceDimension.CumulVar(pickupIndex), distanceDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
                 }
             }
         }
@@ -136,65 +198,50 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         }
 
-        public RoutingSearchParameters GetSearchParameters()
+        public RoutingSearchParameters GetDefaultSearchParameters()
         {
             // Setting first solution heuristic.
             RoutingSearchParameters searchParameters =
                 operations_research_constraint_solver.DefaultRoutingSearchParameters();
             searchParameters.FirstSolutionStrategy =
-                FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
+                FirstSolutionStrategy.Types.Value.Automatic; //automatically finds best first solution strategy
 
             return searchParameters;
         }
 
-        public Assignment GetSolution(PdtwDataModel pdtwDataModel)
+        public Assignment TryGetFastSolution(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes)
+        {
+            _pdtwDataModel = pdtwDataModel;
+            Assignment solution = null;
+            MaxUpperBound = maxUpperBoundInMinutes;
+            Init();
+            var searchParameters = GetDefaultSearchParameters();
+            //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
+            //Get the solution of the problem
+            solution = _routingModel.SolveWithParameters(searchParameters);
+            return solution; //retuns null if no solution is found, otherwise returns the solution
+        }
+
+        public Assignment TryGetSolutionWithSearchLimit(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes, int searchTimeLimitInSeconds)
         {
             _pdtwDataModel = pdtwDataModel;
             Assignment solution = null;
 
-            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < 20; maxUpperBound++)
-            {
-                MaxUpperBound = maxUpperBound;
-                Init(MaxUpperBound);
-                var searchParameters = GetSearchParameters();
-                //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
-                //Get the solution of the problem
-                solution = _routingModel.SolveWithParameters(searchParameters);
-                if (solution != null) //if the solution isn't null, this means the problem is feasible with the inserted maxUpperBound, break the for loop
-                {
-                    break;
-                }
-            }
-            return solution;
+            MaxUpperBound = maxUpperBoundInMinutes;
+            Init();
+            var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds);
+            //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
+            //Get the solution of the problem
+            solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
+            return solution; //retuns null if no solution is found, otherwise returns the solution
         }
-
-        public Assignment GetSolution(PdtwDataModel pdtwDataModel,int searchTimeLimit)
+        public RoutingSearchParameters GetSearchParametersWithSearchStrategy(int searchTimeLimit)
         {
-            _pdtwDataModel = pdtwDataModel;
-            Assignment solution = null;
-            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < 20; maxUpperBound++)
-            {
-                MaxUpperBound = maxUpperBound;
-                Init(MaxUpperBound);
-                var searchParameters = GetSearchParameters();
-                //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
-                //Get the solution of the problem
-                SetSearchStrategy(searchParameters, 20);
-                solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
-                if (solution != null) //if the solution isn't null, this means the problem is feasible with the inserted maxUpperBound, break the for loop
-                {
-                    break;
-                }
-            }
-            return solution;
-        }
-        public void SetSearchStrategy(RoutingSearchParameters searchParam,int searchTimeLimit)
-        {
+            var searchParam = GetDefaultSearchParameters();
             searchParam.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
             searchParam.TimeLimit = new Duration { Seconds = searchTimeLimit };
-            searchParam.LogSearch = true; //logs the search if true
+            searchParam.LogSearch = false; //logs the search if true
+            return searchParam;
 
         }
 
@@ -227,7 +274,6 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 {
                     List<Stop> routeStops = new List<Stop>();
                     List<Customer> routeCustomers = new List<Customer>();
-                    List<Customer> customersToBeRemove = new List<Customer>();
                     List<long[]> routeTimeWindows = new List<long[]>();
                     int stopIndex = 0;
                     long[] timeWindow;
@@ -267,16 +313,9 @@ namespace Simulator.Objects.Data_Objects.PDTW
                             ) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
                             {
                                 routeCustomers.Add(customer);
-                                customersToBeRemove.Add(customer);
                             }
                         }
                     }
-                    //customer removal (for the already added to the solution object)
-                    foreach (var customer in customersToBeRemove)
-                    {
-                        allCustomers.Remove(customer); //removes the already added customers from the list
-                    }
-
                     var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
                     vehicleStopCustomerTimeWindowsDictionary.Add(_pdtwDataModel.Vehicles[i],
                         tuple); //adds the vehicle index + tuple with the customer and routestop list
@@ -295,12 +334,14 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 var distanceDim = _routingModel.GetMutableDimension("Distance");
                 long totalTime = 0;
                 long totalDistance = 0;
+                long totalLoad = 0;
                 Calculator calculator = new Calculator();
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("| PDTW Solver Solution Printer |");
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
+                Console.WriteLine("Max upperbound limit:"+MaxUpperBound+" minutes");
                 for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
                 {
                     int nodeIndex = 0;
@@ -312,6 +353,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                         var timeVar = timeDim.CumulVar(index);
                         nodeIndex = _routingIndexManager.IndexToNode(index);
                         routeLoad += _pdtwDataModel.Demands[nodeIndex];
+                    
                         var previousIndex = index;
                         index = solution.Value(_routingModel.NextVar(index));
                         var timeToTravel = _routingModel.GetArcCostForVehicle(previousIndex, index, 0); //Gets the travel time between the previousNode and the NextNode
@@ -321,12 +363,15 @@ namespace Simulator.Objects.Data_Objects.PDTW
                             solution.Min(timeVar),
                             solution.Max(timeVar), routeLoad,
                             (int)distance);
+                        //need to fix totalLoad
+                        totalLoad += routeLoad > 0  ? routeLoad : 0; //if the current route load is greater than 0 adds it to the total load
 
                     }
                     var endDistanceVar = distanceDim.CumulVar(index);
                     var endTimeVar = timeDim.CumulVar(index);
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += _pdtwDataModel.Demands[nodeIndex];
+                    totalLoad += routeLoad > 0 ? routeLoad : 0;//if the current route load is greater than 0 adds it to the total load
                     Console.WriteLine(_pdtwDataModel.IndexToStop(nodeIndex) + ":T({0},{1}), L({2})",
                         solution.Min(endTimeVar),
                         solution.Max(endTimeVar),routeLoad);
@@ -334,12 +379,14 @@ namespace Simulator.Objects.Data_Objects.PDTW
                     long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar), _pdtwDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     Console.WriteLine("Distance of the route: {0} meters",routeDistance); 
                     Console.WriteLine("Avg time cost:"+solution.Min(endTimeVar)/index); //debug
+                    Console.WriteLine("Total Load of the route:"+totalLoad); //change!
                     totalDistance += routeDistance;
                     totalTime += solution.Min(endTimeVar);
                     Console.WriteLine("------------------------------------------");
                 }
                 Console.WriteLine("Total time of all routes: {0} minutes", TimeSpan.FromSeconds(totalTime).TotalMinutes);
                 Console.WriteLine("Total distance of all routes: {0} meters",totalDistance);
+                Console.WriteLine("Total Load of all routes: {0} customers",totalLoad);
                 
             }
             else

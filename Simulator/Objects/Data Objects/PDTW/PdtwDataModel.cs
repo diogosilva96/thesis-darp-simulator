@@ -106,7 +106,10 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return demands;
         }
 
-
+        //public void UpdateDemands(int index, long value)
+        //{
+        //    Demands[index] = value;
+        //}
         public void AddCustomer(Customer customer)
         {
             if (!Customers.Contains(customer))
@@ -164,6 +167,10 @@ namespace Simulator.Objects.Data_Objects.PDTW
         
         public Stop IndexToStop(int index)
         {
+            if (index == Stops.Count)
+            {
+                index = 0; //the depot
+            }
             return Stops[index];
         }
 
@@ -219,6 +226,29 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         }
 
+        public bool IsPickupStop(int index)
+        {
+            var stop = IndexToStop(index);
+            var custCount = Customers.FindAll(c => c.PickupDelivery[0] == stop).Count; //finds all customers with this pickup stop
+            if (custCount > 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsDeliveryStop(int index)
+        {
+            var stop = IndexToStop(index);
+            var custCount = Customers.FindAll(c => c.PickupDelivery[1] == stop).Count; //finds all customers with this delivery stop
+            if (custCount > 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
         public void PrintPickupDeliveries()
         {
             Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows (total: " + Customers.Count + "):");

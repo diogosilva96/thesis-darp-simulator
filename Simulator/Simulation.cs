@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Google.OrTools.ConstraintSolver;
 using Simulator.Events;
 using Simulator.Logger;
@@ -21,8 +22,6 @@ namespace Simulator
 
         private PdtwSolutionObject _pdtwSolutionObject; //CHANGE THIS!
 
-        public PdtwSolver PdtwSolver = new PdtwSolver();
-
         public PdtwDataModel PdtwDataModel;
 
 
@@ -39,7 +38,7 @@ namespace Simulator
             _eventLogger = new Logger.Logger(fileRecorder);
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
-            _vehicleCapacity = 53;
+            _vehicleCapacity = 20;
             _vehicleSpeed = 30;
             _validationsCounter = 1;
             _simulationStartEndTime = new int[2];
@@ -131,22 +130,59 @@ namespace Simulator
             PdtwDataModel.PrintMatrix();
             PdtwDataModel.PrintPickupDeliveries();
             PdtwDataModel.PrintTimeWindows();
-            AssignVehicleFlexibleTrips(PdtwDataModel); //assigns the flexible trips
-        }
-
-        private void AssignVehicleFlexibleTrips(PdtwDataModel pdtwDataModel)
-        {
             PdtwSolver pdtwSolver = new PdtwSolver();
             Assignment timeWindowSolution = null;
-            timeWindowSolution = pdtwSolver.GetSolution(PdtwDataModel);
+
+            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
+            for (int maxUpperBound = 0; maxUpperBound < 30; maxUpperBound++)
+            {
+                timeWindowSolution = pdtwSolver.TryGetFastSolution(PdtwDataModel,maxUpperBound);
+                if (timeWindowSolution != null)
+                {
+                    break;
+                }
+            }
+
+            pdtwSolver.PrintSolution(timeWindowSolution);
+            //PdtwSolver pdtwSolver2 = new PdtwSolver(30);
+            ////comparing first solution and the one with search
+            //var twSolutionWithSearchLimit = pdtwSolver2.TryGetSolutionWithSearchLimit(PdtwDataModel, 30);
+            //pdtwSolver2.PrintSolution(twSolutionWithSearchLimit);
+            //if (timeWindowSolution != null && twSolutionWithSearchLimit != null)
+            //{
+            //    var tw1 = pdtwSolver.GetSolutionObject(timeWindowSolution);
+            //    var tw2 = pdtwSolver2.GetSolutionObject(twSolutionWithSearchLimit);
+
+            //    for (int i = 0; i < PdtwDataModel.VehicleNumber; i++)
+            //    {
+            //        var tw1Vstops = tw1.GetVehicleStops(tw1.GetVehicle(i));
+            //        var tw2Vstops = tw2.GetVehicleStops(tw2.GetVehicle(i));
+            //        var tw1Vtw = tw1.GetVehicleTimeWindows(tw1.GetVehicle(i));
+            //        var tw2Vtw = tw2.GetVehicleTimeWindows(tw2.GetVehicle(i));
+            //        var tw1Vcust = tw1.GetVehicleCustomers(tw1.GetVehicle(i));
+            //        var tw2Vcust = tw2.GetVehicleCustomers(tw2.GetVehicle(i));
+            //        ConsoleLogger.Log("Tw1 and Tw2 vehicle stops are equal:" + tw1Vstops.SequenceEqual(tw2Vstops));
+            //        ConsoleLogger.Log("Tw1 and Tw2 vehicle time windows are equal:" + tw1Vtw.SequenceEqual(tw2Vtw));
+            //        ConsoleLogger.Log("Tw1 and Tw2 vehicle customers are equal:" + tw1Vcust.SequenceEqual(tw2Vcust));
+            //    }
+            //}
+
             if (timeWindowSolution != null)
             {
-                ConsoleLogger.Log("Initial PDTW solution (Max Upper Bound:" + pdtwSolver.MaxUpperBound + " minutes)");
+                ConsoleLogger.Log("Initial PDTW solution");
                 pdtwSolver.PrintSolution(timeWindowSolution);
                 _pdtwSolutionObject = pdtwSolver.GetSolutionObject(timeWindowSolution);
+                AssignVehicleFlexibleTrips(_pdtwSolutionObject);
+            }
 
+        }
+
+        private void AssignVehicleFlexibleTrips(PdtwSolutionObject pdtwSolutionObject)
+        {
+            if (pdtwSolutionObject != null)
+            {
                 //Adds the flexible trip vehicles to the vehicleFleet
-                for (int j = 0; j < _pdtwSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
+                for (int j = 0; j < pdtwSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
                 {
                     var solutionVehicle = _pdtwSolutionObject.GetVehicle(j);
                     var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
@@ -156,11 +192,12 @@ namespace Simulator
                     trip.Stops = _pdtwSolutionObject.GetVehicleStops(solutionVehicle);
                     solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
                     VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
+                    ConsoleLogger.Log("Num cust data model"+_pdtwSolutionObject.CustomerNumber);
                 }
             }
             else
             {
-                ConsoleLogger.Log("No solution was found.");
+                ConsoleLogger.Log("pdtwSolutionObject is null.");
             }
         }
         public void StandardBusRouteOption()
