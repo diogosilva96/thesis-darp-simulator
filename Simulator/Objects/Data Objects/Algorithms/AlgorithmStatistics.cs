@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Google.OrTools.ConstraintSolver;
+using Simulator.Objects.Data_Objects.Algorithms;
 
 namespace Simulator.Objects.Data_Objects.PDTW
 {
-    public class AlgorithmTester
+    public class AlgorithmStatistics
     {
         private List<FirstSolutionStrategy.Types.Value> _firstSolutionAlgorithms;
         private List<LocalSearchMetaheuristic.Types.Value> _searchStrategyAlgorithms;
         public PdtwDataModel DataModel;
-        public AlgorithmTester(PdtwDataModel dataModel)
+        public AlgorithmStatistics(PdtwDataModel dataModel)
         {
            InitFirstSolutionList();
            InitSearchList();
@@ -38,17 +40,18 @@ namespace Simulator.Objects.Data_Objects.PDTW
             _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.TabuSearch);
         }
 
-        public Dictionary<LocalSearchMetaheuristic.Types.Value,string> GetSearchStrategiesResults()
+        public Dictionary<LocalSearchMetaheuristic.Types.Value,AlgorithmTester> GetSearchAlgorithmsResultsDictionary(int searchTimeLimitInSeconds)
         {
-            Dictionary<LocalSearchMetaheuristic.Types.Value,string> searchDictionary = new Dictionary<LocalSearchMetaheuristic.Types.Value, string>();
+            Dictionary<LocalSearchMetaheuristic.Types.Value,AlgorithmTester> dictionary = new Dictionary<LocalSearchMetaheuristic.Types.Value, AlgorithmTester>();
             //TEST ALL the criterions (performance, time to compute, solution cost, etc)
             foreach (var searchStrategy in _searchStrategyAlgorithms)
             {
-                //test the strategy and save results
+                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,searchStrategy,10);
+                algorithmTester.Test();
+                dictionary.Add(searchStrategy,algorithmTester);
             }
-            return searchDictionary;
+            return dictionary;
         }
-
 
     }
 }

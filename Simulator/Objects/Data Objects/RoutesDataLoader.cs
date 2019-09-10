@@ -7,7 +7,7 @@ using System.Linq;
 namespace Simulator.Objects.Data_Objects
 {
     public class
-        RoutesDataObject //Class that contains the data for the Stops, trips, routes and demands
+        RoutesDataLoader //Class that contains the data for the Stops, trips, routes and demands
     {
         private List<Trip> Trips { get; set; }
         public List<Stop> Stops { get; internal set; }
@@ -16,7 +16,7 @@ namespace Simulator.Objects.Data_Objects
 
         private readonly bool _urbanOnly;
 
-        public RoutesDataObject(bool urbanOnly)
+        public RoutesDataLoader(bool urbanOnly)
         {
             _urbanOnly = urbanOnly;
             Trips = new List<Trip>();

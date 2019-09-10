@@ -132,7 +132,8 @@ namespace Simulator
             PdtwDataModel.PrintTimeWindows();
             PdtwSolver pdtwSolver = new PdtwSolver();
             Assignment timeWindowSolution = null;
-
+            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(PdtwDataModel);
+            var dictionary = algorithmStatistics.GetSearchAlgorithmsResultsDictionary(10);
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
             for (int maxUpperBound = 0; maxUpperBound < 30; maxUpperBound++)
             {
@@ -146,7 +147,7 @@ namespace Simulator
             pdtwSolver.PrintSolution(timeWindowSolution);
             //PdtwSolver pdtwSolver2 = new PdtwSolver(30);
             ////comparing first solution and the one with search
-            //var twSolutionWithSearchLimit = pdtwSolver2.TryGetSolutionWithSearchLimit(PdtwDataModel, 30);
+            //var twSolutionWithSearchLimit = pdtwSolver2.TryGetSolutionWithSearchStrategy(PdtwDataModel, 30);
             //pdtwSolver2.PrintSolution(twSolutionWithSearchLimit);
             //if (timeWindowSolution != null && twSolutionWithSearchLimit != null)
             //{

@@ -16,7 +16,7 @@ namespace Simulator.Objects.Data_Objects
 
         public TransportationNetwork()
         {
-            var routesDataObject = new RoutesDataObject(true);
+            var routesDataObject = new RoutesDataLoader(true);
             Routes = routesDataObject.Routes;
             Stops = routesDataObject.Stops;
             DemandsDataObject = routesDataObject.DemandsDataObject;

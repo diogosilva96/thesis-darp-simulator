@@ -4,6 +4,7 @@ using Google.OrTools.ConstraintSolver;
 using Google.OrTools.Sat;
 using Google.Protobuf.WellKnownTypes;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
+using Type = System.Type;
 
 namespace Simulator.Objects.Data_Objects.PDTW
 {
@@ -14,12 +15,11 @@ namespace Simulator.Objects.Data_Objects.PDTW
         private RoutingModel _routingModel;
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
-        private readonly int _maxUpperBoundLimit; //the maximum upperbound limit, a solution maxUpperBound cannot be greater than this value
         public int MaxUpperBound; //the current upper bound limit of the found solution, which is lesser or equal than _maxUpperBoundLimit
 
         public PdtwSolver()
         {
-
+            MaxUpperBound = 0; //default value
         }
         public override string ToString()
         {
@@ -222,23 +222,23 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
 
-        public Assignment TryGetSolutionWithSearchLimit(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes, int searchTimeLimitInSeconds)
+        public Assignment TryGetSolutionWithSearchStrategy(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
             _pdtwDataModel = pdtwDataModel;
             Assignment solution = null;
 
             MaxUpperBound = maxUpperBoundInMinutes;
             Init();
-            var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds);
+            var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds,searchAlgorithm);
             //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
             //Get the solution of the problem
             solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
-        public RoutingSearchParameters GetSearchParametersWithSearchStrategy(int searchTimeLimit)
+        public RoutingSearchParameters GetSearchParametersWithSearchStrategy(int searchTimeLimit,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
             var searchParam = GetDefaultSearchParameters();
-            searchParam.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+            searchParam.LocalSearchMetaheuristic = searchAlgorithm;
             searchParam.TimeLimit = new Duration { Seconds = searchTimeLimit };
             searchParam.LogSearch = false; //logs the search if true
             return searchParam;
