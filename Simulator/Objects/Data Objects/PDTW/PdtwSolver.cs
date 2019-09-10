@@ -31,7 +31,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
             // Create RoutingModel Index RoutingIndexManager
             _routingIndexManager = new RoutingIndexManager(
                 _pdtwDataModel.TimeMatrix.GetLength(0),
-                _pdtwDataModel.VehicleNumber,
+                _pdtwDataModel.Vehicles.Count,
                 _pdtwDataModel.DepotIndex);
 
             //Create routing model
@@ -80,7 +80,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                     true,                      // start cumul to zero
                     "Capacity");
                 RoutingDimension capacityDimension = _routingModel.GetMutableDimension("Capacity");
-                RoutingDimension distanceDimension = _routingModel.GetMutableDimension("Distance");
+                //RoutingDimension distanceDimension = _routingModel.GetMutableDimension("Distance");
                 var solver = _routingModel.solver();
 
                 for (int i = 0; i < _routingModel.Size(); i++)
@@ -180,7 +180,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 }
 
                 // Add time window constraints for each vehicle start node.
-                for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
+                for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     long index = _routingModel.Start(i);
                     timeDimension.CumulVar(index).SetRange(
@@ -188,7 +188,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                         _pdtwDataModel.TimeWindows[0, 1]); //this guarantees that a vehicle must visit the location during its time window
                 }
 
-                for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
+                for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     _routingModel.AddVariableMinimizedByFinalizer(
                         timeDimension.CumulVar(_routingModel.Start(i)));
@@ -254,6 +254,8 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 if (solutionDictionary != null)
                 {
                     pdtwSolutionObject = new PdtwSolutionObject(solutionDictionary);
+                    pdtwSolutionObject.AddMetrics(ComputeSolutionTotalMetrics(solution));
+                    
                 }
             }
             return pdtwSolutionObject;
@@ -270,7 +272,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                     new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
                 var timeDim = _routingModel.GetMutableDimension("Time");
                 var distanceDim = _routingModel.GetMutableDimension("Distance");
-                for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
+                for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     List<Stop> routeStops = new List<Stop>();
                     List<Customer> routeCustomers = new List<Customer>();
@@ -342,7 +344,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
                 Console.WriteLine("Max upperbound limit:"+MaxUpperBound+" minutes");
-                for (int i = 0; i < _pdtwDataModel.VehicleNumber; ++i)
+                for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     int nodeIndex = 0;
                     long routeLoad = 0;
@@ -393,6 +395,44 @@ namespace Simulator.Objects.Data_Objects.PDTW
             {
                 throw new ArgumentNullException("solution = null");
             }
+        }
+
+        public Dictionary<string,long> ComputeSolutionTotalMetrics(Assignment solution)
+        {
+            long totalTime = 0;
+            long totalDistance = 0;
+            long totalLoad = 0; //ADD THIS AFTER FIX!
+            var calculator = new Calculator();
+            Dictionary<string,long> metricsDictionary = new Dictionary<string, long>();
+            if (solution != null)
+            {
+                
+                var timeDim = _routingModel.GetMutableDimension("Time");
+                var distanceDim = _routingModel.GetMutableDimension("Distance");
+                for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
+                {
+                    long routeLoad = 0;
+                    var index = _routingModel.Start(i);
+                    while (_routingModel.IsEnd(index) == false)
+                    {
+                        routeLoad += _pdtwDataModel.Demands[_routingIndexManager.IndexToNode(index)];
+                        index = solution.Value(_routingModel.NextVar(index));
+                        totalLoad += routeLoad > 0 ? routeLoad : 0; //if the current route load is greater than 0 adds it to the total load
+                    }
+                    routeLoad += _pdtwDataModel.Demands[_routingIndexManager.IndexToNode(index)];
+                    totalLoad += routeLoad > 0 ? routeLoad : 0;//if the current route load is greater than 0 adds it to the total load
+                    var endTimeVar = timeDim.CumulVar(index);
+                    var endDistanceVar = distanceDim.CumulVar(index);
+                    long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar), _pdtwDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
+                    totalDistance += routeDistance;
+                    totalTime += solution.Min(endTimeVar);
+                }
+                metricsDictionary.Add("totalTime",totalTime);
+                metricsDictionary.Add("totalDistance", totalDistance);
+                metricsDictionary.Add("totalLoad",totalLoad);
+
+            }
+            return metricsDictionary;
         }
     }
 }

@@ -9,8 +9,6 @@ namespace Simulator.Objects.Data_Objects.PDTW
     {
         public int DepotIndex;
 
-        public int VehicleNumber => Vehicles.Count; // number of vehicles
-
         public long[] VehicleCapacities;
 
         public long[,] TimeMatrix; //time window matrix

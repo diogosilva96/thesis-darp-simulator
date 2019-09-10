@@ -5,12 +5,18 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.PDTW
 {
-    public class PdtwSolutionObject //pickup delivery with time windows solution object
+    public class PdtwSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
     {
 
         private readonly Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
 
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
+
+        public long TotalLoad;
+
+        public long TotalDistanceInMeters;
+
+        public long TotalTimeInSeconds;
 
         public int CustomerNumber
         {
@@ -87,5 +93,14 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return _vehicleSolutionDictionary.Keys.Contains(vehicle);
         }
 
+        public void AddMetrics(Dictionary<string, long> metricsDictionary)
+        {
+            metricsDictionary.TryGetValue("totalDistance", out long totalDistance);
+            TotalDistanceInMeters = totalDistance;
+            metricsDictionary.TryGetValue("totalTime", out long totalTime);
+            TotalTimeInSeconds = totalTime;
+            metricsDictionary.TryGetValue("totalLoad", out long totalLoad);
+            TotalLoad = totalLoad;
+        }
     }
 }

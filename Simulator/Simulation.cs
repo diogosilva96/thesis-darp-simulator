@@ -7,6 +7,7 @@ using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.Algorithms;
 using Simulator.Objects.Data_Objects.PDTW;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
@@ -133,7 +134,12 @@ namespace Simulator
             PdtwSolver pdtwSolver = new PdtwSolver();
             Assignment timeWindowSolution = null;
             AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(PdtwDataModel);
-            var dictionary = algorithmStatistics.GetSearchAlgorithmsResultsDictionary(10);
+            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10);
+            var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
+            foreach (var printableItem in printList)
+            {
+                ConsoleLogger.Log(printableItem);
+            }
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
             for (int maxUpperBound = 0; maxUpperBound < 30; maxUpperBound++)
             {
@@ -193,7 +199,6 @@ namespace Simulator
                     trip.Stops = _pdtwSolutionObject.GetVehicleStops(solutionVehicle);
                     solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
                     VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
-                    ConsoleLogger.Log("Num cust data model"+_pdtwSolutionObject.CustomerNumber);
                 }
             }
             else

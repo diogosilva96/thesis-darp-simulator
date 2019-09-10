@@ -9,10 +9,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 {
     class SearchAlgorithmTester:AlgorithmTester
     {
-        public SearchAlgorithmTester(PdtwDataModel dataModel,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSeconds) : base(dataModel)
+        public SearchAlgorithmTester(PdtwDataModel dataModel,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel)
         {
             AlgorithmValue = algorithmValue;
-            SearchTimeLimit = searchTimeLimitInSeconds;
+            SearchTimeLimitInSeconds = searchTimeLimitInSecondsInSeconds;
             Type = "Search Algorithm";
             Name = algorithmValue.ToString();
         }
@@ -23,7 +23,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             if (AlgorithmValue is LocalSearchMetaheuristic.Types.Value localSearchAlgorithm)
             {
                 solution = Solver.TryGetSolutionWithSearchStrategy(DataModel, maxUpperBound,
-                    SearchTimeLimit, localSearchAlgorithm);
+                    SearchTimeLimitInSeconds, localSearchAlgorithm);
             }
             else
             {
