@@ -165,7 +165,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
         
         public Stop IndexToStop(int index)
         {
-            if (index == Stops.Count)
+            if (index >= Stops.Count)
             {
                 index = 0; //the depot
             }
@@ -182,7 +182,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return "[" + GetType().Name + "] ";
         }
 
-        public void PrintMatrix()
+        public void PrintTimeMatrix()
         {
             Console.WriteLine(ToString() + "TimeMatrix:");
             var counter = 0;

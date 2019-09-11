@@ -9,7 +9,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 {
     class SearchAlgorithmTester:AlgorithmTester
     {
-        public SearchAlgorithmTester(PdtwDataModel dataModel,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel)
+        public SearchAlgorithmTester(PdtwDataModel dataModel,bool allowDropNodes,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel,allowDropNodes)
         {
             AlgorithmValue = algorithmValue;
             SearchTimeLimitInSeconds = searchTimeLimitInSecondsInSeconds;

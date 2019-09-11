@@ -47,16 +47,25 @@ namespace Simulator
             TotalEventsHandled = 0;
         }
 
+        public abstract void Init();
         public abstract void InitVehicleEvents();
 
         public abstract void PrintSimulationSettings();
-       
-        public void Init()
+
+        public void MainLoop()
         {
-            PrintOptionsMenu();
-            PrintSimulationSettings();
-            InitVehicleEvents();
-            Simulate();
+            while (true)
+            {
+                Init(); //initializes simulation variables
+                OptionsMenu();
+                InitVehicleEvents(); //initializes vehicle events (if there is any event to be initialized)
+                if (Events.Count > 0) //it means there is the need to simulate
+                {
+                    PrintSimulationSettings();
+                    Simulate();
+                    PrintSimulationStatistics();
+                }
+            }
         }
         public void Simulate()
         {
@@ -75,12 +84,12 @@ namespace Simulator
                 watch.Stop();
                 ConsoleLogger.Log("-----------------------------------------------------");
                 ConsoleLogger.Log(this.ToString()+"Simulation finished after "+TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds+" seconds.");
-                PrintSimulationStatistics();
+                
             }
             
         }
 
-        public abstract void PrintOptionsMenu();
+        public abstract void OptionsMenu();
 
         public abstract void Append(Event evt);
         public override string ToString()

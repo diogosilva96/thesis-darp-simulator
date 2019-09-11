@@ -94,7 +94,6 @@ namespace Simulator.Objects.Data_Objects
         {
             Console.WriteLine(this + "Removing duplicate trips...");
             var watch = Stopwatch.StartNew();
-            var duplicateCount = 0;
             List<Trip> tripsToRemove = new List<Trip>();
             //Searching for duplicates code
             foreach (var route in Routes)

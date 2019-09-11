@@ -44,13 +44,13 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.TabuSearch);
         }
 
-        public List<AlgorithmTester> GetSearchAlgorithmsResultsList(int searchTimeLimitInSeconds)
+        public List<AlgorithmTester> GetSearchAlgorithmsResultsList(int searchTimeLimitInSeconds,bool allowDropNodes)
         {
             List<AlgorithmTester> testedAlgorithmsList = new List<AlgorithmTester>();
             //TEST ALL the criterions (performance, time to compute, solution cost, etc)
             foreach (var searchStrategy in _searchStrategyAlgorithms)
             {
-                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,searchStrategy,10);
+                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,searchStrategy,10);
                 algorithmTester.Test();
                 testedAlgorithmsList.Add(algorithmTester); //adds it to the list
                 
@@ -80,9 +80,9 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                     toPrintList.Add("Search time limit: " + algorithm.SearchTimeLimitInSeconds + " seconds");
                 }
                 toPrintList.Add("Number of served requests: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).CustomerNumber);
-                toPrintList.Add("Total distance traveled:"+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalDistanceInMeters+" meters.");
-                toPrintList.Add("Total time:"+TimeSpan.FromSeconds(algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalTimeInSeconds).TotalMinutes+" minutes.");
-                toPrintList.Add("Total Load:"+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad);
+                toPrintList.Add("Total distance traveled: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalDistanceInMeters+" meters.");
+                toPrintList.Add("Total time: "+TimeSpan.FromSeconds(algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalTimeInSeconds).TotalMinutes+" minutes.");
+                toPrintList.Add("Total Load: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad);
                 toPrintList.Add("-----------------------------");
 
             }

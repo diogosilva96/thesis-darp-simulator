@@ -18,11 +18,11 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public int SearchTimeLimitInSeconds; //in seconds
         public PdtwSolver Solver;
 
-        protected AlgorithmTester(PdtwDataModel dataModel)
+        protected AlgorithmTester(PdtwDataModel dataModel,bool allowDropNodes)
         {
             DataModel = dataModel;
             SolutionIsFeasible = false;
-            Solver = new PdtwSolver();
+            Solver = new PdtwSolver(allowDropNodes);
         }
 
         public override string ToString()
@@ -32,7 +32,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public void Test() //tests the algorithm using different maxUpperBound values until it finds the earliest feasible maxupperbound value, then saves its metrics
         {
-            Console.WriteLine(this.ToString() + " testing " + Type + ": " + Name);
+            Console.WriteLine(this.ToString() + " testing algorithm: " + Name);
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
                 for (int maxUpperBound = 0; maxUpperBound < 30; maxUpperBound++)
                 {
@@ -40,14 +40,13 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                     var solution = TryGetSolutionHookMethod(maxUpperBound);
                     watch.Stop();
                     var elapsedSeconds = watch.ElapsedMilliseconds * 0.001;
-
-                    if (solution != null) //solution != null (means earliest feasible solution was found)
+                    SolutionIsFeasible = solution != null;
+                    if (SolutionIsFeasible) //solution != null (means earliest feasible solution was found)
                     {
                         //Saves the important metrics for the earliest feasible solution
                         MaxUpperBoundInMinutes = Solver.MaxUpperBound;
                         ComputationTimeInSeconds = elapsedSeconds;
                         Solution = solution;
-                        SolutionIsFeasible = true;
                         break;
                     }
                 }

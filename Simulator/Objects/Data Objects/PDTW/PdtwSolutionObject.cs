@@ -12,17 +12,17 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
 
-        public long TotalLoad => GetTotalValue(RouteLoads);
+        public long TotalLoad => GetTotalValue(_routeLoads);
 
-        public long TotalDistanceInMeters => GetTotalValue(RouteDistancesInMeters);
+        public long TotalDistanceInMeters => GetTotalValue(_routeDistancesInMeters);
 
-        public long TotalTimeInSeconds => GetTotalValue(RouteTimesInSeconds);
+        public long TotalTimeInSeconds => GetTotalValue(_routeTimesInSeconds);
 
-        public long[] RouteLoads; 
+        private readonly long[] _routeLoads; 
 
-        public long[] RouteDistancesInMeters;
+        private readonly long[] _routeDistancesInMeters;
 
-        public long[] RouteTimesInSeconds;
+        private readonly long[] _routeTimesInSeconds;
 
         public int CustomerNumber
         {
@@ -32,9 +32,9 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 if (_vehicleSolutionDictionary != null)
                 {
                     
-                    foreach (var dictTuple in _vehicleSolutionDictionary)
+                    foreach (var vehicleTuples in _vehicleSolutionDictionary)
                     {
-                        customerNumber += dictTuple.Value.Item2.Count;
+                        customerNumber += vehicleTuples.Value.Item2.Count;
                     }
                 }
                 return customerNumber;
@@ -45,11 +45,11 @@ namespace Simulator.Objects.Data_Objects.PDTW
         {
             _vehicleSolutionDictionary = solutionDictionary;
             solutionMetricsDictionary.TryGetValue("routeDistances", out long[] routeDistance);
-            RouteDistancesInMeters = routeDistance;
+            _routeDistancesInMeters = routeDistance;
             solutionMetricsDictionary.TryGetValue("routeTimes", out long[] routeTime);
-            RouteTimesInSeconds = routeTime;
+            _routeTimesInSeconds = routeTime;
             solutionMetricsDictionary.TryGetValue("routeLoads", out long[] routeLoad);
-            RouteLoads = routeLoad;
+            _routeLoads = routeLoad;
         }
 
         public Vehicle IndexToVehicle(int index)
@@ -69,6 +69,21 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 index++;
             }
             return index;
+        }
+
+        public long GetVehicleRouteLoad(Vehicle vehicle)
+        {
+            return _vehicleSolutionDictionary.ContainsKey(vehicle) ? _routeLoads[VehicleToIndex(vehicle)] : 0;
+        }
+
+        public long GetVehicleRouteDistance(Vehicle vehicle)
+        {
+            return _vehicleSolutionDictionary.ContainsKey(vehicle) ? _routeDistancesInMeters[VehicleToIndex(vehicle)] : 0;
+        }
+
+        public long GetVehicleRouteTime(Vehicle vehicle)
+        {
+            return _vehicleSolutionDictionary.ContainsKey(vehicle) ? _routeTimesInSeconds[VehicleToIndex(vehicle)] : 0;
         }
         public List<Stop> GetVehicleStops(Vehicle vehicle)
         {
