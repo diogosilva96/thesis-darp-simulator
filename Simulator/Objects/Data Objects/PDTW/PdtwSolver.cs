@@ -253,8 +253,8 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 var solutionDictionary = SolutionToVehicleStopTimeWindowsDictionary(solution);
                 if (solutionDictionary != null)
                 {
-                    pdtwSolutionObject = new PdtwSolutionObject(solutionDictionary);
-                    pdtwSolutionObject.AddMetrics(ComputeSolutionTotalMetrics(solution));
+                    var solutionMetricsDictionary = GetVehicleSolutionRouteMetrics(solution);
+                    pdtwSolutionObject = new PdtwSolutionObject(solutionDictionary,solutionMetricsDictionary);
                     
                 }
             }
@@ -397,21 +397,25 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         }
 
-        public Dictionary<string,long> ComputeSolutionTotalMetrics(Assignment solution)
+        public Dictionary<string,long[]> GetVehicleSolutionRouteMetrics(Assignment solution) //computes the metrics for each vehicle route
         {
-            long totalTime = 0;
-            long totalDistance = 0;
-            long totalLoad = 0; //ADD THIS AFTER FIX!
+       
             var calculator = new Calculator();
-            Dictionary<string,long> metricsDictionary = new Dictionary<string, long>();
+            Dictionary<string, long[]> vehicleMetricsDictionary = new Dictionary<string, long[]>();
             if (solution != null)
             {
                 
                 var timeDim = _routingModel.GetMutableDimension("Time");
                 var distanceDim = _routingModel.GetMutableDimension("Distance");
+                //route metrics each index is the vehicle index
+                long[] routeTimes = new long[_pdtwDataModel.Vehicles.Count];
+                long[] routeDistances = new long[_pdtwDataModel.Vehicles.Count];
+                long[] routeLoads = new long[_pdtwDataModel.Vehicles.Count];
                 for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     long routeLoad = 0;
+
+                    long totalLoad = 0; //ADD THIS AFTER FIX!
                     var index = _routingModel.Start(i);
                     while (_routingModel.IsEnd(index) == false)
                     {
@@ -420,19 +424,18 @@ namespace Simulator.Objects.Data_Objects.PDTW
                         totalLoad += routeLoad > 0 ? routeLoad : 0; //if the current route load is greater than 0 adds it to the total load
                     }
                     routeLoad += _pdtwDataModel.Demands[_routingIndexManager.IndexToNode(index)];
-                    totalLoad += routeLoad > 0 ? routeLoad : 0;//if the current route load is greater than 0 adds it to the total load
+                    totalLoad += routeLoad > 0 ? routeLoad : 0; //if the current route load is greater than 0 adds it to the total load
                     var endTimeVar = timeDim.CumulVar(index);
                     var endDistanceVar = distanceDim.CumulVar(index);
-                    long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar), _pdtwDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
-                    totalDistance += routeDistance;
-                    totalTime += solution.Min(endTimeVar);
+                    routeLoads[i] = totalLoad;
+                    routeDistances[i] = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar), _pdtwDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
+                    routeTimes[i] = solution.Min(endTimeVar);
                 }
-                metricsDictionary.Add("totalTime",totalTime);
-                metricsDictionary.Add("totalDistance", totalDistance);
-                metricsDictionary.Add("totalLoad",totalLoad);
-
+                vehicleMetricsDictionary.Add("routeLoads", routeLoads);
+                vehicleMetricsDictionary.Add("routeDistances", routeDistances);
+                vehicleMetricsDictionary.Add("routeTimes", routeTimes);
             }
-            return metricsDictionary;
+            return vehicleMetricsDictionary;
         }
     }
 }

@@ -162,12 +162,12 @@ namespace Simulator
 
             //    for (int i = 0; i < PdtwDataModel.VehicleNumber; i++)
             //    {
-            //        var tw1Vstops = tw1.GetVehicleStops(tw1.GetVehicle(i));
-            //        var tw2Vstops = tw2.GetVehicleStops(tw2.GetVehicle(i));
-            //        var tw1Vtw = tw1.GetVehicleTimeWindows(tw1.GetVehicle(i));
-            //        var tw2Vtw = tw2.GetVehicleTimeWindows(tw2.GetVehicle(i));
-            //        var tw1Vcust = tw1.GetVehicleCustomers(tw1.GetVehicle(i));
-            //        var tw2Vcust = tw2.GetVehicleCustomers(tw2.GetVehicle(i));
+            //        var tw1Vstops = tw1.GetVehicleStops(tw1.IndexToVehicle(i));
+            //        var tw2Vstops = tw2.GetVehicleStops(tw2.IndexToVehicle(i));
+            //        var tw1Vtw = tw1.GetVehicleTimeWindows(tw1.IndexToVehicle(i));
+            //        var tw2Vtw = tw2.GetVehicleTimeWindows(tw2.IndexToVehicle(i));
+            //        var tw1Vcust = tw1.GetVehicleCustomers(tw1.IndexToVehicle(i));
+            //        var tw2Vcust = tw2.GetVehicleCustomers(tw2.IndexToVehicle(i));
             //        ConsoleLogger.Log("Tw1 and Tw2 vehicle stops are equal:" + tw1Vstops.SequenceEqual(tw2Vstops));
             //        ConsoleLogger.Log("Tw1 and Tw2 vehicle time windows are equal:" + tw1Vtw.SequenceEqual(tw2Vtw));
             //        ConsoleLogger.Log("Tw1 and Tw2 vehicle customers are equal:" + tw1Vcust.SequenceEqual(tw2Vcust));
@@ -191,7 +191,7 @@ namespace Simulator
                 //Adds the flexible trip vehicles to the vehicleFleet
                 for (int j = 0; j < pdtwSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
                 {
-                    var solutionVehicle = _pdtwSolutionObject.GetVehicle(j);
+                    var solutionVehicle = _pdtwSolutionObject.IndexToVehicle(j);
                     var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
                     trip.StartTime =
                         (int)_pdtwSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time

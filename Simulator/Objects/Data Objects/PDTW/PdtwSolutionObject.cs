@@ -12,11 +12,17 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
 
-        public long TotalLoad;
+        public long TotalLoad => GetTotalValue(RouteLoads);
 
-        public long TotalDistanceInMeters;
+        public long TotalDistanceInMeters => GetTotalValue(RouteDistancesInMeters);
 
-        public long TotalTimeInSeconds;
+        public long TotalTimeInSeconds => GetTotalValue(RouteTimesInSeconds);
+
+        public long[] RouteLoads; 
+
+        public long[] RouteDistancesInMeters;
+
+        public long[] RouteTimesInSeconds;
 
         public int CustomerNumber
         {
@@ -35,20 +41,39 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         }
 
-        public PdtwSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary)
+        public PdtwSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary,Dictionary<string,long[]> solutionMetricsDictionary)
         {
             _vehicleSolutionDictionary = solutionDictionary;
+            solutionMetricsDictionary.TryGetValue("routeDistances", out long[] routeDistance);
+            RouteDistancesInMeters = routeDistance;
+            solutionMetricsDictionary.TryGetValue("routeTimes", out long[] routeTime);
+            RouteTimesInSeconds = routeTime;
+            solutionMetricsDictionary.TryGetValue("routeLoads", out long[] routeLoad);
+            RouteLoads = routeLoad;
         }
 
-        public Vehicle GetVehicle(int index)
+        public Vehicle IndexToVehicle(int index)
         {
             return _vehicleSolutionDictionary.Keys.ElementAt(index);
+        }
+
+        public int VehicleToIndex(Vehicle vehicle)
+        {
+            int index = 0;
+            foreach (var vehicleTuple in _vehicleSolutionDictionary)
+            {
+                if (vehicleTuple.Key == vehicle)//index found, breaks loop
+                {
+                    break;
+                }
+                index++;
+            }
+            return index;
         }
         public List<Stop> GetVehicleStops(Vehicle vehicle)
         {
             return GetTupleData(vehicle) != null ? GetTupleData(vehicle).Item1 : null;
         }
-
         public List<Customer> GetVehicleCustomers(Vehicle vehicle)
         {
             return GetTupleData(vehicle) != null ? GetTupleData(vehicle).Item2 : null;
@@ -93,14 +118,17 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return _vehicleSolutionDictionary.Keys.Contains(vehicle);
         }
 
-        public void AddMetrics(Dictionary<string, long> metricsDictionary)
+        private long GetTotalValue(long[] metricValues)
         {
-            metricsDictionary.TryGetValue("totalDistance", out long totalDistance);
-            TotalDistanceInMeters = totalDistance;
-            metricsDictionary.TryGetValue("totalTime", out long totalTime);
-            TotalTimeInSeconds = totalTime;
-            metricsDictionary.TryGetValue("totalLoad", out long totalLoad);
-            TotalLoad = totalLoad;
+            long totalValue = 0;
+            if (metricValues.Length > 0)
+            {
+                foreach (var value in metricValues)
+                {
+                    totalValue += value;
+                }
+            }
+            return totalValue;
         }
     }
 }
