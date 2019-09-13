@@ -17,10 +17,12 @@ namespace Simulator.Objects.Data_Objects.PDTW
         private int _demandCallbackIndex;
         public bool DropNodesAllowed;
         public int MaxUpperBound; //the current upper bound limit of the found solution, which is lesser or equal than _maxUpperBoundLimit
+        public int MaxAllowedUpperBound;
 
         public PdtwSolver(bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
+            MaxAllowedUpperBound = 30;
             MaxUpperBound = 0; //default value
             
         }
@@ -219,30 +221,46 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return searchParameters;
         }
 
-        public Assignment TryGetFastSolution(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes)
+        public Assignment TryGetFastSolution(PdtwDataModel pdtwDataModel)
         {
             _pdtwDataModel = pdtwDataModel;
             Assignment solution = null;
-            MaxUpperBound = maxUpperBoundInMinutes;
-            Init();
-            var searchParameters = GetDefaultSearchParameters();
-            //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
-            //Get the solution of the problem
-            solution = _routingModel.SolveWithParameters(searchParameters);
+            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
+            for (int maxUpperBound = 0; maxUpperBound < MaxAllowedUpperBound; maxUpperBound++)
+            {
+                MaxUpperBound = maxUpperBound;
+                Init();
+                var searchParameters = GetDefaultSearchParameters();
+                //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
+                //Get the solution of the problem
+                solution = _routingModel.SolveWithParameters(searchParameters);
+                if (solution != null) //if true, solution was found, breaks the cycle
+                {
+                    break;
+                }
+            }
+
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
 
-        public Assignment TryGetSolutionWithSearchStrategy(PdtwDataModel pdtwDataModel,int maxUpperBoundInMinutes, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
+        public Assignment TryGetSolutionWithSearchStrategy(PdtwDataModel pdtwDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
             _pdtwDataModel = pdtwDataModel;
             Assignment solution = null;
-
-            MaxUpperBound = maxUpperBoundInMinutes;
-            Init();
-            var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds,searchAlgorithm);
-            //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
-            //Get the solution of the problem
-            solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
+            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
+            for (int maxUpperBound = 0; maxUpperBound < MaxAllowedUpperBound; maxUpperBound++)
+            {
+                MaxUpperBound = maxUpperBound;
+                Init();
+                var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds, searchAlgorithm);
+                //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
+                //Get the solution of the problem
+                solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
+                if (solution != null) //if true, solution was found, breaks the cycle
+                {
+                    break;
+                }
+            }
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
         private RoutingSearchParameters GetSearchParametersWithSearchStrategy(int searchTimeLimit,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
@@ -333,31 +351,27 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return vehicleStopCustomerTimeWindowsDictionary;
 
         }
-        public void PrintSolution(Assignment solution)
-        {
 
+        public List<string> GetSolutionPrintableList(Assignment solution)
+        {
+            List<string> printableList = new List<string>();
             if (solution != null)
             {
+                Calculator calculator = new Calculator();
                 var timeDim = _routingModel.GetMutableDimension("Time");
                 var distanceDim = _routingModel.GetMutableDimension("Distance");
                 long totalTime = 0;
                 long totalDistance = 0;
                 long totalLoad = 0;
-                Calculator calculator = new Calculator();
-                Console.WriteLine("--------------------------------");
-                Console.WriteLine("| PDTW Solver Solution Printer |");
-                Console.WriteLine("--------------------------------");
-                Console.WriteLine("T - Time Windows");
-                Console.WriteLine("L - Load of the vehicle");
-                Console.WriteLine("Max Upper Bound limit:"+MaxUpperBound+" minutes");
                 var solutionObject = GetSolutionObject(solution);
                 for (int i = 0; i < _pdtwDataModel.Vehicles.Count; ++i)
                 {
                     int nodeIndex = 0;
                     long routeLoad = 0;
                     long previousRouteLoad = 0;
-                    Console.WriteLine("Vehicle {0} Route:", i);
+                    printableList.Add("Vehicle "+i+" Route:");
                     var index = _routingModel.Start(i);
+                    string concatenatedString = "";
                     while (_routingModel.IsEnd(index) == false)
                     {
                         previousRouteLoad = routeLoad;
@@ -371,13 +385,10 @@ namespace Simulator.Objects.Data_Objects.PDTW
                             _routingModel.GetArcCostForVehicle(previousIndex, index,
                                 0); //Gets the travel time between the previousNode and the NextNode
                         var distance =
-                            calculator.TravelTimeToDistance((int) timeToTravel,
+                            calculator.TravelTimeToDistance((int)timeToTravel,
                                 _pdtwDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        Console.Write(_pdtwDataModel.IndexToStop(nodeIndex) + ":T({0},{1}), L({2}) --[{3}m]--> ",
-                            solution.Min(timeVar),
-                            solution.Max(timeVar), routeLoad,
-                            (int) distance);
+                        concatenatedString += _pdtwDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+ routeLoad+") --["+distance+"m]--> ";
                         //need to fix totalLoad
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
 
@@ -388,29 +399,51 @@ namespace Simulator.Objects.Data_Objects.PDTW
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += _pdtwDataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
-                    Console.WriteLine(_pdtwDataModel.IndexToStop(nodeIndex) + ":T({0},{1}), L({2})",
-                        solution.Min(endTimeVar),
-                        solution.Max(endTimeVar), routeLoad);
-                   
-                    long routeDistance = (long) calculator.TravelTimeToDistance((int) solution.Min(endDistanceVar),
+                    concatenatedString+=_pdtwDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(endTimeVar) + ","+ solution.Max(endTimeVar) + "), L("+routeLoad+")";
+                    printableList.Add(concatenatedString);
+                    long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endDistanceVar),
                         _pdtwDataModel
                             .VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
-                    Console.WriteLine("Route time: {0} minutes",
-                        TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes);
-                    Console.WriteLine("Route Distance: {0} meters", routeDistance);
-                    Console.WriteLine("Route Total Load:" + totalLoad); //change!
-                    Console.WriteLine("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
-                    Console.WriteLine("Avg time cost:" + solution.Min(endTimeVar) / index); //debug
+                    printableList.Add("Route time: "+ TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes + " minutes");
+                    printableList.Add("Route Distance: "+ routeDistance+" meters");
+                    printableList.Add("Route Total Load:" + totalLoad); 
+                    printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
+                    printableList.Add("Avg time cost:" + solution.Min(endTimeVar) / index); //debug
                     totalDistance += routeDistance;
                     totalTime += solution.Min(endTimeVar);
-                    Console.WriteLine("------------------------------------------");
+                    printableList.Add("------------------------------------------");
                 }
 
-                
-                Console.WriteLine("Total time of all routes: {0} minutes", TimeSpan.FromSeconds(totalTime).TotalMinutes);
-                Console.WriteLine("Total distance of all routes: {0} meters",totalDistance);
-                Console.WriteLine("Total Load of all routes: {0} customers",totalLoad);
-                Console.WriteLine("Total customers served: {0}/{1}",solutionObject.CustomerNumber,_pdtwDataModel.Customers.Count);
+
+                printableList.Add("Total time of all routes: "+ TimeSpan.FromSeconds(totalTime).TotalMinutes+" minutes");
+                printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
+                printableList.Add("Total Load of all routes: " + totalLoad + " customers");
+                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ _pdtwDataModel.Customers.Count);
+            }
+            else
+            {
+                throw new ArgumentNullException("solution = null");
+            }
+
+            return printableList;
+        }
+        public void PrintSolution(Assignment solution)
+        {
+
+            if (solution != null)
+            {
+               
+                Console.WriteLine("--------------------------------");
+                Console.WriteLine("| PDTW Solver Solution Printer |");
+                Console.WriteLine("--------------------------------");
+                Console.WriteLine("T - Time Windows");
+                Console.WriteLine("L - Load of the vehicle");
+                Console.WriteLine("Max Upper Bound limit:" + MaxUpperBound + " minutes");
+                var printableList = GetSolutionPrintableList(solution);
+                foreach (var stringToBePrinted in printableList)
+                {
+                    Console.WriteLine(stringToBePrinted);
+                }
             }
             else
             {

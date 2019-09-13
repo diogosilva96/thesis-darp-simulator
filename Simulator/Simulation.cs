@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Google.OrTools.ConstraintSolver;
 using Simulator.Events;
 using Simulator.Logger;
@@ -25,9 +26,6 @@ namespace Simulator
 
         public PdtwDataModel PdtwDataModel;
 
-
-        private int[] _simulationStartEndTime;
-
         private readonly int _vehicleSpeed;
 
         private readonly int _vehicleCapacity;
@@ -47,7 +45,6 @@ namespace Simulator
         {
             TotalEventsHandled = 0;
             _validationsCounter = 1;
-            _simulationStartEndTime = new int[2];
             Events.Clear(); //clears all events 
             VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
             
@@ -75,7 +72,7 @@ namespace Simulator
             ConsoleLogger.Log("Please Select one of the options:");
             ConsoleLogger.Log("1 - Standard Bus route simulation (static routing)");
             ConsoleLogger.Log("2 - Single Bus route flexible simulation");
-            ConsoleLogger.Log("3 - Algorithm comparison");
+            ConsoleLogger.Log("3 - Algorithms Test & Results");
             int key = 0;
             wrongKeyLabel:
             try
@@ -106,22 +103,25 @@ namespace Simulator
 
         public void InitDataModel()
         {
-            PdtwDataModel = new PdtwDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), _vehicleSpeed);//data model
+            List<Vehicle> dataModelVehicles = new List<Vehicle>();
             //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
             for (int i = 0; i < 2; i++)
             {
 
-                var vehicle = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, true);
-                PdtwDataModel.AddVehicle(vehicle);
+                dataModelVehicles.Add(new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, true));
+                
             }
+            PdtwDataModel = new PdtwDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), _vehicleSpeed,dataModelVehicles);//data model
+            var customersToBeServed = new List<Customer>();
             // Pickup and deliveries definition using static generated stop requests
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 2000, 3700 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3200, 5000 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3000, 3900 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
-            PdtwDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new int[] { 2000, 3700 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new int[] { 3200, 5000 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new int[] { 3000, 3900 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
+            PdtwDataModel.Customers = customersToBeServed;
             //Print datamodel data
             PdtwDataModel.PrintTimeMatrix();
             PdtwDataModel.PrintPickupDeliveries();
@@ -149,15 +149,8 @@ namespace Simulator
             //PdtwDataModel.PrintTimeWindows();
             PdtwSolver pdtwSolver = new PdtwSolver(false);
             Assignment timeWindowSolution = null;
-            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < 30; maxUpperBound++)
-            {
-                timeWindowSolution = pdtwSolver.TryGetFastSolution(PdtwDataModel,maxUpperBound);
-                if (timeWindowSolution != null)
-                {
-                    break;
-                }
-            }
+            timeWindowSolution = pdtwSolver.TryGetFastSolution(PdtwDataModel);
+
 
             //PdtwSolver pdtwSolver2 = new PdtwSolver(30);
             ////comparing first solution and the one with search
@@ -192,15 +185,61 @@ namespace Simulator
 
         public void AlgorithmComparisonOption()
         {
+            wrongKeyLabel:
+            ConsoleLogger.Log("Allow drop nodes penalties?");
+            ConsoleLogger.Log("1 - Yes");
+            ConsoleLogger.Log("2 - No");
+            int key = 0;
+            try
+            {
+                key = int.Parse(Console.ReadLine());
+                if (key <= 0 && key > 2)
+                {
+                    ConsoleLogger.Log("Wrong input, please retype using a valid input!");
+                    goto wrongKeyLabel;
+                }
+            }
+            catch (Exception)
+            {
+                goto wrongKeyLabel;
+            }
+
+            var allowDropNodes = key == 1;
             InitDataModel();
             AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(PdtwDataModel);
-            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,true);
+            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
             var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
             foreach (var printableItem in printList)
             {
                 ConsoleLogger.Log(printableItem);
             }
         }
+     
+        public void StandardBusRouteOption()
+        {
+            int startTime = 0;
+            int endTime = 0;
+            bool canAdvance = false;
+            while (!canAdvance)
+            {
+                try
+                {
+                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
+                    startTime = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
+                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
+                    endTime = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
+                    canAdvance = true;
+                }
+                catch (Exception)
+                {
+                    ConsoleLogger.Log(this.ToString() +
+                                      "Error Wrong input, please insert integer numbers for the start and end hour.");
+                    canAdvance = false;
+                }
+            }
+            AssignAllTripsToVehicles(startTime,endTime);
+        }
+
         private void AssignVehicleFlexibleTrips(PdtwSolutionObject pdtwSolutionObject)
         {
             if (pdtwSolutionObject != null)
@@ -223,34 +262,12 @@ namespace Simulator
                 ConsoleLogger.Log("pdtwSolutionObject is null.");
             }
         }
-        public void StandardBusRouteOption()
-        {
-            bool canAdvance = false;
-            while (!canAdvance)
-            {
-                try
-                {
-                    ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
-                    _simulationStartEndTime[0] = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
-                    ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
-                    _simulationStartEndTime[1] = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
-                    canAdvance = true;
-                }
-                catch (Exception)
-                {
-                    ConsoleLogger.Log(this.ToString() +
-                                      "Error Wrong input, please insert integer numbers for the start and end hour.");
-                    canAdvance = false;
-                }
-            }
-            AssignVehicleTrips();
-        }
 
-        private void AssignVehicleTrips()
+        private void AssignAllTripsToVehicles(int startHour, int endHour)
         {
             foreach (var route in TransportationNetwork.Routes)
             {
-                var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= _simulationStartEndTime[0] && TimeSpan.FromSeconds(t.StartTime).Hours < _simulationStartEndTime[1]);
+                var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= startHour && TimeSpan.FromSeconds(t.StartTime).Hours < endHour);
                 if (allRouteTrips.Count > 0)
                 {
                     var tripCount = 0;
@@ -302,9 +319,6 @@ namespace Simulator
                 }
             }
             ConsoleLogger.Log("Number of distinct routes:"+distinctRoutes.Count);
-            if (_simulationStartEndTime[0] == 0 && _simulationStartEndTime[1] == 0) return;
-            ConsoleLogger.Log("Start hour:" + _simulationStartEndTime[0]);
-            ConsoleLogger.Log(  "End Hour:" + _simulationStartEndTime[1]);
 
         }
 
@@ -397,12 +411,19 @@ namespace Simulator
                 lastInsertedLeaveTime = customerLeaveVehicleEvents.Count > 0 ? customerLeaveVehicleEvents[customerLeaveVehicleEvents.Count - 1].Time : arrivalTime;
 
                 List<Event> customersEnterVehicleEvents = null;
-                if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.TripIterator.Current.HasStarted && !_pdtwSolutionObject.ContainsVehicle(eventArrive.Vehicle))
+                if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.TripIterator.Current.HasStarted)
                 {
                     int expectedDemand = 0;
                     try
                     {
-                        expectedDemand = TransportationNetwork.DemandsDataObject.GetDemand(eventArrive.Stop.Id, eventArrive.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(eventArrive.Time).Hours);
+                        if (_pdtwSolutionObject != null)
+                        {
+                            expectedDemand = !_pdtwSolutionObject.ContainsVehicle(eventArrive.Vehicle) ? TransportationNetwork.DemandsDataObject.GetDemand(eventArrive.Stop.Id, eventArrive.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(eventArrive.Time).Hours) : 0;
+                        }
+                        else
+                        {
+                            expectedDemand = TransportationNetwork.DemandsDataObject.GetDemand(eventArrive.Stop.Id, eventArrive.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(eventArrive.Time).Hours);
+                        }
                     }
                     catch (Exception)
                     {
@@ -483,7 +504,7 @@ namespace Simulator
                         var arriveEvent = EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle, nextArrivalTime); //generates the arrive event
                         AddEvent(arriveEvent);
                         //DEBUG!
-                        if (_pdtwSolutionObject.ContainsVehicle(eventDepart.Vehicle))
+                        if (_pdtwSolutionObject != null && _pdtwSolutionObject.ContainsVehicle(eventDepart.Vehicle))
                         {
                             ConsoleLogger.Log("Event arrival time:"+nextArrivalTime+", Scheduled arrival time:"+_pdtwSolutionObject.GetVehicleStopTimeWindow(eventDepart.Vehicle,eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop)[0]);
                         }
@@ -522,7 +543,11 @@ namespace Simulator
                     _validationsCounter++;
                     break;
                 case CustomerRequestEvent customerRequestEvent:
-                    PdtwDataModel.AddCustomer(customerRequestEvent.Customer);
+                    if (PdtwDataModel != null && !PdtwDataModel.Customers.Contains(customerRequestEvent.Customer))
+                    {
+                        PdtwDataModel.Customers.Add(customerRequestEvent.Customer);
+                    }
+                
                     break;
             }
         }

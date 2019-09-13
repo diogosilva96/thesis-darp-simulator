@@ -7,17 +7,46 @@ namespace Simulator.Objects.Data_Objects.PDTW
 {
     public class PdtwDataModel //pickup delivery with time windows data model
     {
-        public int DepotIndex;
+        public int DepotIndex => Stops.IndexOf(Depot);
+
+        public Stop Depot;
 
         public long[] VehicleCapacities;
 
-        public long[,] TimeMatrix; //time window matrix
+        public long[,] TimeMatrix; //time matrix that contains the travel time to each stop
 
-        public readonly List<Stop> Stops; // a list with all the distinct stops for the pickup and deliveries
+        public List<Stop> Stops; // a list with all the distinct stops for the pickup and deliveries
 
-        public List<Vehicle> Vehicles;
+        public int[] Starts;
 
-        public List<Customer> Customers; //A list with all the customers for the pickupDeliveries
+        public int[] Ends;
+
+        public List<Vehicle> Vehicles
+        {
+            get => _vehicles;
+            set
+            {
+                _vehicles = value;
+                UpdateVehicleCapacities(); //updates the vehicle capacities array, for the new vehicle list
+                InitialRoutes = new long[_vehicles.Count][]; //updates the initial routes for the number of vehicles
+                UpdateVehicleStartEnds();
+            }
+        }
+
+        private List<Vehicle> _vehicles;
+
+        public List<Customer> Customers //A list with all the customers for the pickupDeliveries
+        {
+            get => _customers;
+            set
+            {
+                _customers = value; //assigns the new value to the customer list
+                AddCustomersPickupDeliveryStopsToStopList(_customers); //resets the stop list and adds the new customer pickup delivery stops to the stop list
+                UpdateTimeMatrix(); //updates the time matrix with the new stops and its respective travel time
+            }
+        } 
+
+        private List<Customer> _customers;
 
         public long[][] InitialRoutes;
 
@@ -31,20 +60,42 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
         public int[][] PickupsDeliveries => GetPickupDeliveryIndexMatrix();
 
-        public PdtwDataModel(Stop depot,int vehicleSpeed)
+        public PdtwDataModel(Stop depot,int vehicleSpeed, List<Vehicle> vehicles)
         {
-            VehicleSpeed = vehicleSpeed;
-            Customers = new List<Customer>();
-            Stops = new List<Stop>();
-            Stops.Add(depot);
-            DepotIndex = Stops.IndexOf(depot);
-            Vehicles = new List<Vehicle>();
-            InitialRoutes = new long[0][];
+            Init(depot, vehicleSpeed);
+            Vehicles = vehicles;
         }
 
         public PdtwDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed) //if different end and start depot
         {
+            //CHANGE THIS
+            Init(starts[0],vehicleSpeed);
+            VehicleSpeed = vehicleSpeed;
+        }
 
+        private void Init(Stop depot, int vehicleSpeed)
+        {
+            Stops = new List<Stop>();
+            Customers = new List<Customer>();
+            Vehicles = new List<Vehicle>();
+            VehicleSpeed = vehicleSpeed;
+            Depot = depot;
+            Stops.Add(depot);
+        }
+
+        private void AddCustomersPickupDeliveryStopsToStopList(List<Customer> customers)
+        {
+            Stops = new List<Stop> {Depot}; //clears stop list and initializes it with the depot stop
+            foreach (var customer in _customers) //loop to add the pickup and delivery stops for each customer, to the stop list
+            {
+                foreach (var pickupDelivery in customer.PickupDelivery)
+                {
+                    if (!Stops.Contains(pickupDelivery))
+                    {
+                        Stops.Add(pickupDelivery); //if the pickup stop isn't in the list, add it to the stop list
+                    }
+                }
+            }
         }
         private int[][] GetPickupDeliveryIndexMatrix()//returns the pickupdelivery stop matrix using indexes (based on the stop list) instead of stop id's
         {
@@ -62,19 +113,22 @@ namespace Simulator.Objects.Data_Objects.PDTW
             return pickupsDeliveries;
         }
 
-        public void AddInitialRoute(List<Stop> stopSequence)
+        public void AddInitialRoute(Vehicle vehicle,List<Stop> stopSequence)
         {
-            // Initial route creation
-            long[] initialRoute = new long[stopSequence.Count];
-            int index = 0;
-            foreach (var stop in stopSequence)
+            if (Vehicles.Contains(vehicle))
             {
-                if (!Stops.Contains(stop)) Stops.Add(stop);
-                initialRoute[index] = Stops.IndexOf(stop);
-                index++;
+                var vehicleIndex = Vehicles.FindIndex(v => v == vehicle);
+                // Initial route creation
+                long[] vehicleInitialRoute = new long[stopSequence.Count];
+                int index = 0;
+                foreach (var stop in stopSequence)
+                {
+                    if (!Stops.Contains(stop)) Stops.Add(stop);
+                    vehicleInitialRoute[index] = Stops.IndexOf(stop);
+                    index++;
+                }
+                InitialRoutes[vehicleIndex] = vehicleInitialRoute;
             }
-            Array.Resize(ref InitialRoutes, InitialRoutes.Length + 1);
-            InitialRoutes[InitialRoutes.Length - 1] = initialRoute;
         }
 
         private long[] GetDemands()
@@ -108,39 +162,40 @@ namespace Simulator.Objects.Data_Objects.PDTW
         //{
         //    Demands[index] = value;
         //}
-        public void AddCustomer(Customer customer)
-        {
-            if (!Customers.Contains(customer))
-            {
-                Customers.Add(customer);
-                AddPickupDeliveryStops(customer);
-            }
-        }
-
-
-        public void AddVehicle(Vehicle vehicle)
-        {
-            if (!Vehicles.Contains(vehicle))
-            {
-                Vehicles.Add(vehicle);
-                UpdateVehicleCapacities();
-            }
-        }
 
         private void UpdateVehicleCapacities()
         {
             VehicleCapacities = null;
-            if (Vehicles.Count > 0)
+            if (_vehicles.Count > 0)
             {
-                VehicleCapacities = new long[Vehicles.Count];
-                for (int i = 0; i < Vehicles.Count; i++)
+                VehicleCapacities = new long[_vehicles.Count];
+                for (int i = 0; i < _vehicles.Count; i++)
                 {
-                    VehicleCapacities[i] = Vehicles[i].Capacity;
+                    VehicleCapacities[i] = _vehicles[i].Capacity;
                 }
             }
         }
-        
-        private void AddPickupDeliveryStops(Customer customer)
+
+        private void UpdateVehicleStartEnds()
+        {
+            if (_vehicles.Count > 0)
+            {
+                Starts = new int[_vehicles.Count];
+                Ends = new int[_vehicles.Count];
+                foreach (var vehicle in _vehicles)
+                {
+                    Starts[_vehicles.IndexOf(vehicle)] = DepotIndex;
+                    Ends[_vehicles.IndexOf(vehicle)] = DepotIndex;
+                }
+            }
+            else
+            {
+                Starts = null;
+                Ends = null;
+            }
+        }
+
+        private void AddPickupDeliveryStops(Customer customer)//responsible for adding the pickup stop and delivery stop to the stop list (Stops) and updating the time matrix with the newly added stops
         {
             bool valueChanged = false;
             for (int i = 0; i < customer.PickupDelivery.Length; i++)
@@ -152,9 +207,8 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
             if (valueChanged)
             {
-                UpdateTimeMatrix();
+                UpdateTimeMatrix(); //updates the time matrix
             }
-
         }
 
         private void UpdateTimeMatrix()

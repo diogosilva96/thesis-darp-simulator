@@ -17,12 +17,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             Name = algorithmValue.ToString();
         }
 
-        public override Assignment TryGetSolutionHookMethod(int maxUpperBound)
+        public override Assignment TryGetSolutionHookMethod()
         {
             Assignment solution = null;
             if (AlgorithmValue is LocalSearchMetaheuristic.Types.Value localSearchAlgorithm)
             {
-                solution = Solver.TryGetSolutionWithSearchStrategy(DataModel, maxUpperBound,
+                solution = Solver.TryGetSolutionWithSearchStrategy(DataModel,
                     SearchTimeLimitInSeconds, localSearchAlgorithm);
             }
             else
