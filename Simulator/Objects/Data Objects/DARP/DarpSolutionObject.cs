@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.PDTW
+namespace Simulator.Objects.Data_Objects.DARP
 {
-    public class PdtwSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
+    public class DarpSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
     {
 
         private readonly Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
@@ -41,7 +41,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         }
 
-        public PdtwSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary,Dictionary<string,long[]> solutionMetricsDictionary)
+        public DarpSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary,Dictionary<string,long[]> solutionMetricsDictionary)
         {
             _vehicleSolutionDictionary = solutionDictionary;
             solutionMetricsDictionary.TryGetValue("routeDistances", out long[] routeDistance);

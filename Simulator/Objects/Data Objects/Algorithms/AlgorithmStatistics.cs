@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Google.OrTools.ConstraintSolver;
-using Simulator.Objects.Data_Objects.PDTW;
+using Simulator.Objects.Data_Objects.DARP;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
@@ -9,14 +9,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
     {
         private List<FirstSolutionStrategy.Types.Value> _firstSolutionAlgorithms;
         private List<LocalSearchMetaheuristic.Types.Value> _searchStrategyAlgorithms;
-        public PdtwDataModel DataModel;
+        public DarpDataModel DataModel;
 
         public override string ToString()
         {
             return "["+this.GetType().Name+"]";
         }
 
-        public AlgorithmStatistics(PdtwDataModel dataModel)
+        public AlgorithmStatistics(DarpDataModel dataModel)
         {
            InitFirstSolutionList();
            InitSearchStrategyList();
@@ -66,6 +66,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             toPrintList.Add("----------------------------");
             toPrintList.Add("Total Requests: "+DataModel.Customers.Count);
             toPrintList.Add("Number of available vehicles: " + DataModel.Vehicles.Count);
+            string capacitiesString = "Vehicle Capacities: ";
+            foreach (var vehicle in DataModel.Vehicles)
+            {
+                capacitiesString += "{" + vehicle.Capacity + "} ";
+            }
+            toPrintList.Add(capacitiesString);
             toPrintList.Add("------------------------");
             toPrintList.Add("| Algorithm Statistics |");
             toPrintList.Add("------------------------");

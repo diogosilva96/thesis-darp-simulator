@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
-using Simulator.Objects.Data_Objects.PDTW;
+using Simulator.Objects.Data_Objects.DARP;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
@@ -13,16 +13,16 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public object AlgorithmValue;
         public int MaxUpperBoundInMinutes; //in minutes
         public Assignment Solution;
-        public PdtwDataModel DataModel;
+        public DarpDataModel DataModel;
         public bool SolutionIsFeasible;
         public int SearchTimeLimitInSeconds; //in seconds
-        public PdtwSolver Solver;
+        public DarpSolver Solver;
 
-        protected AlgorithmTester(PdtwDataModel dataModel,bool allowDropNodes)
+        protected AlgorithmTester(DarpDataModel dataModel,bool allowDropNodes)
         {
             DataModel = dataModel;
             SolutionIsFeasible = false;
-            Solver = new PdtwSolver(allowDropNodes);
+            Solver = new DarpSolver(allowDropNodes);
         }
 
         public override string ToString()

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.PDTW
+namespace Simulator.Objects.Data_Objects.DARP
 {
-    public class PdtwDataModel //pickup delivery with time windows data model
+    public class DarpDataModel //pickup delivery with time windows data model
     {
         public int DepotIndex => Stops.IndexOf(Depot);
 
@@ -32,6 +31,19 @@ namespace Simulator.Objects.Data_Objects.PDTW
                 UpdateVehicleStartEnds();
             }
         }
+        private List<Customer> _customers;
+
+        public long[][] InitialRoutes;
+
+        public long[,] TimeWindows => GetTimeWindows();
+
+        public long[] Demands => GetDemands();
+
+        public int VehicleSpeed;
+
+        private const int DayInSeconds = 60 * 60 * 24; //24hours = 86400 seconds = 60 secs * 60 mins * 24 hours
+
+        public int[][] PickupsDeliveries => GetPickupDeliveryIndexMatrix();
 
         private List<Vehicle> _vehicles;
 
@@ -46,27 +58,15 @@ namespace Simulator.Objects.Data_Objects.PDTW
             }
         } 
 
-        private List<Customer> _customers;
 
-        public long[][] InitialRoutes;
 
-        public long[,] TimeWindows => GetTimeWindows();
-
-        public long[] Demands => GetDemands();
-
-        public int VehicleSpeed;
-
-        private const int DayInSeconds = 60 * 60 * 24; //24hours = 86400 seconds
-
-        public int[][] PickupsDeliveries => GetPickupDeliveryIndexMatrix();
-
-        public PdtwDataModel(Stop depot,int vehicleSpeed, List<Vehicle> vehicles)
+        public DarpDataModel(Stop depot,int vehicleSpeed, List<Vehicle> vehicles)
         {
             Init(depot, vehicleSpeed);
             Vehicles = vehicles;
         }
 
-        public PdtwDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed) //if different end and start depot
+        public DarpDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed) //if different end and start depot
         {
             //CHANGE THIS
             Init(starts[0],vehicleSpeed);
@@ -301,6 +301,7 @@ namespace Simulator.Objects.Data_Objects.PDTW
 
             return false;
         }
+
         public void PrintPickupDeliveries()
         {
             Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows (total: " + Customers.Count + "):");
