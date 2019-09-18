@@ -149,6 +149,7 @@ namespace Simulator
             //DarpDataModel.PrintTimeWindows();
             DarpSolver darpSolver = new DarpSolver(false);
             Assignment timeWindowSolution = null;
+            darpSolver.MaxAllowedCustomerRideTimeMultiplier = 2;
             timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
 
 
