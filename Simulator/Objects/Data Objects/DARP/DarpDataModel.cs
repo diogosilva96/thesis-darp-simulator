@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using Google.OrTools.ConstraintSolver;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.DARP
@@ -19,6 +21,10 @@ namespace Simulator.Objects.Data_Objects.DARP
         public int[] Starts;
 
         public int[] Ends;
+
+        public List<Stop> StartDepots;
+
+        public List<Stop> EndDepots;
 
         public List<Vehicle> Vehicles
         {
@@ -53,8 +59,9 @@ namespace Simulator.Objects.Data_Objects.DARP
             set
             {
                 _customers = value; //assigns the new value to the customer list
-                AddCustomersPickupDeliveryStopsToStopList(_customers); //resets the stop list and adds the new customer pickup delivery stops to the stop list
+                UpdateStopsWithPickupDeliveryStops(_customers); //resets the stop list and adds the new customer pickup delivery stops to the stop list
                 UpdateTimeMatrix(); //updates the time matrix with the new stops and its respective travel time
+                UpdateVehicleStartEnds();
             }
         } 
 
@@ -62,30 +69,33 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public DarpDataModel(Stop depot,int vehicleSpeed, List<Vehicle> vehicles)
         {
-            Init(depot, vehicleSpeed);
+            Init(vehicleSpeed);
+            Depot = depot;
+            Stops.Add(depot);
             Vehicles = vehicles;
         }
 
-        public DarpDataModel(Stop[] starts, Stop[] ends, int vehicleSpeed) //if different end and start depot
+        public DarpDataModel(List<Stop> starts, List<Stop> ends, int vehicleSpeed, List<Vehicle> vehicles) //if different end and start depot
         {
             //CHANGE THIS
-            Init(starts[0],vehicleSpeed);
-            VehicleSpeed = vehicleSpeed;
+            Init(vehicleSpeed);
+            Vehicles = vehicles;
+            StartDepots = starts;
+            EndDepots = ends;
         }
 
-        private void Init(Stop depot, int vehicleSpeed)
+        private void Init(int vehicleSpeed)
         {
             Stops = new List<Stop>();
             Customers = new List<Customer>();
             Vehicles = new List<Vehicle>();
             VehicleSpeed = vehicleSpeed;
-            Depot = depot;
-            Stops.Add(depot);
+
         }
 
-        private void AddCustomersPickupDeliveryStopsToStopList(List<Customer> customers)
+        private void UpdateStopsWithPickupDeliveryStops(List<Customer> customers)
         {
-            Stops = new List<Stop> {Depot}; //clears stop list and initializes it with the depot stop
+            InitStops();
             foreach (var customer in _customers) //loop to add the pickup and delivery stops for each customer, to the stop list
             {
                 foreach (var pickupDelivery in customer.PickupDelivery)
@@ -93,6 +103,34 @@ namespace Simulator.Objects.Data_Objects.DARP
                     if (!Stops.Contains(pickupDelivery))
                     {
                         Stops.Add(pickupDelivery); //if the pickup stop isn't in the list, add it to the stop list
+                    }
+                }
+            }
+        }
+
+        private void InitStops()
+        {
+            Stops = new List<Stop>(); //clears stop list
+            // initializes the list with the start depots
+            if (StartDepots != null)
+            {
+                foreach (var startDepot in StartDepots)
+                {
+                    if (!Stops.Contains(startDepot))
+                    {
+                        Stops.Add(startDepot);
+                    }
+                }
+            }
+
+            if (EndDepots != null)
+            {
+                //initializes the list with the end depots
+                foreach (var endDepot in EndDepots)
+                {
+                    if (!Stops.Contains(endDepot))
+                    {
+                        Stops.Add(endDepot);
                     }
                 }
             }
@@ -178,14 +216,16 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         private void UpdateVehicleStartEnds()
         {
-            if (_vehicles.Count > 0)
+            if (Vehicles != null)
             {
+                if (_vehicles.Count <= 0) return;
                 Starts = new int[_vehicles.Count];
                 Ends = new int[_vehicles.Count];
                 foreach (var vehicle in _vehicles)
                 {
-                    Starts[_vehicles.IndexOf(vehicle)] = DepotIndex;
-                    Ends[_vehicles.IndexOf(vehicle)] = DepotIndex;
+                    var vehicleIndex = _vehicles.IndexOf(vehicle);
+                    Starts[vehicleIndex] = Stops.FindIndex(startIndex=> startIndex == StartDepots[vehicleIndex]); //finds the index of the start depot stop in the stop list
+                    Ends[vehicleIndex] = Stops.FindIndex(endIndex => endIndex == EndDepots[vehicleIndex]);//finds the index of the end depot stop in the stop list
                 }
             }
             else

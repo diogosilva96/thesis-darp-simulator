@@ -103,15 +103,18 @@ namespace Simulator
 
         public void InitDataModel()
         {
+            int vehicleNumber = 2;
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
+            List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
+            List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
             //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < vehicleNumber; i++)
             {
-
                 dataModelVehicles.Add(new Vehicle(_vehicleSpeed, 20, TransportationNetwork.ArcDictionary, true));
-                
+                startDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
+                endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
             }
-            DarpDataModel = new DarpDataModel(TransportationNetwork.Stops.Find(s => s.Id == 2183), _vehicleSpeed,dataModelVehicles);//data model
+            DarpDataModel = new DarpDataModel(startDepots,endDepots, _vehicleSpeed,dataModelVehicles);//data model
             var customersToBeServed = new List<Customer>();
             // Pickup and deliveries definition using static generated stop requests
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));

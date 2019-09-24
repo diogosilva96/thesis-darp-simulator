@@ -35,7 +35,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             _routingIndexManager = new RoutingIndexManager(
                 _darpDataModel.TimeMatrix.GetLength(0),
                 _darpDataModel.Vehicles.Count,
-                _darpDataModel.DepotIndex);
+                _darpDataModel.Starts,_darpDataModel.Ends);
 
             //Create routing model
             _routingModel = new RoutingModel(_routingIndexManager);
@@ -227,8 +227,6 @@ namespace Simulator.Objects.Data_Objects.DARP
                     true, // start cumul to zero
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");
-          
-
                 // Add time window constraints for each location except depot.
                 for (int i = 1; i < _darpDataModel.TimeWindows.GetLength(0); ++i)
                 {
@@ -446,7 +444,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
                         var previousIndex = index;
                         index = solution.Value(_routingModel.NextVar(index));
-                        printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(i)));
+                        //printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(i)));
                         var timeToTravel =
                             _routingModel.GetArcCostForVehicle(previousIndex, index,
                                 0); //Gets the travel time between the previousNode and the NextNode
