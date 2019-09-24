@@ -16,11 +16,13 @@ namespace Simulator.Objects.Data_Objects.DARP
         public bool DropNodesAllowed;
         public int MaxUpperBound; //the current upper bound limit of the found solution, which is lesser or equal than _maxUpperBoundLimit
         public int MaxAllowedUpperBound;
+        public int MaxAllowedRideDurationMultiplier;
 
         public DarpSolver(bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxAllowedUpperBound = 30;
+            MaxAllowedRideDurationMultiplier = 3; 
             MaxUpperBound = 0; //default value
             
         }
@@ -76,7 +78,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
             _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
             AddPickupDeliveryDimension(); //Adds the pickup delivery dimension, which contains the pickup and delivery constraints
-            AddTimeWindowDimension(MaxUpperBound*60,2); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
+            AddTimeWindowDimension(MaxUpperBound*60); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
             AddCapacityDimension();
 
         }
@@ -212,7 +214,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
 
 
-        private void AddTimeWindowDimension(int maxUpperBoundLimitInSeconds, int maxAllowedRideDurationMultiplier)
+        private void AddTimeWindowDimension(int maxUpperBoundLimitInSeconds)
         {
             //Max upper bound limit received as parameter, defines the maximum arrival time at the delivery location (e.g a request with {10,20} the maximum arrival time at the delivery location will be 20 + maxUpperBoundLimitInSeconds)
             // this is used to relax the problem, if needed in cases such as if the problem isn't possible to be solved with the current timewindow requests.
@@ -263,7 +265,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     {
                         var deliveryIndex = pickupDelivery[1];
                         var minRideTimeDuration = _darpDataModel.TimeMatrix[i, deliveryIndex];
-                        var maxRideTimeDuration = maxAllowedRideDurationMultiplier * minRideTimeDuration;
+                        var maxRideTimeDuration = MaxAllowedRideDurationMultiplier * minRideTimeDuration;
                         var realRideTimeDuration =
                             timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
                         solver.Add(realRideTimeDuration < maxRideTimeDuration); //adds the constraint so that the current ride time duration does not exceed the maxRideTimeDuration
@@ -444,7 +446,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
                         var previousIndex = index;
                         index = solution.Value(_routingModel.NextVar(index));
-                        //printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(i)));
+                        //printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(index))); //current capacity
                         var timeToTravel =
                             _routingModel.GetArcCostForVehicle(previousIndex, index,
                                 0); //Gets the travel time between the previousNode and the NextNode
@@ -452,8 +454,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                             calculator.TravelTimeToDistance((int)timeToTravel,
                                 _darpDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        concatenatedString += _darpDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+ routeLoad+") --["+distance+"m]--> ";
-                        //need to fix totalLoad
+                        concatenatedString += _darpDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+routeLoad+") --["+distance+"m]--> ";
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
 
                     }
@@ -503,6 +504,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
                 Console.WriteLine("Max Upper Bound limit:" + MaxUpperBound + " minutes");
+                Console.WriteLine("Max allowed ride time multiplier: "+MaxAllowedRideDurationMultiplier + "x");
                 var printableList = GetSolutionPrintableList(solution);
                 foreach (var stringToBePrinted in printableList)
                 {
