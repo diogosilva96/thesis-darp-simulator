@@ -307,6 +307,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
 
+
         public Assignment TryGetSolutionWithSearchStrategy(DarpDataModel darpDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
             _darpDataModel = darpDataModel;

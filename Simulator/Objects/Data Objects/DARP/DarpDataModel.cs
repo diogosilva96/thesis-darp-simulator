@@ -8,9 +8,6 @@ namespace Simulator.Objects.Data_Objects.DARP
 {
     public class DarpDataModel //pickup delivery with time windows data model
     {
-        public int DepotIndex => Stops.IndexOf(Depot);
-
-        public Stop Depot;
 
         public long[] VehicleCapacities;
 
@@ -66,36 +63,20 @@ namespace Simulator.Objects.Data_Objects.DARP
         } 
 
 
-
-        public DarpDataModel(Stop depot,int vehicleSpeed, List<Vehicle> vehicles)
-        {
-            Init(vehicleSpeed);
-            Depot = depot;
-            Stops.Add(depot);
-            Vehicles = vehicles;
-        }
-
-        public DarpDataModel(List<Stop> starts, List<Stop> ends, int vehicleSpeed, List<Vehicle> vehicles) //if different end and start depot
+        public DarpDataModel(List<Stop> starts, List<Stop> ends,List<Vehicle> vehicles,List<Customer> customers) //if different end and start depot
         {
             //CHANGE THIS
-            Init(vehicleSpeed);
+            VehicleSpeed = vehicles[0].Speed;
             Vehicles = vehicles;
             StartDepots = starts;
             EndDepots = ends;
+            InitStops();
+            Customers = customers;
         }
 
-        private void Init(int vehicleSpeed)
-        {
-            Stops = new List<Stop>();
-            Customers = new List<Customer>();
-            Vehicles = new List<Vehicle>();
-            VehicleSpeed = vehicleSpeed;
-
-        }
 
         private void UpdateStopsWithPickupDeliveryStops(List<Customer> customers)
         {
-            InitStops();
             foreach (var customer in _customers) //loop to add the pickup and delivery stops for each customer, to the stop list
             {
                 foreach (var pickupDelivery in customer.PickupDelivery)
@@ -216,7 +197,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         private void UpdateVehicleStartEnds()
         {
-            if (Vehicles != null)
+            if (Vehicles != null && Stops != null)
             {
                 if (_vehicles.Count <= 0) return;
                 Starts = new int[_vehicles.Count];
@@ -253,7 +234,10 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         private void UpdateTimeMatrix()
         {
-            TimeMatrix = new MatrixBuilder().GetTimeMatrix(Stops, VehicleSpeed);
+            if (Stops != null)
+            {
+                TimeMatrix = new MatrixBuilder().GetTimeMatrix(Stops, VehicleSpeed);
+            }
         }
 
         
@@ -412,4 +396,5 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
 
     }
+    
 }

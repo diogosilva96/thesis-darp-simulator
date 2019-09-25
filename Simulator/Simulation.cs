@@ -114,7 +114,7 @@ namespace Simulator
                 startDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                 endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
             }
-            DarpDataModel = new DarpDataModel(startDepots,endDepots, _vehicleSpeed,dataModelVehicles);//data model
+
             var customersToBeServed = new List<Customer>();
             // Pickup and deliveries definition using static generated stop requests
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 3250, 4500 }, 0));
@@ -124,7 +124,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
-            DarpDataModel.Customers = customersToBeServed;
+            DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed);//data model
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -182,6 +182,29 @@ namespace Simulator
             {
                 darpSolver.PrintSolution(timeWindowSolution);
                 _darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
+                ////InitialRoutes
+                //var initialStartEnds = new List<Stop>();
+                //initialStartEnds.Add(DarpDataModel.IndexToStop(DarpDataModel.Starts[0]));
+                //var vehicles = new List<Vehicle>();
+                //vehicles.Add(DarpDataModel.Vehicles[0]);
+                //var initialRoute = _darpSolutionObject.GetVehicleStops(vehicles[0]);
+                //var routeCustomers = _darpSolutionObject.GetVehicleCustomers(vehicles[0]);
+                //var initialRouteDataModel = new DarpDataModel(initialStartEnds,initialStartEnds,_vehicleSpeed,vehicles);
+                //Dictionary<Vehicle, List<Stop>> initialRoutes = new Dictionary<Vehicle, List<Stop>>();
+                //initialRoutes.Add(vehicles[0],initialRoute);
+                //initialRouteDataModel.Customers = _darpSolutionObject.GetVehicleCustomers(vehicles[0]);
+                //initialRouteDataModel.AddInitialRoute(vehicles[0],initialRoute);
+                //var initialDarpSolver = new DarpSolver(false);
+                //var initSolution = initialDarpSolver.TryGetFastSolution(initialRouteDataModel);
+                //if (initSolution == null)
+                //{
+                //    ConsoleLogger.Log("initSolution is null");
+                //}
+                //else
+                //{
+                //    initialDarpSolver.PrintSolution(initSolution);
+                //}
+                ////End of initial routes
                 AssignVehicleFlexibleTrips(_darpSolutionObject);
             }
             else
