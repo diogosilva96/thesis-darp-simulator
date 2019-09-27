@@ -36,7 +36,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             // Create RoutingModel Index RoutingIndexManager
             _routingIndexManager = new RoutingIndexManager(
                 _darpDataModel.TimeMatrix.GetLength(0),
-                _darpDataModel.Vehicles.Count,
+                _darpDataModel.IndexManager.Vehicles.Count,
                 _darpDataModel.Starts,_darpDataModel.Ends);
 
             //Create routing model
@@ -239,7 +239,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 }
 
                 // Add time window constraints for each vehicle start node.
-                for (int i = 0; i < _darpDataModel.Vehicles.Count; ++i)
+                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     long index = _routingModel.Start(i);
                     timeDimension.CumulVar(index).SetRange(
@@ -247,7 +247,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                         _darpDataModel.TimeWindows[0, 1]); //this guarantees that a vehicle must visit the location during its time window
                 }
 
-                for (int i = 0; i < _darpDataModel.Vehicles.Count; ++i)
+                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     _routingModel.AddVariableMinimizedByFinalizer(
                         timeDimension.CumulVar(_routingModel.Start(i)));
@@ -360,14 +360,14 @@ namespace Simulator.Objects.Data_Objects.DARP
                 vehicleStopCustomerTimeWindowsDictionary = null;
             if (solution != null)
             {
-                List<Customer> allCustomers = _darpDataModel.Customers;
+                List<Customer> allCustomers = _darpDataModel.IndexManager.Customers;
                 vehicleStopCustomerTimeWindowsDictionary =
                     new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
                 var timeDim = _routingModel.GetMutableDimension("Time");
-                var distanceDim = _routingModel.GetMutableDimension("Distance");
-                for (int i = 0; i < _darpDataModel.Vehicles.Count; ++i)
+                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     List<Stop> routeStops = new List<Stop>();
+                    int nodeIndex = 0;
                     List<Customer> routeCustomers = new List<Customer>();
                     List<long[]> routeTimeWindows = new List<long[]>();
                     long[] timeWindow;
@@ -375,9 +375,9 @@ namespace Simulator.Objects.Data_Objects.DARP
                     var index = _routingModel.Start(i);
                     while (_routingModel.IsEnd(index) == false) //while the iterator isn't done
                     {
-                        
+                        nodeIndex = _routingIndexManager.IndexToNode(index);
                         //routeStops add
-                        currentStop = _darpDataModel.IndexToStop((int)index);
+                        currentStop = _darpDataModel.IndexManager.GetStop(nodeIndex);
                         routeStops.Add(currentStop); //adds the current stop
                         //timeWindow add
                         var timeVar = timeDim.CumulVar(index);
@@ -387,11 +387,12 @@ namespace Simulator.Objects.Data_Objects.DARP
                         index = solution.Value(_routingModel.NextVar(index)); //increments the iterator
                     }
                     //timeWindow add
+                    nodeIndex = _routingIndexManager.IndexToNode(index);
                     var endTimeVar = timeDim.CumulVar(index);
                     timeWindow = new[] { solution.Min(endTimeVar), solution.Max(endTimeVar) };
                     routeTimeWindows.Add(timeWindow);
                     //routeStops add
-                    currentStop = _darpDataModel.IndexToStop((int)index);
+                    currentStop = _darpDataModel.IndexManager.GetStop(nodeIndex);
                     routeStops.Add(currentStop); //adds the current stop
                     foreach (var customer in allCustomers) //loop to add the customers to the routecustomers
                     {
@@ -408,7 +409,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                         }
                     }
                     var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
-                    vehicleStopCustomerTimeWindowsDictionary.Add(_darpDataModel.Vehicles[i],
+                    vehicleStopCustomerTimeWindowsDictionary.Add(_darpDataModel.IndexManager.GetVehicle(i),
                         tuple); //adds the vehicle index + tuple with the customer and routestop list
                 }
             }
@@ -430,7 +431,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 long totalDistance = 0;
                 long totalLoad = 0;
                 var solutionObject = GetSolutionObject(solution);
-                for (int i = 0; i < _darpDataModel.Vehicles.Count; ++i)
+                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     int nodeIndex = 0;
                     long routeLoad = 0;
@@ -455,7 +456,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                             calculator.TravelTimeToDistance((int)timeToTravel,
                                 _darpDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        concatenatedString += _darpDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+routeLoad+") --["+distance+"m]--> ";
+                        concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+routeLoad+") --["+distance+"m]--> ";
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
 
                     }
@@ -465,7 +466,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += _darpDataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
-                    concatenatedString+=_darpDataModel.IndexToStop(nodeIndex) + ":T("+ solution.Min(endTimeVar) + ","+ solution.Max(endTimeVar) + "), L("+routeLoad+")";
+                    concatenatedString+=_darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(endTimeVar) + ","+ solution.Max(endTimeVar) + "), L("+routeLoad+")";
                     printableList.Add(concatenatedString);
                     long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar),
                         _darpDataModel
@@ -484,7 +485,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 printableList.Add("Total time of all routes: "+ TimeSpan.FromSeconds(totalTime).TotalMinutes+" minutes");
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
-                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ _darpDataModel.Customers.Count);
+                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ _darpDataModel.IndexManager.Customers.Count);
             }
             else
             {
@@ -528,11 +529,12 @@ namespace Simulator.Objects.Data_Objects.DARP
                 
                 var timeDim = _routingModel.GetMutableDimension("Time");
                 var pickupDeliveryDim = _routingModel.GetMutableDimension("PickupDelivery");
+                var vehicleNumber = _darpDataModel.IndexManager.Vehicles.Count;
                 //route metrics each index is the vehicle index
-                long[] routeTimes = new long[_darpDataModel.Vehicles.Count];
-                long[] routeDistances = new long[_darpDataModel.Vehicles.Count];
-                long[] routeLoads = new long[_darpDataModel.Vehicles.Count];
-                for (int i = 0; i < _darpDataModel.Vehicles.Count; ++i)
+                long[] routeTimes = new long[vehicleNumber];
+                long[] routeDistances = new long[vehicleNumber];
+                long[] routeLoads = new long[vehicleNumber];
+                for (int i = 0; i < vehicleNumber; ++i)
                 {
                     long routeLoad = 0;
                     long totalLoad = 0;

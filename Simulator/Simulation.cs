@@ -30,6 +30,8 @@ namespace Simulator
 
         private readonly int _vehicleCapacity;
 
+        public List<Customer> DynamicCustomers; //Customers that request service during the simulation
+
 
         public Simulation()
         {
@@ -39,6 +41,7 @@ namespace Simulator
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _vehicleCapacity = 20;
             _vehicleSpeed = 30;
+            DynamicCustomers = new List<Customer>();
         }
 
         public override void Init()
@@ -47,6 +50,7 @@ namespace Simulator
             _validationsCounter = 1;
             Events.Clear(); //clears all events 
             VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
+            DynamicCustomers.Clear();
             
         }
         public override void InitVehicleEvents()
@@ -573,9 +577,9 @@ namespace Simulator
                     _validationsCounter++;
                     break;
                 case CustomerRequestEvent customerRequestEvent:
-                    if (DarpDataModel != null && !DarpDataModel.Customers.Contains(customerRequestEvent.Customer))
+                    if (DynamicCustomers != null && !DynamicCustomers.Contains(customerRequestEvent.Customer))
                     {
-                        DarpDataModel.Customers.Add(customerRequestEvent.Customer);
+                        DynamicCustomers.Add(customerRequestEvent.Customer);
                     }
                 
                     break;

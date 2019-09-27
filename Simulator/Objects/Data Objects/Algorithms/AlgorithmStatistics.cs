@@ -61,13 +61,15 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public List<string> GetPrintableStatisticsList(List<AlgorithmTester> testedAlgorithms)
         {
             List<string> toPrintList = new List<string>();
+            var customers = DataModel.IndexManager.Customers;
+            var vehicles = DataModel.IndexManager.Vehicles;
             toPrintList.Add("----------------------------");
             toPrintList.Add("| Data Model Configuration |");
             toPrintList.Add("----------------------------");
-            toPrintList.Add("Total Requests: "+DataModel.Customers.Count);
-            toPrintList.Add("Number of available vehicles: " + DataModel.Vehicles.Count);
+            toPrintList.Add("Total Requests: "+customers.Count);
+            toPrintList.Add("Number of available vehicles: " + vehicles.Count);
             string capacitiesString = "Vehicle Capacities: ";
-            foreach (var vehicle in DataModel.Vehicles)
+            foreach (var vehicle in vehicles)
             {
                 capacitiesString += "{" + vehicle.Capacity + "} ";
             }

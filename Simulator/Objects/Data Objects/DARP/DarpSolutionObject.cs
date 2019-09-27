@@ -122,7 +122,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             {
                 if (stops.Contains(stop))
                 {
-                    var stopIndex = stops.FindIndex(s => s.Id == stop.Id); //Gets the stopIndex
+                    var stopIndex = stops.FindIndex(s => s == stop); //Gets the stopIndex
                     stopTimeWindow = GetVehicleTimeWindows(vehicle)[stopIndex]; //gets the timewindow for the stop received as the function parameter
                 }
             }
