@@ -186,6 +186,71 @@ namespace Simulator
             {
                 darpSolver.PrintSolution(timeWindowSolution);
                 _darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
+
+                ///////////////////////////////////////////////////////////////////////
+                List<Stop> startDepots = new List<Stop>();
+                List<Stop> endDepots = new List<Stop>();
+                List<Vehicle> vehicles = new List<Vehicle>();
+                var vehicle = _darpSolutionObject.IndexToVehicle(0);
+                vehicles.Add(vehicle);
+                var stops = _darpSolutionObject.GetVehicleStops(vehicle);
+                List<Customer> customers = _darpSolutionObject.GetVehicleCustomers(vehicle);
+                List<Customer> customersToBeRemoved = new List<Customer>();
+                var numStops = 2;
+                foreach (var customer in customers)
+                {
+                    var index = 0;
+                    foreach (var stop in stops)
+                    {
+                        if (index > numStops)
+                        {
+                            break;
+                        }
+                        if (stops.FindIndex(s=> s==customer.PickupDelivery[0])<= stops.FindIndex(s=> s == customer.PickupDelivery[1]) && customer.PickupDelivery[1] == stop)
+                        {
+                            customersToBeRemoved.Add(customer);
+
+                        }
+
+                        if (customer.PickupDelivery[0] == stop &&
+                            stops.FindIndex(s => s == customer.PickupDelivery[1]) > 3)
+                        {
+                            customer.PickupDelivery[0] = stops[numStops + 1];
+                            
+                            var newStopIndex = _darpSolutionObject.GetVehicleStops(vehicle).IndexOf(stops[numStops+1]);
+                            var vehicleTW = _darpSolutionObject.GetVehicleTimeWindows(vehicle);
+                            customer.DesiredTimeWindow[0] = (int)vehicleTW[newStopIndex][0];
+                        }
+                        index++;
+                    }
+                }
+
+                foreach (var cust in customersToBeRemoved)
+                {
+                    customers.Remove(cust);
+                }
+
+                for (int i = 0; i <= numStops; i++)
+                {
+                    stops.RemoveAt(0); //removes the first numstops of the stopsl ist
+                }
+            
+                startDepots.Add(stops[0]);
+                endDepots.Add(stops[stops.Count-1]);
+                customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2000)},new int[]{4000,5600},0 ));
+                var darpM = new DarpDataModel(startDepots,endDepots,vehicles,customers);
+                var darps1 = new DarpSolver(false);
+                var sol = darps1.TryGetFastSolution(darpM);
+                if (sol != null)
+                {
+                    ConsoleLogger.Log("Dynamic Req:");
+                    darps1.PrintSolution(sol);
+                }
+                else
+                {
+                    ConsoleLogger.Log("No sol");
+                }
+                //////////////////////////////////////////////////////////////////////
                 ////InitialRoutes
                 //var initialStartEnds = new List<Stop>();
                 //initialStartEnds.Add(DarpDataModel.IndexToStop(DarpDataModel.Starts[0]));
