@@ -128,7 +128,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
-            DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed,false);//data model
+            DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed);//data model
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -251,7 +251,7 @@ namespace Simulator
                 startDepots.Add(stops[0]);
                 endDepots.Add(stops[stops.Count-1]);
                 //customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)},new int[]{4500,6000},0 ));
-                var darpM = new DarpDataModel(startDepots,endDepots,vehicles,customers,true);
+                var darpM = new DarpDataModel(startDepots,endDepots,vehicles,customers);
                 darpM.PrintTimeMatrix();
                 darpM.PrintPickupDeliveries();
                 darpM.PrintTimeWindows();
@@ -612,7 +612,7 @@ namespace Simulator
 
 
                         var travelTime =
-                            new Calculator().DistanceToTravelTime(eventDepart.Vehicle.Speed,
+                            DistanceCalculator.DistanceToTravelTime(eventDepart.Vehicle.Speed,
                                 distance); //Gets the time it takes to travel from the currentStop to the nextStop
                         var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
                         eventDepart.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop

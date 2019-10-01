@@ -27,12 +27,11 @@ namespace Simulator.Objects.Data_Objects
         private void LoadArcDictionary()
         {
             ArcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
-            Calculator calculator = new Calculator();
             foreach (var stopO in Stops)
             {
                 foreach (var stopD in Stops)
                 {
-                    var distance = calculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
+                    var distance = DistanceCalculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
                         stopD.Latitude, stopD.Longitude);
                     var tuple = Tuple.Create(stopO, stopD);
                     if (!ArcDictionary.ContainsKey(tuple))

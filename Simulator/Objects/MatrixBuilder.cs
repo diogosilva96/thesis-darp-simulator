@@ -16,7 +16,6 @@ namespace Simulator.Objects
         {
 
             long[,] distanceMatrix = new long[stops.Count, stops.Count];
-            Calculator calculator = new Calculator();
             //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
             for (int i = 0; i < stops.Count; i++)
             {
@@ -30,7 +29,7 @@ namespace Simulator.Objects
                     else
                     {
                         
-                        distance = (long)calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
+                        distance = (long)DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                     }
                     distanceMatrix[i, j] = distance;
@@ -47,7 +46,6 @@ namespace Simulator.Objects
         {
             
             long[,] timeMatrix = new long[stops.Count, stops.Count];
-            Calculator calculator = new Calculator();
             //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
             for (int i = 0; i < stops.Count; i++)
             {
@@ -61,10 +59,10 @@ namespace Simulator.Objects
                     else
                     {
 
-                        distance = (long)calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
+                        distance = (long)DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                     }
-                     var timeInSeconds = (long)calculator.DistanceToTravelTime(speedInKmHour,distance);
+                     var timeInSeconds = (long)DistanceCalculator.DistanceToTravelTime(speedInKmHour,distance);
                      //timeMatrix[i, j] = (long)TimeSpan.FromSeconds(timeInSeconds).TotalMinutes; // time in minutes
                      timeMatrix[i, j] = (long) timeInSeconds;
                 }

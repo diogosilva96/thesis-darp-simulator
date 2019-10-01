@@ -458,7 +458,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             List<string> printableList = new List<string>();
             if (solution != null)
             {
-                Calculator calculator = new Calculator();
                 var timeDim = _routingModel.GetMutableDimension("Time");
                 var pickupDeliveryDim = _routingModel.GetMutableDimension("PickupDelivery");
                 var capacityDim = _routingModel.GetMutableDimension("Capacity");
@@ -488,7 +487,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                             _routingModel.GetArcCostForVehicle(previousIndex, index,
                                 0); //Gets the travel time between the previousNode and the NextNode
                         var distance =
-                            calculator.TravelTimeToDistance((int)timeToTravel,
+                            DistanceCalculator.TravelTimeToDistance((int)timeToTravel,
                                 _darpDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
                         concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+routeLoad+") --["+distance+"m]--> ";
@@ -503,7 +502,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     concatenatedString+=_darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(endTimeVar) + ","+ solution.Max(endTimeVar) + "), L("+routeLoad+")";
                     printableList.Add(concatenatedString);
-                    long routeDistance = (long)calculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar),
+                    long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar),
                         _darpDataModel
                             .VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     printableList.Add("Route time: "+ TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes + " minutes");
@@ -556,8 +555,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public Dictionary<string,long[]> GetVehicleRouteMetrics(Assignment solution) //computes the metrics for each vehicle route
         {
-       
-            var calculator = new Calculator();
+            
             Dictionary<string, long[]> vehicleMetricsDictionary = new Dictionary<string, long[]>();
             if (solution != null)
             {
@@ -587,7 +585,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     var endTimeVar = timeDim.CumulVar(index);
                     var endPickupDeliveryVar = pickupDeliveryDim.CumulVar(index);
                     routeLoads[i] = totalLoad;
-                    routeDistances[i] = (long)calculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), _darpDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
+                    routeDistances[i] = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), _darpDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     routeTimes[i] = solution.Min(endTimeVar);
                 }
                 vehicleMetricsDictionary.Add("routeLoads", routeLoads);
