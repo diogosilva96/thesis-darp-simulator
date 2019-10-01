@@ -46,13 +46,33 @@ namespace Simulator.Objects.Data_Objects.DARP
             VehicleCapacities = GetVehicleCapacities(IndexManager);
             InitialRoutes = new long[IndexManager.Vehicles.Count][];
             TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
+            //if (allowArbitraryStartEnds)
+            //{
+            //    for (int i = 0; i < TimeMatrix.GetLength(0); i++)
+            //    {
+            //        if (i == Starts[0])
+            //        {
+            //            for (int j = 0; j < TimeMatrix.GetLength(1); j++)
+            //            {
+            //                TimeMatrix[i, j] = 0;
+            //            }
+            //        }
+
+            //        TimeMatrix[i, Starts[0]] = 0;
+            //    }
+            //}
+
             TimeWindows = GetTimeWindows(IndexManager);
+            //depot max and min values init
+            TimeWindows[Starts[0],0] = 0; 
+            TimeWindows[Starts[0],1] = DayInSeconds;
+            //-------------------------------
             PickupsDeliveries = GetPickupDeliveries(IndexManager);
             Demands = GetDemands(IndexManager);
 
         }
 
-
+        
         private int[] GetVehicleDepots(List<Stop> depots, DataModelIndexManager indexManager)
         {
             int[] vehicleDepots = null;
@@ -74,6 +94,10 @@ namespace Simulator.Objects.Data_Objects.DARP
             return vehicleDepots;
         }
 
+        public bool IsVehicleStartDepot(long vehicleIndex, long stopIndex)
+        {
+            return Starts[vehicleIndex] == stopIndex;
+        }
         private List<Stop> GetStops(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers)
         {
             var stops = new List<Stop>(); //clears stop list

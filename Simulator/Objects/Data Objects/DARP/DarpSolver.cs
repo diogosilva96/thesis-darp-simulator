@@ -18,14 +18,15 @@ namespace Simulator.Objects.Data_Objects.DARP
         public int MaxAllowedUpperBound;
         public int MaxAllowedRideDurationMultiplier;
 
-        public DarpSolver(bool dropNodesAllowed)
+        public DarpSolver(bool dropNodesAllowed,int maxAllowedRideDurationMultiplier)
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxAllowedUpperBound = 30;
-            MaxAllowedRideDurationMultiplier = 3; 
+            MaxAllowedRideDurationMultiplier = maxAllowedRideDurationMultiplier; 
             MaxUpperBound = 0; //default value
             
         }
+
         public override string ToString()
         {
             return "[" + GetType().Name + "] ";
@@ -230,12 +231,25 @@ namespace Simulator.Objects.Data_Objects.DARP
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");
                 // Add time window constraints for each location except depot.
-                for (int i = 1; i < _darpDataModel.TimeWindows.GetLength(0); ++i)
+                for (int i = 0; i < _darpDataModel.TimeWindows.GetLength(0); ++i)
                 {
                     long index = _routingIndexManager.NodeToIndex(i); //gets the node index
-                    timeDimension.CumulVar(index).SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit
-                    timeDimension.CumulVar(index).SetMax(_darpDataModel.TimeWindows[i, 1] + maxUpperBoundLimitInSeconds); //Sets the maximum upper bound limit
-                    timeDimension.SetCumulVarSoftUpperBound(index, _darpDataModel.TimeWindows[i, 1], 1); //adds soft upper bound limit which is the requested time window
+                    if (index == -1 || i == _darpDataModel.Starts[0])
+
+                {
+                        Console.WriteLine("solution maxupperbound limit:"+maxUpperBoundLimitInSeconds);
+                        Console.WriteLine("index == -1 at "+i);
+                    }
+                    else
+                    {
+                        timeDimension.CumulVar(index)
+                            .SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit
+                        timeDimension.CumulVar(index)
+                            .SetMax(_darpDataModel.TimeWindows[i, 1] +
+                                    maxUpperBoundLimitInSeconds); //Sets the maximum upper bound limit
+                        timeDimension.SetCumulVarSoftUpperBound(index, _darpDataModel.TimeWindows[i, 1],
+                            1); //adds soft upper bound limit which is the requested time window
+                    }
                 }
 
                 // Add time window constraints for each vehicle start node.
@@ -253,6 +267,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                         timeDimension.CumulVar(_routingModel.Start(i)));
                     _routingModel.AddVariableMinimizedByFinalizer(
                         timeDimension.CumulVar(_routingModel.End(i)));
+
                 }
 
                 var solver = _routingModel.solver();
@@ -303,11 +318,31 @@ namespace Simulator.Objects.Data_Objects.DARP
                     break;
                 }
             }
-
+            
+            Console.WriteLine("Solver status:"+GetSolverStatus());
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
 
-
+    
+        public string GetSolverStatus()
+        {
+            string status = "";
+            int solverStatus = _routingModel.GetStatus();
+            switch (solverStatus)
+            {
+                case 0: status = "ROUTING_NOT_SOLVED"; //Problem not solved yet
+                    break;
+                case 1: status = "ROUTING_SUCCESS"; //Problem solved successfully.
+                    break;
+                case 2: status = "ROUTING_FAIL"; //No solution found to the problem
+                    break;
+                case 3: status = "ROUTING_FAIL_TIMEOUT"; //Time limit reached before finding the solution
+                    break;
+                case 4: status = "ROUTING_INVALID"; //Model, parameter or flags are not valid
+                    break;
+            }
+            return status;
+        }
         public Assignment TryGetSolutionWithSearchStrategy(DarpDataModel darpDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
             _darpDataModel = darpDataModel;

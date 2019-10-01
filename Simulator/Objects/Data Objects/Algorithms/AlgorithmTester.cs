@@ -18,11 +18,11 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public int SearchTimeLimitInSeconds; //in seconds
         public DarpSolver Solver;
 
-        protected AlgorithmTester(DarpDataModel dataModel,bool allowDropNodes)
+        protected AlgorithmTester(DarpDataModel dataModel,bool allowDropNodes, int maxAllowedRideDurationMultiplier)
         {
             DataModel = dataModel;
             SolutionIsFeasible = false;
-            Solver = new DarpSolver(allowDropNodes);
+            Solver = new DarpSolver(allowDropNodes,maxAllowedRideDurationMultiplier);
         }
 
         public override string ToString()

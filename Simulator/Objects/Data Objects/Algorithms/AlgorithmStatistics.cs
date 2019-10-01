@@ -50,7 +50,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             //TEST ALL the criterions (performance, time to compute, solution cost, etc)
             foreach (var searchStrategy in _searchStrategyAlgorithms)
             {
-                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,searchStrategy,10);
+                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,3,searchStrategy,10);
                 algorithmTester.Test();
                 testedAlgorithmsList.Add(algorithmTester); //adds it to the list
                 

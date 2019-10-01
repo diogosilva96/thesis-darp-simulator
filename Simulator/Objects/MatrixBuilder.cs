@@ -45,7 +45,7 @@ namespace Simulator.Objects
 
         public long[,] GetTimeMatrix(List<Stop> stops,int speedInKmHour)
         {
-
+            
             long[,] timeMatrix = new long[stops.Count, stops.Count];
             Calculator calculator = new Calculator();
             //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
