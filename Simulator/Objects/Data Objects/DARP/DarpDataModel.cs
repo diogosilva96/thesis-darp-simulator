@@ -30,14 +30,30 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int[][] PickupsDeliveries;
 
-        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles,
-            List<Customer> customers) //if different end and start depot
+        public bool HasDummyDepot;
+
+
+        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers) //if different end and start depot
         {
+
             Init(startDepots, endDepots, customers, vehicles);
         }
 
+        public DarpDataModel(List<Vehicle> vehicles, List<Customer> customers)
+        {
+            HasDummyDepot = true;
+            VehicleSpeed = vehicles[0].Speed;
+            var stops = GetStops(customers);
+            IndexManager = new DataModelIndexManager(stops,vehicles,customers);
+            VehicleCapacities = GetVehicleCapacities(IndexManager);
+            TimeMatrix = new MatrixBuilder().GetTimeMatrix(stops,VehicleSpeed);
+            TimeWindows = GetTimeWindows(IndexManager);
+            PickupsDeliveries = GetPickupDeliveries(IndexManager);
+            Demands = GetDemands(IndexManager);
+        }
         private void Init(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers,List<Vehicle> vehicles)
         {
+            HasDummyDepot = false;
             VehicleSpeed = vehicles[0].Speed;
             var stops = GetStops(startDepots, endDepots, customers);
             IndexManager = new DataModelIndexManager(stops, vehicles,customers);
@@ -46,22 +62,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             VehicleCapacities = GetVehicleCapacities(IndexManager);
             InitialRoutes = new long[IndexManager.Vehicles.Count][];
             TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
-            //if (allowArbitraryStartEnds)
-            //{
-            //    for (int i = 0; i < TimeMatrix.GetLength(0); i++)
-            //    {
-            //        if (i == Starts[0])
-            //        {
-            //            for (int j = 0; j < TimeMatrix.GetLength(1); j++)
-            //            {
-            //                TimeMatrix[i, j] = 0;
-            //            }
-            //        }
-
-            //        TimeMatrix[i, Starts[0]] = 0;
-            //    }
-            //}
-
             TimeWindows = GetTimeWindows(IndexManager);
             //depot max and min values init
             TimeWindows[Starts[0],0] = 0; 
@@ -94,10 +94,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             return vehicleDepots;
         }
 
-        public bool IsVehicleStartDepot(long vehicleIndex, long stopIndex)
-        {
-            return Starts[vehicleIndex] == stopIndex;
-        }
         private List<Stop> GetStops(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers)
         {
             var stops = new List<Stop>(); //clears stop list
@@ -125,8 +121,22 @@ namespace Simulator.Objects.Data_Objects.DARP
                 }
             }
 
-            foreach (var customer in customers
-            ) //loop to add the pickup and delivery stops for each customer, to the stop list
+            stops = AddCustomerPickupDeliveryToStops(stops, customers);
+
+            return stops;
+        }
+
+        private List<Stop> GetStops(List<Customer> customers)
+        {
+            List<Stop> stops = new List<Stop>();
+            stops.Add(null); //dummy stop
+            AddCustomerPickupDeliveryToStops(stops,customers);
+            return stops;
+        }
+
+        private List<Stop> AddCustomerPickupDeliveryToStops(List<Stop> stops, List<Customer> customers)
+        {
+            foreach (var customer in customers) //loop to add the pickup and delivery stops for each customer, to the stop list
             {
                 foreach (var pickupDelivery in customer.PickupDelivery)
                 {
@@ -139,7 +149,6 @@ namespace Simulator.Objects.Data_Objects.DARP
 
             return stops;
         }
-
         private int[][] GetPickupDeliveries(DataModelIndexManager indexManager) //returns the pickupdelivery stop matrix using indexes (based on the stop list) instead of stop id's
         {
             var customers = indexManager.Customers;
@@ -254,29 +263,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
         }
 
-        public bool IsPickupStop(int index)
-        {
-            var stop = IndexManager.GetStop(index);
-            var custCount = IndexManager.Customers.FindAll(c => c.PickupDelivery[0] == stop).Count; //finds all customers with this pickup stop
-            if (custCount > 0)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool IsDeliveryStop(int index)
-        {
-            var stop = IndexManager.GetStop(index);
-            var custCount = IndexManager.Customers.FindAll(c => c.PickupDelivery[1] == stop).Count; //finds all customers with this delivery stop
-            if (custCount > 0)
-            {
-                return true;
-            }
-
-            return false;
-        }
 
         public void PrintPickupDeliveries()
         {
@@ -308,20 +294,24 @@ namespace Simulator.Objects.Data_Objects.DARP
                 
                 //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
-                var arrayMinTimeWindow = timeWindows[indexManager.GetStopIndex(customer.PickupDelivery[0]), 0]; //gets current min timewindow for the pickupstop in minutes
+                var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]);
+               ; //if hasDummyDepot, index will be stopindex+1, because at position 0 is the dummy depot
+                var arrayMinTimeWindow = timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
                 //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
                 //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
                 var lowerBoundValue = Math.Max((long) arrayMinTimeWindow, (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
-                timeWindows[indexManager.GetStopIndex(customer.PickupDelivery[0]), 0] = lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+          
+                timeWindows[pickupIndex, 0] = lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
 
 
                 //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMaxTimeWindow = customer.DesiredTimeWindow[1]; //customer max time window in seconds
-                var arrayMaxTimeWindow = timeWindows[indexManager.GetStopIndex(customer.PickupDelivery[1]), 1]; //gets curent max timewindow for the delivery stop in minutes
+                var deliveryIndex = indexManager.GetStopIndex(customer.PickupDelivery[1]);//if hasDummyDepot, index will be stopindex+1, because at position 0 is the dummy depot
+                var arrayMaxTimeWindow = timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
                 //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
                 //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
                 var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
-                timeWindows[indexManager.GetStopIndex(customer.PickupDelivery[1]), 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+                timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
             return timeWindows;
         }

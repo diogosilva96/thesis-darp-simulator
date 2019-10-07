@@ -12,6 +12,7 @@ namespace Simulator.Objects.Data_Objects
         public double Latitude { get;}
         public double Longitude { get;}
         public bool IsUrban { get; set; }
+
         public Stop(int id, string code,string name, double lat, double lon)
         {
             Id = id;

@@ -128,7 +128,8 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
-            DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed);//data model
+            //DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed);//data model
+            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -235,23 +236,14 @@ namespace Simulator
                     customers.Remove(cust);
                 }
 
-                //foreach (var customer in customers)
-                //{
-                //    var baseTime = (int)_darpSolutionObject.GetVehicleTimeWindows(vehicle)[_darpSolutionObject.GetVehicleStops(vehicle).IndexOf(stops[numStops + 1])][0];
-                //    var customerTW1 = customer.DesiredTimeWindow[0];
-                //    var customerTW2 = customer.DesiredTimeWindow[1];
-                //    customer.DesiredTimeWindow[0] = baseTime < customerTW1 ? customerTW1 - baseTime : 0;
-
-                //    customer.DesiredTimeWindow[1] = baseTime < customerTW2 ? customerTW2 - baseTime : 0;
-                //}
                 for (int i = 0; i <= numStops; i++)
                 {
                     stops.RemoveAt(0); //removes the first numstops of the stops list
                 }
                 startDepots.Add(stops[0]);
                 endDepots.Add(stops[stops.Count-1]);
-                //customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)},new int[]{4500,6000},0 ));
-                var darpM = new DarpDataModel(startDepots,endDepots,vehicles,customers);
+                customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)},new int[]{4500,6000},0 ));
+                var darpM = new DarpDataModel(vehicles,customers);
                 darpM.PrintTimeMatrix();
                 darpM.PrintPickupDeliveries();
                 darpM.PrintTimeWindows();

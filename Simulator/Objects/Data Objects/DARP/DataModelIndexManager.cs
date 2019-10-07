@@ -11,6 +11,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         public readonly List<Vehicle> Vehicles;
         public readonly List<Customer> Customers;
 
+
         public DataModelIndexManager(List<Stop> stops, List<Vehicle> vehicles, List<Customer> customers)
         {
             Stops = stops;
@@ -64,7 +65,8 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
         public int GetStopIndex(Stop stop)
         {
-            return Stops.FindIndex(s => s == stop);
+            var index = Stops.FindIndex(s => s == stop);
+            return index;
         }
     }
 }

@@ -35,10 +35,20 @@ namespace Simulator.Objects.Data_Objects.DARP
         public void Init()
         {
             // Create RoutingModel Index RoutingIndexManager
-            _routingIndexManager = new RoutingIndexManager(
-                _darpDataModel.TimeMatrix.GetLength(0),
-                _darpDataModel.IndexManager.Vehicles.Count,
-                _darpDataModel.Starts,_darpDataModel.Ends);
+            if (!_darpDataModel.HasDummyDepot)
+            {
+                _routingIndexManager = new RoutingIndexManager(
+                    _darpDataModel.TimeMatrix.GetLength(0),
+                    _darpDataModel.IndexManager.Vehicles.Count,
+                    _darpDataModel.Starts, _darpDataModel.Ends);
+            }
+            else
+            {
+                _routingIndexManager = new RoutingIndexManager(
+                    _darpDataModel.TimeMatrix.GetLength(0),
+                    _darpDataModel.IndexManager.Vehicles.Count,
+                    0);
+            }
 
             //Create routing model
             _routingModel = new RoutingModel(_routingIndexManager);
@@ -234,7 +244,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 for (int i = 0; i < _darpDataModel.TimeWindows.GetLength(0); ++i)
                 {
                     long index = _routingIndexManager.NodeToIndex(i); //gets the node index
-                    if (index == -1 || i == _darpDataModel.Starts[0])
+                    if (index == -1)
 
                 {
                         Console.WriteLine("solution maxupperbound limit:"+maxUpperBoundLimitInSeconds);
@@ -490,7 +500,19 @@ namespace Simulator.Objects.Data_Objects.DARP
                             DistanceCalculator.TravelTimeToDistance((int)timeToTravel,
                                 _darpDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(timeVar) + ","+solution.Max(timeVar)+"), L("+routeLoad+") --["+distance+"m]--> ";
+                        if (!_darpDataModel.HasDummyDepot || (_darpDataModel.HasDummyDepot && nodeIndex != 0 && !_routingModel.IsEnd(index)))
+                        {
+                            concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                                                  solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
+                                                  routeLoad + ") --[" + distance + "m]--> ";
+                        }
+                        if (_darpDataModel.HasDummyDepot && _routingModel.IsEnd(index))
+                        {
+                            concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                                                  solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
+                                                  routeLoad + ")";
+                        }
+
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
 
                     }
@@ -500,7 +522,13 @@ namespace Simulator.Objects.Data_Objects.DARP
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += _darpDataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
-                    concatenatedString+=_darpDataModel.IndexManager.GetStop(nodeIndex) + ":T("+ solution.Min(endTimeVar) + ","+ solution.Max(endTimeVar) + "), L("+routeLoad+")";
+                    if (!_darpDataModel.HasDummyDepot)
+                    {
+                        concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                                              solution.Min(endTimeVar) + "," + solution.Max(endTimeVar) + "), L(" +
+                                              routeLoad + ")";
+                    }
+
                     printableList.Add(concatenatedString);
                     long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar),
                         _darpDataModel
