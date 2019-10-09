@@ -294,7 +294,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 
                 //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
-                var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]);
+                var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]);//gets stop pickup index
                ; //if hasDummyDepot, index will be stopindex+1, because at position 0 is the dummy depot
                 var arrayMinTimeWindow = timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
                 //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
@@ -306,7 +306,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
                 //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMaxTimeWindow = customer.DesiredTimeWindow[1]; //customer max time window in seconds
-                var deliveryIndex = indexManager.GetStopIndex(customer.PickupDelivery[1]);//if hasDummyDepot, index will be stopindex+1, because at position 0 is the dummy depot
+                var deliveryIndex = indexManager.GetStopIndex(customer.PickupDelivery[1]);//get stop delivery index
                 var arrayMaxTimeWindow = timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
                 //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
                 //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests

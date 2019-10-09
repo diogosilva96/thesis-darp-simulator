@@ -41,7 +41,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     _darpDataModel.TimeMatrix.GetLength(0),
                     _darpDataModel.IndexManager.Vehicles.Count,
                     _darpDataModel.Starts, _darpDataModel.Ends);
-            }
+        }
             else
             {
                 _routingIndexManager = new RoutingIndexManager(
@@ -50,8 +50,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                     0);
             }
 
-            //Create routing model
-            _routingModel = new RoutingModel(_routingIndexManager);
+    //Create routing model
+    _routingModel = new RoutingModel(_routingIndexManager);
             // Create and register a transit callback.
             _transitCallbackIndex = _routingModel.RegisterTransitCallback(
                 (long fromIndex, long toIndex) =>
@@ -500,13 +500,13 @@ namespace Simulator.Objects.Data_Objects.DARP
                             DistanceCalculator.TravelTimeToDistance((int)timeToTravel,
                                 _darpDataModel
                                     .VehicleSpeed); //Calculates the distance based on the travel time and vehicle speed
-                        if (!_darpDataModel.HasDummyDepot || (_darpDataModel.HasDummyDepot && nodeIndex != 0 && !_routingModel.IsEnd(index)))
+                        if (_darpDataModel.IndexManager.GetStop(nodeIndex) != null && !_routingModel.IsEnd(index))
                         {
                             concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
                                                   solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
                                                   routeLoad + ") --[" + distance + "m]--> ";
                         }
-                        if (_darpDataModel.HasDummyDepot && _routingModel.IsEnd(index))
+                        if (_routingModel.IsEnd(index) && _darpDataModel.IndexManager.GetStop(_routingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {
                             concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
                                                   solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
@@ -522,7 +522,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += _darpDataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
-                    if (!_darpDataModel.HasDummyDepot)
+                    if (_darpDataModel.IndexManager.GetStop(nodeIndex) != null)
                     {
                         concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
                                               solution.Min(endTimeVar) + "," + solution.Max(endTimeVar) + "), L(" +

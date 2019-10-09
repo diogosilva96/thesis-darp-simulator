@@ -116,6 +116,7 @@ namespace Simulator
             {
                 dataModelVehicles.Add(new Vehicle(_vehicleSpeed, 20, TransportationNetwork.ArcDictionary, true));
                 startDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
+                //startDepots.Add(null);
                 endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
             }
 
@@ -128,7 +129,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new int[] { 3300, 3900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new int[] { 2900, 3300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new int[] { 2900, 4000 }, 0));
-            //DarpDataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,customersToBeServed);//data model
+           
             DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
@@ -195,12 +196,14 @@ namespace Simulator
                 var vehicle = _darpSolutionObject.IndexToVehicle(0);
                 vehicles.Add(vehicle);
                 var stops = _darpSolutionObject.GetVehicleStops(vehicle);
+                var vehicleTW = _darpSolutionObject.GetVehicleTimeWindows(vehicle);
                 List<Customer> customers = _darpSolutionObject.GetVehicleCustomers(vehicle);
 
 
-
+               
                 List<Customer> customersToBeRemoved = new List<Customer>();
-                var numStops = 1;
+                var numStops = 2;
+                var baseStop = stops[numStops + 1];
                 foreach (var customer in customers)
                 {
                     var index = 0;
@@ -219,8 +222,8 @@ namespace Simulator
                         if (customer.PickupDelivery[0] == stop &&
                             stops.FindIndex(s => s == customer.PickupDelivery[1]) > numStops)
                         {
-                            customer.PickupDelivery[0] = stops[numStops + 1];
-
+                                              customer.PickupDelivery[0] = stops[numStops+1];
+                           
                         }
                         index++;
                     }
@@ -229,17 +232,27 @@ namespace Simulator
                     {
                         customersToBeRemoved.Add(customer);
                     }
-                }
+                }           
 
                 foreach (var cust in customersToBeRemoved)
                 {
                     customers.Remove(cust);
                 }
 
+      
+
                 for (int i = 0; i <= numStops; i++)
                 {
                     stops.RemoveAt(0); //removes the first numstops of the stops list
                 }
+
+                var customersToBeUpdated = customers.FindAll(c => c.PickupDelivery[0] == baseStop);
+                foreach (var cust in customersToBeUpdated)
+                {
+                    var newPickupTimeIndex = _darpSolutionObject.GetVehicleStops(vehicle).FindIndex(s => s == baseStop);
+                    cust.DesiredTimeWindow[0] = (int)vehicleTW[newPickupTimeIndex][0]; //updates the timewindow so that it uses the current time of the simulation
+                }
+
                 startDepots.Add(stops[0]);
                 endDepots.Add(stops[stops.Count-1]);
                 customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)},new int[]{4500,6000},0 ));
