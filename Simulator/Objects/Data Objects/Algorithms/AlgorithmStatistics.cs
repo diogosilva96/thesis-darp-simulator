@@ -91,6 +91,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 toPrintList.Add("Total distance traveled: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalDistanceInMeters+" meters.");
                 toPrintList.Add("Total time: "+TimeSpan.FromSeconds(algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalTimeInSeconds).TotalMinutes+" minutes.");
                 toPrintList.Add("Total Load: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad);
+                toPrintList.Add("Average Distance traveled per request:"+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalDistanceInMeters / algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad+" meters.");
                 toPrintList.Add("-----------------------------");
 
             }

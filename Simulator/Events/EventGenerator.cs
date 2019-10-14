@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics.Mcmc;
 using Simulator.Objects;
@@ -77,7 +78,7 @@ namespace Simulator.Events
             Event evt = _eventFactory.CreateEvent(2, time, vehicle, null, customer);
             return evt;
         }
-        public List<Event> GenerateCustomersEnterVehicleEvents(Vehicle vehicle, Stop stop, int time, int lambda, int expectedDemand)
+        public List<Event> GenerateCustomersEnterVehicleEvents(Vehicle vehicle, Stop stop, int time, int expectedDemand)
         {
             List<Event> events = new List<Event>();
             //Lambda = lambda; // remove??
@@ -120,19 +121,24 @@ namespace Simulator.Events
             return events;
         }
 
-        public Event GenerateCustomerRequestEvent(int time,Stop pickup, Stop dropoff)
+        public Event GenerateDynamicRequestCheckEvent(int time,double probabilityThreshold)
         {
-            Random rnd = new Random();
-            var prob = rnd.NextDouble();
             Event evt = null;
-            if (prob <= 0.03)
+            evt = _eventFactory.CreateEvent(5, time, null, null, null);
+            if (evt is DynamicRequestCheckEvent drcEVT)
             {
-                Customer customer = new Customer(new Stop[] { pickup, dropoff}, time);
-                evt = _eventFactory.CreateEvent(4, time, null, null, customer);
+                drcEVT.SetThreshold(probabilityThreshold);
             }
-
             return evt;
         }
+        public Event GenerateCustomerRequestEvent(int time,Stop[] pickupDelivery,int[] desiredTimeWindow)
+        {
+       
+                Customer customer = new Customer(pickupDelivery,desiredTimeWindow, time);
+                Event evt = _eventFactory.CreateEvent(4, time, null, null, customer);
+                return evt;
+        }
+
 
         public Event GenerateVehicleArriveEvent(Vehicle vehicle, int time)
         {
@@ -147,15 +153,20 @@ namespace Simulator.Events
 
         public Event GenerateVehicleDepartEvent(Vehicle vehicle, int time)
         {
-            if (vehicle.TripIterator.Current.StopsIterator.IsDone)
+            if (vehicle.TripIterator.Current != null && vehicle.TripIterator.Current.StopsIterator.IsDone)
             {
                 return null;
             }
             else
             {
-                var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
-                var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
-                return evtDepart;
+                if (vehicle.TripIterator.Current != null)
+                {
+                    var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
+                    var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
+                    return evtDepart;
+                }
+
+                return null;
             }
         }
 

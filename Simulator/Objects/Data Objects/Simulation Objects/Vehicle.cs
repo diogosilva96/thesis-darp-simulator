@@ -43,7 +43,7 @@ namespace Simulator.Objects.Data_Objects
         {
             if (customer == null) throw new ArgumentNullException();
 
-            TripIterator.Current.TotalRequests++;
+            if (TripIterator.Current != null) TripIterator.Current.TotalRequests++;
             if (IsFull) return false;
             if (Customers.Contains(customer)) return false;
             Customers.Add(customer);
@@ -66,7 +66,7 @@ namespace Simulator.Objects.Data_Objects
 
         public bool Arrive(Stop stop, int time)
         {
-            if (TripIterator.Current.StopsIterator.CurrentStop == stop)
+            if (TripIterator.Current != null && TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 if (TripIterator.Current.StopsIterator.CurrentIndex == 0)
                 {
@@ -108,7 +108,7 @@ namespace Simulator.Objects.Data_Objects
 
         public bool Depart(Stop stop, int time)
         {
-            if (TripIterator.Current.StopsIterator.CurrentStop == stop)
+            if (TripIterator.Current != null && TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 Console.WriteLine(ToString() + "DEPARTED from " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
                 var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
@@ -127,6 +127,7 @@ namespace Simulator.Objects.Data_Objects
 
             if (!Customers.Contains(customer)) return false;
             Customers.Remove(customer);
+            if (TripIterator.Current == null) return true;
             TripIterator.Current.ServicedCustomers.Add(customer);
             return true;
 
@@ -134,7 +135,7 @@ namespace Simulator.Objects.Data_Objects
 
         public bool TransverseToNextStop(double distance, int startTime)
         {
-            if (TripIterator.Current.StopsIterator != null && !TripIterator.Current.StopsIterator.IsDone)
+            if (TripIterator.Current?.StopsIterator != null && !TripIterator.Current.StopsIterator.IsDone)
             {
                 var t = TimeSpan.FromSeconds(startTime);
                 TripIterator.Current.TotalDistanceTraveled =

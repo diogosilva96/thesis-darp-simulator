@@ -60,7 +60,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     var waitTimeStr = "";
                     if (DesiredTimeWindow != null && RealTimeWindow != null)
                     {
-                        waitTimeStr = "(Wait time: " + WaitTime + " seconds.)";
+                        waitTimeStr = "(Wait time: " + WaitTime + " seconds)";
                     }
                     Console.WriteLine(v.SeatsState + this.ToString() + waitTimeStr+ " ENTERED at " + PickupDelivery[0] +
                                       " at " + t.ToString() + ".");

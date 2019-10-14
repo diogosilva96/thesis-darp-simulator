@@ -42,6 +42,9 @@ namespace Simulator.Events
                     //Customer service request
                     evt = new CustomerRequestEvent(category,time,customer);
                     break;
+                case 5: 
+                    evt = new DynamicRequestCheckEvent(category,time);
+                    break;
             }
 
             return evt;

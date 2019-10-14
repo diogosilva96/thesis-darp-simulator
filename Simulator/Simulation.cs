@@ -32,6 +32,14 @@ namespace Simulator
 
         public List<Customer> DynamicCustomers; //Customers that request service during the simulation
 
+        public int TotalDynamicRequests;
+
+        public int[] SimulationTimeWindow;
+
+        public int TotalSimulationTime => SimulationTimeWindow[0] >= 0 && SimulationTimeWindow[1] >= 0 && SimulationTimeWindow[1] != 0 ? SimulationTimeWindow[1] - SimulationTimeWindow[0] : 0; //in seconds
+
+        private readonly double _dynamicRequestProbabilityThreshold; //randomly generated value has to be lower than this in order to generate a dynamic request
+
 
         public Simulation()
         {
@@ -41,7 +49,12 @@ namespace Simulator
             _validationsLogger = new Logger.Logger(validationsRecorder);
             _vehicleCapacity = 20;
             _vehicleSpeed = 30;
+            _dynamicRequestProbabilityThreshold = 0.02;
             DynamicCustomers = new List<Customer>();
+            SimulationTimeWindow = new int[2];
+            TotalDynamicRequests = 0;
+            SimulationTimeWindow[0] = 0;
+            SimulationTimeWindow[1] = 24 * 24 * 60; // 24hours in seconds
         }
 
         public override void Init()
@@ -55,6 +68,7 @@ namespace Simulator
         }
         public override void InitVehicleEvents()
         {
+            var minStartTime = 24 * 60 * 60; //gets the min start time to initialize the dynamic request event check, initializes it at 24 hours (in seconds), which is the max value possible
             foreach (var vehicle in VehicleFleet)
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
                 {
@@ -64,19 +78,26 @@ namespace Simulator
                     {
                         var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.TripIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
                         Events.Add(arriveEvt);
+                        minStartTime = Math.Min(minStartTime, vehicle.TripIterator.Current.StartTime);//gets the simulation min startTime
                     }
                 }
-
+            
+            if (Events.Count > 0) //initializes dynamic request check events
+            {
+                var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(minStartTime, _dynamicRequestProbabilityThreshold);
+                AddEvent(eventDynamicRequestCheck);
+            }
             SortEvents();
         }
 
-        public override void OptionsMenu()
+        public override void DisplayOptionsMenu()
         {
-            var numOptions = 3;
+            var numOptions = 4;
             ConsoleLogger.Log("Please Select one of the options:");
-            ConsoleLogger.Log("1 - Standard Bus route simulation (static routing)");
-            ConsoleLogger.Log("2 - Single Bus route flexible simulation");
+            ConsoleLogger.Log("1 - Standard Bus route simulation");
+            ConsoleLogger.Log("2 - Flexible Bus route simulation");
             ConsoleLogger.Log("3 - Algorithms Test & Results");
+            ConsoleLogger.Log("4 - Single Bus route flexible simulation");
             int key = 0;
             wrongKeyLabel:
             try
@@ -96,18 +117,19 @@ namespace Simulator
             {
                 case 1: StandardBusRouteOption();
                     break;
-                case 2:SingleBusRouteFlexibleOption();
+                case 2:FlexibleBusRouteOption();
                     break;
                 case 3:AlgorithmComparisonOption();
+                    break;
+                case 4:SingleBusRouteFlexibleOption();
                     break;
                 default: StandardBusRouteOption();
                     break;
             }
         }
 
-        public void InitDataModel()
+        public void InitDataModel(int vehicleNumber)
         {
-            int vehicleNumber = 2;
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
             List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
@@ -116,8 +138,9 @@ namespace Simulator
             {
                 dataModelVehicles.Add(new Vehicle(_vehicleSpeed, 20, TransportationNetwork.ArcDictionary, true));
                 startDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
-                //startDepots.Add(null);
+               // startDepots.Add(null); //dummy start depot
                 endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
+               // endDepots.Add(null);//dummy end depot
             }
 
             var customersToBeServed = new List<Customer>();
@@ -136,6 +159,24 @@ namespace Simulator
             DarpDataModel.PrintPickupDeliveries();
             DarpDataModel.PrintTimeWindows();
         }
+
+        public void FlexibleBusRouteOption()
+        {
+            DisplayStartEndHourMenu();
+            InitDataModel(2);
+            DarpSolver darpSolver = new DarpSolver(false, 4);
+            Assignment timeWindowSolution = null;
+            timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
+            AssignVehicleFlexibleTrips(_darpSolutionObject);
+            if (timeWindowSolution != null)
+            {
+                darpSolver.PrintSolution(timeWindowSolution);
+                _darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
+                AssignVehicleFlexibleTrips(_darpSolutionObject);
+                darpSolver.PrintSolution(timeWindowSolution); //initial solution
+            }
+
+        }
         public void SingleBusRouteFlexibleOption()
         {
         
@@ -145,7 +186,7 @@ namespace Simulator
             var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary,false);
             v.AddTrip(serviceTrip); //Adds the service to the vehicle
             VehicleFleet.Add(v);
-            InitDataModel();
+            InitDataModel(2);
 
 
             //DarpDataModel.AddCustomer(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new int[] { 2700, 3700 }, 0));
@@ -244,6 +285,7 @@ namespace Simulator
                 for (int i = 0; i <= numStops; i++)
                 {
                     stops.RemoveAt(0); //removes the first numstops of the stops list
+                    vehicleTW.RemoveAt(0);
                 }
 
                 var customersToBeUpdated = customers.FindAll(c => c.PickupDelivery[0] == baseStop);
@@ -253,10 +295,10 @@ namespace Simulator
                     cust.DesiredTimeWindow[0] = (int)vehicleTW[newPickupTimeIndex][0]; //updates the timewindow so that it uses the current time of the simulation
                 }
 
-                startDepots.Add(stops[0]);
-                endDepots.Add(stops[stops.Count-1]);
+                startDepots.Add(null);
+                endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                 customers.Add(new Customer(new Stop[]{TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)},new int[]{4500,6000},0 ));
-                var darpM = new DarpDataModel(vehicles,customers);
+                var darpM = new DarpDataModel(startDepots,endDepots,vehicles,customers);
                 darpM.PrintTimeMatrix();
                 darpM.PrintPickupDeliveries();
                 darpM.PrintTimeWindows();
@@ -305,6 +347,19 @@ namespace Simulator
 
         public void AlgorithmComparisonOption()
         {
+            bool allowDropNodes = AllowDropNodesMenu();
+            InitDataModel(2);
+            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(DarpDataModel);
+            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
+            var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
+            foreach (var printableItem in printList)
+            {
+                ConsoleLogger.Log(printableItem);
+            }
+        }
+
+        public bool AllowDropNodesMenu()
+        {
             wrongKeyLabel:
             ConsoleLogger.Log("Allow drop nodes penalties?");
             ConsoleLogger.Log("1 - Yes");
@@ -325,29 +380,32 @@ namespace Simulator
             }
 
             var allowDropNodes = key == 1;
-            InitDataModel();
-            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(DarpDataModel);
-            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
-            var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
-            foreach (var printableItem in printList)
-            {
-                ConsoleLogger.Log(printableItem);
-            }
+            return allowDropNodes;
         }
-     
         public void StandardBusRouteOption()
         {
-            int startTime = 0;
-            int endTime = 0;
+
+            DisplayStartEndHourMenu();
+            AssignAllConventionalTripsToVehicles();
+        }
+
+        public void DisplayStartEndHourMenu()
+        {
+            int startTimeHour = 0;
+            int endTimeHour = 0;
             bool canAdvance = false;
             while (!canAdvance)
             {
                 try
                 {
                     ConsoleLogger.Log(this.ToString() + "Insert the start hour of the simulation (inclusive).");
-                    startTime = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
+                    startTimeHour = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
                     ConsoleLogger.Log(this.ToString() + "Insert the end hour of the simulation (exclusive).");
-                    endTime = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
+                    endTimeHour = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException());
+                    if (startTimeHour >= endTimeHour)
+                    {
+                        throw new InvalidOperationException();
+                    }
                     canAdvance = true;
                 }
                 catch (Exception)
@@ -357,9 +415,11 @@ namespace Simulator
                     canAdvance = false;
                 }
             }
-            AssignAllTripsToVehicles(startTime,endTime);
-        }
 
+            SimulationTimeWindow[0] = (int)TimeSpan.FromHours(startTimeHour).TotalSeconds;//hours in seconds
+            SimulationTimeWindow[1] = (int)TimeSpan.FromHours(endTimeHour).TotalSeconds;//hours in seconds
+    
+        }
         private void AssignVehicleFlexibleTrips(DarpSolutionObject darpSolutionObject)
         {
             if (darpSolutionObject != null)
@@ -370,7 +430,7 @@ namespace Simulator
                     var solutionVehicle = _darpSolutionObject.IndexToVehicle(j);
                     var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
                     trip.StartTime =
-                        (int)_darpSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time
+                        SimulationTimeWindow[0]+(int)_darpSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time, might need to change!
                     trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
                     trip.Stops = _darpSolutionObject.GetVehicleStops(solutionVehicle);
                     solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
@@ -383,25 +443,33 @@ namespace Simulator
             }
         }
 
-        private void AssignAllTripsToVehicles(int startHour, int endHour)
+        private void AssignAllConventionalTripsToVehicles() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
         {
             foreach (var route in TransportationNetwork.Routes)
             {
-                var allRouteTrips = route.Trips.FindAll(t => TimeSpan.FromSeconds(t.StartTime).Hours >= startHour && TimeSpan.FromSeconds(t.StartTime).Hours < endHour);
+                var allRouteTrips = route.Trips.FindAll(t => t.StartTime >= SimulationTimeWindow[0] && t.StartTime < SimulationTimeWindow[1]);
                 if (allRouteTrips.Count > 0)
                 {
+                    List<int> startTimes = new List<int>();
                     var tripCount = 0;
-                    foreach (var trip in allRouteTrips) //Generates a new vehicle for each service, meaning that the number of services will be equal to the number of vehicles
+                    foreach (var trip in allRouteTrips) //Generates a new vehicle for each trip, meaning that the number of services will be equal to the number of vehicles
                     {
-                        if (trip.IsDone == true)
+                        if (!startTimes.Contains(trip.StartTime))
                         {
-                            trip.Reset();
+                            startTimes.Add(trip.StartTime);
+
+                            if (trip.IsDone == true)
+                            {
+                                trip.Reset();
+                            }
+
+                            var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary,
+                                false);
+                            v.AddTrip(trip); //Adds the service
+                            VehicleFleet.Add(v);
+                            ConsoleLogger.Log(trip.ToString() + " added.");
+                            tripCount++;
                         }
-                        var v = new Vehicle(_vehicleSpeed, _vehicleCapacity, TransportationNetwork.ArcDictionary, false);
-                        v.AddTrip(trip); //Adds the service
-                        VehicleFleet.Add(v);
-                        ConsoleLogger.Log(trip.ToString() + " added.");
-                        tripCount++;
                     }
                     ConsoleLogger.Log(this.ToString() + route.ToString() + " - total of trips added:" + tripCount);
                 }
@@ -453,6 +521,8 @@ namespace Simulator
             toPrintList.Add(ToString() + "Total number of events handled: " +
                             Events.FindAll(e => e.AlreadyHandled).Count + " out of " + Events.Count + ".");
             toPrintList.Add(ToString() + "Vehicle Fleet Size: " + VehicleFleet.Count + " vehicle(s).");
+            toPrintList.Add(ToString()+ "Average dynamic requests per hour:"+TotalDynamicRequests / TimeSpan.FromSeconds(TotalSimulationTime).TotalHours);
+            toPrintList.Add(ToString() + "Total simulation time:"+TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours.");
             toPrintList.Add("-------------------------------------");
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
@@ -519,7 +589,7 @@ namespace Simulator
         public override void Append(Event evt)
         {
             var eventsCount = Events.Count;
-            var rnd = new Random();
+        
 
             //INSERTION (APPEND) OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS AND GENERATION OF THE DEPART EVENT FROM THE CURRENT STOP---------------------------------------
             if (evt.Category == 0 && evt is VehicleStopEvent eventArrive)
@@ -550,7 +620,7 @@ namespace Simulator
                         expectedDemand = 0;
                     }
 
-                    customersEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, lastInsertedLeaveTime, rnd.Next(1, 7), expectedDemand);
+                    customersEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, lastInsertedLeaveTime, expectedDemand);
                     if (customersEnterVehicleEvents.Count > 0)
                         lastInsertedEnterTime = customersEnterVehicleEvents[customersEnterVehicleEvents.Count - 1].Time;
                 }
@@ -633,17 +703,36 @@ namespace Simulator
 
             }
             //END OF INSERTION OF VEHICLE NEXT STOP ARRIVE EVENT--------------------------------------
+
+
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUESTS-----------------------------------------------------------
-            var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
-            var delivery = pickup;
-            while (pickup == delivery) delivery = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+          
+            if (evt.Category == 5 && evt is DynamicRequestCheckEvent eventDRCE && evt.Time <= SimulationTimeWindow[1]) // if the event is a dynamic request check event and the current event time is lower than the end time of the simulation
+            {
 
-            var eventReq =
-                EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickup,
-                    delivery); //Generates a pickup and delivery customer request
-            if (eventReq != null) //if eventReq isn't null, add the event 
-                AddEvent(eventReq);
+                if (eventDRCE.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
+                {
+                    var rnd = new Random();
+                    var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+                    var delivery = pickup;
+                    var requestTime = evt.Time + 1;
+                    while (pickup == delivery) delivery = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+                    var pickupTime = rnd.Next(requestTime + 60, requestTime + 30 * 60);//the minimum pickup time is one minute above the requestTime and maximum pickup 30 minutes after the request time, 
+                    var deliveryTime = rnd.Next(pickupTime + 10 * 60, pickupTime + 30 * 60);//delivery time will be at minimum 10 minutes from the pickuptime and at max 30 minutes from the pickup time
+                    Stop[] pickupDelivery = new[] { pickup, delivery };
+                    int[] desiredTimeWindow = new[] { pickupTime, deliveryTime };
+                    var eventReq =
+                        EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickupDelivery,desiredTimeWindow); //Generates a pickup and delivery customer request (dynamic)
+                    AddEvent(eventReq);
+                }
+
+                var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(evt.Time + 10,_dynamicRequestProbabilityThreshold); //generates a new dynamic request check 10 seconds later than the current evt
+                AddEvent(eventDynamicRequestCheck);
+              
+
+
+            }
             //END OF INSERTION OF PICKUP DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
             //--------------------------------------------------------------------------------------------------------
             if (eventsCount != Events.Count) //If the size of the events list has changed, the event list has to be sorted
@@ -666,6 +755,7 @@ namespace Simulator
                     if (DynamicCustomers != null && !DynamicCustomers.Contains(customerRequestEvent.Customer))
                     {
                         DynamicCustomers.Add(customerRequestEvent.Customer);
+                        TotalDynamicRequests++;
                     }
                 
                     break;

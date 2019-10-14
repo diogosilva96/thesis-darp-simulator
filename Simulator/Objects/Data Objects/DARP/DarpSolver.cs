@@ -35,13 +35,13 @@ namespace Simulator.Objects.Data_Objects.DARP
         public void Init()
         {
             // Create RoutingModel Index RoutingIndexManager
-            if (!_darpDataModel.HasDummyDepot)
+            if (_darpDataModel.Starts != null && _darpDataModel != null)
             {
                 _routingIndexManager = new RoutingIndexManager(
                     _darpDataModel.TimeMatrix.GetLength(0),
                     _darpDataModel.IndexManager.Vehicles.Count,
                     _darpDataModel.Starts, _darpDataModel.Ends);
-        }
+            }
             else
             {
                 _routingIndexManager = new RoutingIndexManager(
@@ -50,8 +50,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                     0);
             }
 
-    //Create routing model
-    _routingModel = new RoutingModel(_routingIndexManager);
+            //Create routing model
+            _routingModel = new RoutingModel(_routingIndexManager);
             // Create and register a transit callback.
             _transitCallbackIndex = _routingModel.RegisterTransitCallback(
                 (long fromIndex, long toIndex) =>
@@ -246,7 +246,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     long index = _routingIndexManager.NodeToIndex(i); //gets the node index
                     if (index == -1)
 
-                {
+                    {
                         Console.WriteLine("solution maxupperbound limit:"+maxUpperBoundLimitInSeconds);
                         Console.WriteLine("index == -1 at "+i);
                     }

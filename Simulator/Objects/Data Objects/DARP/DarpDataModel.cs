@@ -18,8 +18,6 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public DataModelIndexManager IndexManager; //Index manager with the data vehicle,customer and stops objects
 
-        public long[][] InitialRoutes;
-
         public long[,] TimeWindows;
 
         public long[] Demands;
@@ -60,7 +58,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             Starts = GetVehicleDepots(startDepots, IndexManager);
             Ends = GetVehicleDepots(endDepots, IndexManager);
             VehicleCapacities = GetVehicleCapacities(IndexManager);
-            InitialRoutes = new long[IndexManager.Vehicles.Count][];
             TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
             TimeWindows = GetTimeWindows(IndexManager);
             //depot max and min values init
@@ -106,6 +103,11 @@ namespace Simulator.Objects.Data_Objects.DARP
                     {
                         stops.Add(startDepot);
                     }
+
+                    if (startDepot == null)
+                    {
+                        HasDummyDepot = true;
+                    }
                 }
             }
 
@@ -117,6 +119,11 @@ namespace Simulator.Objects.Data_Objects.DARP
                     if (!stops.Contains(endDepot))
                     {
                         stops.Add(endDepot);
+                    }
+
+                    if (endDepot == null)
+                    {
+                        HasDummyDepot = true;
                     }
                 }
             }
@@ -238,31 +245,6 @@ namespace Simulator.Objects.Data_Objects.DARP
                 }
         }
 
-        public void PrintInitialRoutes()
-        {
-            if (InitialRoutes != null)
-            {
-                int count = 0;
-                Console.WriteLine("Initial Routes:");
-                foreach (var initialRoute in InitialRoutes)
-                {
-                    Console.Write("Vehicle " + count + ":");
-                    for (int i = 0; i < initialRoute.Length; i++)
-                    {
-                        if (i != initialRoute.Length - 1)
-                        {
-                            Console.Write(IndexManager.GetStop((int)initialRoute[i]).Id + " -> ");
-                        }
-                        else
-                        {
-                            Console.WriteLine(IndexManager.GetStop((int)initialRoute[i]).Id);
-                        }
-                    }
-                    count++;
-                }
-            }
-        }
-
 
         public void PrintPickupDeliveries()
         {
@@ -291,7 +273,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             timeWindows = GetInitialTimeWindowsArray(timeWindows);
             foreach (var customer in indexManager.Customers)
             {
-                
                 //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
                 var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]);//gets stop pickup index
@@ -299,8 +280,9 @@ namespace Simulator.Objects.Data_Objects.DARP
                 var arrayMinTimeWindow = timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
                 //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
                 //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
+             
                 var lowerBoundValue = Math.Max((long) arrayMinTimeWindow, (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
-          
+                Console.WriteLine("LowerBound value "+customer.PickupDelivery[0]+" = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);
                 timeWindows[pickupIndex, 0] = lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
 
 
@@ -311,6 +293,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
                 //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
                 var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
+                Console.WriteLine("UperBound value "+customer.PickupDelivery[1]+" = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + lowerBoundValue);
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
             return timeWindows;

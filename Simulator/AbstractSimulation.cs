@@ -57,7 +57,7 @@ namespace Simulator
             while (true)
             {
                 Init(); //initializes simulation variables
-                OptionsMenu();
+                DisplayOptionsMenu();
                 InitVehicleEvents(); //initializes vehicle events (if there is any event to be initialized)
                 if (Events.Count > 0) //it means there is the need to simulate
                 {
@@ -89,7 +89,7 @@ namespace Simulator
             
         }
 
-        public abstract void OptionsMenu();
+        public abstract void DisplayOptionsMenu();
 
         public abstract void Append(Event evt);
         public override string ToString()

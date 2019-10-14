@@ -36,7 +36,7 @@ namespace Simulator.Events
         {
             if (Customer != null && !AlreadyHandled)
             {
-                Console.WriteLine("New request:"+Customer+" - "+Customer.PickupDelivery[0]+" -> "+Customer.PickupDelivery[1]);
+                Console.WriteLine("New request:"+Customer+" - "+Customer.PickupDelivery[0]+" -> "+Customer.PickupDelivery[1]+", TimeWindows: {"+Customer.DesiredTimeWindow[0]+","+Customer.DesiredTimeWindow[1]+"} at "+TimeSpan.FromSeconds(Time).ToString());
                 AlreadyHandled = true;
                 //AddRequest to the scheduler
             }
