@@ -293,7 +293,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
                 //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
                 var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
-                Console.WriteLine("UperBound value "+customer.PickupDelivery[1]+" = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + lowerBoundValue);
+                Console.WriteLine("UperBound value "+customer.PickupDelivery[1]+" = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue);
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
             return timeWindows;

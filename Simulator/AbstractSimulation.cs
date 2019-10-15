@@ -10,6 +10,7 @@ using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator
 {
@@ -48,7 +49,7 @@ namespace Simulator
         }
 
         public abstract void Init();
-        public abstract void InitVehicleEvents();
+        public abstract void InitEvents();
 
         public abstract void PrintSimulationSettings();
 
@@ -58,7 +59,7 @@ namespace Simulator
             {
                 Init(); //initializes simulation variables
                 DisplayOptionsMenu();
-                InitVehicleEvents(); //initializes vehicle events (if there is any event to be initialized)
+                InitEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
                 if (Events.Count > 0) //it means there is the need to simulate
                 {
                     PrintSimulationSettings();

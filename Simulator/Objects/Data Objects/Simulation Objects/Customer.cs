@@ -5,13 +5,13 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
     public class Customer:Person
     {
 
-        public int RideTime => RealTimeWindow[1]-RealTimeWindow[0];
+        public long RideTime => RealTimeWindow[1]-RealTimeWindow[0];
 
         public Stop[] PickupDelivery;
 
-        public int[] RealTimeWindow;//in seconds
+        public long[] RealTimeWindow;//in seconds
 
-        public int[] DesiredTimeWindow; //in seconds
+        public long[] DesiredTimeWindow; //in seconds
 
         private bool _isInVehicle;
 
@@ -19,7 +19,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         
         public int RequestTime;//request time in seconds
 
-        public int WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
+        public long WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
@@ -29,7 +29,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
          
         }
 
-        public Customer(Stop[] pickupDelivery, int[] desiredTimeWindow, int requestTime)
+        public Customer(Stop[] pickupDelivery, long[] desiredTimeWindow, int requestTime)
         {
             PickupDelivery = pickupDelivery;
             DesiredTimeWindow = desiredTimeWindow;
@@ -40,7 +40,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         {
             _isInVehicle = false;
             AlreadyServed = false;
-            RealTimeWindow = new int[2];
+            RealTimeWindow = new long[2];
         }
         public override string ToString()
         {

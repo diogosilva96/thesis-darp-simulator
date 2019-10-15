@@ -12,6 +12,7 @@ namespace Simulator.Objects
 
         public Stop NextStop;
 
+
         public int TotalStops => _stops.Count;
 
         public bool IsDone;

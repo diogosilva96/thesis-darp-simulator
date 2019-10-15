@@ -25,6 +25,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         private readonly long[] _routeTimesInSeconds;
 
+
         public int CustomerNumber
         {
             get
@@ -52,6 +53,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             _routeTimesInSeconds = routeTime;
             solutionMetricsDictionary.TryGetValue("routeLoads", out long[] routeLoad);
             _routeLoads = routeLoad;
+
         }
 
         public Vehicle IndexToVehicle(int index)

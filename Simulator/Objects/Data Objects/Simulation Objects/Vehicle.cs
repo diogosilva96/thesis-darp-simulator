@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-
-namespace Simulator.Objects.Data_Objects
+namespace Simulator.Objects.Data_Objects.Simulation_Objects
 {
     public class Vehicle
     {
@@ -22,6 +20,7 @@ namespace Simulator.Objects.Data_Objects
             ServiceTrips = new List<Trip>();
             ArcDictionary = arcDictionary;
             FlexibleRouting = flexibleRouting;
+            IsIdle = true;
         }
 
         public bool FlexibleRouting; // true if the vehicle does flexible routing
@@ -37,7 +36,9 @@ namespace Simulator.Objects.Data_Objects
 
         public List<Trip> ServiceTrips { get; internal set; }
 
-        public List<Customer> Customers { get; internal set; }
+        public List<Customer> Customers { get; internal set; }//customers inside the vehicle
+
+        public bool IsIdle;
 
         public bool AddCustomer(Customer customer)
         {
@@ -66,6 +67,7 @@ namespace Simulator.Objects.Data_Objects
 
         public bool Arrive(Stop stop, int time)
         {
+            IsIdle = true;
             if (TripIterator.Current != null && TripIterator.Current.StopsIterator.CurrentStop == stop)
             {
                 if (TripIterator.Current.StopsIterator.CurrentIndex == 0)
@@ -78,6 +80,7 @@ namespace Simulator.Objects.Data_Objects
                 }
 
                 Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
+                TripIterator.Current.VisitedStops.Add(stop); //adds the current stop to the visited stops
                 
                 if (TripIterator.Current.StopsIterator.IsDone && Customers.Count == 0
                 ) //this means that the trip is complete
@@ -137,6 +140,7 @@ namespace Simulator.Objects.Data_Objects
         {
             if (TripIterator.Current?.StopsIterator != null && !TripIterator.Current.StopsIterator.IsDone)
             {
+                IsIdle = false;
                 var t = TimeSpan.FromSeconds(startTime);
                 TripIterator.Current.TotalDistanceTraveled =
                     TripIterator.Current.TotalDistanceTraveled + distance;

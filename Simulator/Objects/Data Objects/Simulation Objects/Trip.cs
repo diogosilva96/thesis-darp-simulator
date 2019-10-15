@@ -39,7 +39,13 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public List<Customer> ServicedCustomers { get; internal set; }
 
+        public List<long[]> ExpectedTimeWindows;
+
+        public List<Customer> ExpectedCustomers;
+
         public int TotalDeniedRequests => (TotalRequests - TotalServicedRequests);
+
+        public List<Stop> VisitedStops;
 
         public double TotalDistanceTraveled;
 
@@ -50,6 +56,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             Id = id;
             Headsign = headsign;
             Stops = new List<Stop>();
+            VisitedStops = new List<Stop>();
             Reset();
         }
 
