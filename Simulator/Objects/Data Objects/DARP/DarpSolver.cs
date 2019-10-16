@@ -21,7 +21,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         public DarpSolver(bool dropNodesAllowed,int maxAllowedRideDurationMultiplier)
         {
             DropNodesAllowed = dropNodesAllowed;
-            MaxAllowedUpperBound = 20;
+            MaxAllowedUpperBound = 30;
             MaxAllowedRideDurationMultiplier = maxAllowedRideDurationMultiplier; 
             MaxUpperBound = 0; //default value
             
@@ -104,9 +104,6 @@ namespace Simulator.Objects.Data_Objects.DARP
                     _darpDataModel.VehicleCapacities,   // vehicle maximum capacities
                     true,                      // start cumul to zero
                     "Capacity");
-                RoutingDimension capacityDimension = _routingModel.GetMutableDimension("Capacity");
-                RoutingDimension pickupDeliveryDimension = _routingModel.GetMutableDimension("PickupDelivery");
-                var solver = _routingModel.solver();
 
             }
         }
@@ -123,7 +120,6 @@ namespace Simulator.Objects.Data_Objects.DARP
                 pickupDeliveryDimension.SetGlobalSpanCostCoefficient(100);
                 //SetGlobalSpanCostCoefficient sets a large coefficient(100) for the global span of the routes, which in this example is the maximum of the distances of the routes.
                 //This makes the global span the predominant factor in the objective function, so the program minimizes the length of the longest route.
-
 
                 // Define Transportation Requests (pickup and delivery) and its respective constraints.
                 var solver = _routingModel.solver(); //Gets the underlying constraint solver
@@ -164,8 +160,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                     if (index == -1)
 
                     {
-                        Console.WriteLine("solution maxupperbound limit:"+maxUpperBoundLimitInSeconds);
-                        Console.WriteLine("index == -1 at "+i);
+                        Console.WriteLine("solution maxupperbound limit:" + maxUpperBoundLimitInSeconds);
+                        Console.WriteLine("index == -1 at " + i);
                     }
                     else
                     {
@@ -245,6 +241,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 catch (Exception)
                 {
                     solution = null;
+                    
                 }
 
                 if (solution != null) //if true, solution was found, breaks the cycle
@@ -461,7 +458,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
-                    printableList.Add("Avg time cost:" + solution.Min(endTimeVar) / index); //debug
+                    printableList.Add("Average distance traveled per request: " + routeDistance/totalLoad +" meters.");
                     totalDistance += routeDistance;
                     totalTime += solution.Min(endTimeVar);
                     printableList.Add("------------------------------------------");

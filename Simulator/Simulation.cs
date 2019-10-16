@@ -160,7 +160,7 @@ namespace Simulator
             InitDataModel(2);
             if (DarpDataModel != null)
             {
-                DarpSolver darpSolver = new DarpSolver(false, 4);
+                DarpSolver darpSolver = new DarpSolver(false, 10);
 
                 var timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
                 DarpSolutionObject darpSolutionObject = null;
@@ -169,7 +169,6 @@ namespace Simulator
                 {
                     darpSolver.PrintSolution(timeWindowSolution);
                     darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
-                    darpSolver.PrintSolution(timeWindowSolution); //initial solution
 
                 }
 
@@ -734,6 +733,7 @@ namespace Simulator
                     if (DynamicCustomers != null && DynamicCustomers.Count >= 1 && VehicleFleet.FindAll(v=>v.FlexibleRouting == true).Count>0)
                     {
                         var flexibleRoutingVehicles = VehicleFleet.FindAll(v => v.FlexibleRouting);
+                        List<DarpSolutionObject> solutionObjects = new List<DarpSolutionObject>();
                         foreach (var vehicle in flexibleRoutingVehicles)
                         {
                             List<Stop> startDepots = new List<Stop>();
@@ -782,7 +782,7 @@ namespace Simulator
                                         customer.DesiredTimeWindow[0] =
                                             (int) expectedVehicleTimeWindow[
                                                     newPickupTimeIndex]
-                                                [0]; //updates the timewindow so that it uses the current time of the simulation
+                                                [0]; //updates the time window so that it uses the current time of the simulation
                                     }
 
                                     foreach (var customer in currentCustomers)
@@ -793,7 +793,7 @@ namespace Simulator
                                         }
                                     }
 
-                                    startDepots.Add(currentStop);
+                                    startDepots.Add(null);
                                     endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                                     expectedCustomers.Add(DynamicCustomers[0]);
                                     var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
@@ -805,6 +805,8 @@ namespace Simulator
                                         dataModel.PrintPickupDeliveries();
                                         dataModel.PrintTimeWindows();
                                         solver.PrintSolution(solution);
+                                        var solutionObject = solver.GetSolutionObject(solution);
+                                        solutionObjects.Add(solutionObject);
                                     }
                                     else
                                     {
@@ -815,6 +817,25 @@ namespace Simulator
                                 }
                         }
                         DynamicCustomers.RemoveAt(0);
+                        if (solutionObjects.Count > 0)
+                        {
+                            DarpSolutionObject bestSolutionObject = null;
+                            long bestAvgDistanceTraveledPerCustomer = long.MaxValue;
+                            foreach (var solutionObject in solutionObjects)
+                            {
+                                var currentAvgDistanceTraveledPerCustomer =solutionObject.TotalDistanceInMeters / solutionObject.CustomerNumber;
+
+                                bestAvgDistanceTraveledPerCustomer = Math.Min(bestAvgDistanceTraveledPerCustomer,currentAvgDistanceTraveledPerCustomer); // gets the min between the best avg distance and the current avg distance
+                                if (bestAvgDistanceTraveledPerCustomer == currentAvgDistanceTraveledPerCustomer)
+                                {
+                                    bestSolutionObject = solutionObject;//new best solution object is the current solution object
+                                }
+                            }
+
+                            if (bestSolutionObject != null)
+                                ConsoleLogger.Log("Total solution objects: "+solutionObjects.Count+" - Best solution object was found for vehicle:" +
+                                                  bestSolutionObject.IndexToVehicle(0).Id);
+                        }
                     }
                     break;
             }
