@@ -165,13 +165,9 @@ namespace Simulator.Objects.Data_Objects.DARP
                     }
                     else
                     {
-                        timeDimension.CumulVar(index)
-                            .SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit
-                        timeDimension.CumulVar(index)
-                            .SetMax(_darpDataModel.TimeWindows[i, 1] +
-                                    maxUpperBoundLimitInSeconds); //Sets the maximum upper bound limit
-                        timeDimension.SetCumulVarSoftUpperBound(index, _darpDataModel.TimeWindows[i, 1],
-                            1); //adds soft upper bound limit which is the requested time window
+                        timeDimension.CumulVar(index).SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit
+                        timeDimension.CumulVar(index).SetMax(_darpDataModel.TimeWindows[i, 1] + maxUpperBoundLimitInSeconds); //Sets the maximum upper bound limit
+                        timeDimension.SetCumulVarSoftUpperBound(index, _darpDataModel.TimeWindows[i, 1],1000); //adds soft upper bound limit which is the requested time window
                     }
                 }
 
@@ -458,7 +454,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
-                    printableList.Add("Average distance traveled per request: " + routeDistance/totalLoad +" meters.");
+                    printableList.Add("Average distance traveled per request: " + routeDistance/ solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count + " meters.");
                     totalDistance += routeDistance;
                     totalTime += solution.Min(endTimeVar);
                     printableList.Add("------------------------------------------");
