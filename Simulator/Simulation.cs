@@ -137,13 +137,13 @@ namespace Simulator
 
             var customersToBeServed = new List<Customer>();
             // Pickup and deliveries definition using static generated stop requests
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new long[] { 3250, 4500 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new long[] { 2000, 3700 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new long[] { 3200, 5000 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new long[] { 3000, 3900 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new long[] { 3300, 3900 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 2900, 3300 }, 0));
-            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 2900, 4000 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 438), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2430) }, new long[] { 2250, 3500 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1106), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1359) }, new long[] { 1000, 2700 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2270), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2018) }, new long[] { 2200, 4000 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2319), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1523) }, new long[] { 2000, 2900 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new long[] { 2300, 2900 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
            
             DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed);
             //Print datamodel data
@@ -706,6 +706,56 @@ namespace Simulator
             }
             //END OF INSERTION OF PICKUP DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
             //--------------------------------------------------------------------------------------------------------
+            //INSERTION OF EVENTS FOR THE NEWLY GENERATED ROUTE ( after a dynamic request has been accepted)
+            if (evt.Category == 4 && evt is CustomerRequestEvent eventCRE && eventCRE.SolutionObject != null)
+            {
+                var nextEvents = Events.FindAll(ev => ev.Time >= eventCRE.Time);
+                var solutionObject = eventCRE.SolutionObject;
+                foreach (var nextEvent in nextEvents)
+                {
+                    Console.WriteLine(nextEvent.ToString());
+                }
+
+                foreach (var vehicle in VehicleFleet)
+                {
+                    var route = solutionObject.GetVehicleStops(vehicle);
+                    if (vehicle.TripIterator.Current != null && vehicle.TripIterator.Current.Stops == route)
+                    {
+                        Console.WriteLine(vehicle.ToString()+" route is the same");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Old route:");
+                        if (vehicle.TripIterator.Current != null)
+                        {
+                            var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
+                            var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
+                            var currentStopList = new List<Stop>(vehicle.TripIterator.Current.Stops);
+                            for (int i = 0; i < currentStopIndex; i++)
+                            {
+                                currentStopList.RemoveAt(0);
+                            }
+                            foreach (var stop in currentStopList)
+                            {
+                                
+                                Console.WriteLine(stop);
+                            }
+                        }
+
+                        Console.WriteLine("new route:");
+                        foreach (var stop in route)
+                        {
+                            if (stop != null)
+                            {
+                                Console.WriteLine(stop);
+                            }
+                        }
+                        ConsoleLogger.Log("Asd");
+                    }
+                }
+                
+            }
+            //END OF INSERTION OF EVENTS FOR THE NEWLY GENERATED ROUTE
             if (currentNumberOfEvents != Events.Count) //If the size of the events list has changed, the event list has to be sorted
                 SortEvents();
         }
@@ -728,7 +778,6 @@ namespace Simulator
                     if (VehicleFleet.FindAll(v=>v.FlexibleRouting == true).Count>0 && newCustomer != null)
                     {
                         var flexibleRoutingVehicles = VehicleFleet.FindAll(v => v.FlexibleRouting);
-                        List<DarpSolutionObject> solutionObjects = new List<DarpSolutionObject>();
                         List<Stop> startDepots = new List<Stop>();
                         List<Stop> endDepots = new List<Stop>();
                         List<Vehicle> dataModelVehicles = new List<Vehicle>();
@@ -751,7 +800,6 @@ namespace Simulator
                                     var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                                     var currentStopIndex = stops.FindIndex(s => s == currentStop);
 
-                                    //pickup stop change
                                     foreach (var customer in currentCustomers)
                                     {
                                         var index = 0;
@@ -794,71 +842,38 @@ namespace Simulator
                                         }
                                     }
 
-                                    startDepots.Add(null);
+                                    //startDepots.Add(currentStop);// dummy depot
+                                    endDepots.Add(null);
                                     endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                                     expectedCustomers.Add(newCustomer); //adds the new dynamic customer
                                     if (!allExpectedCustomers.Contains(newCustomer))
                                     {
                                         allExpectedCustomers.Add(newCustomer);
                                     }
-                                
-                                    //var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
-                                    //    expectedCustomers);
-                                    //var solver = new DarpSolver(false, 10);
-                                    //var solution = solver.TryGetFastSolution(dataModel);
-                                    //if (solution != null)
-                                    //{
-                                    //    dataModel.PrintPickupDeliveries();
-                                    //    dataModel.PrintTimeWindows();
-                                    //    solver.PrintSolution(solution);
-                                    //    var solutionObject = solver.GetSolutionObject(solution);
-                                    //    solutionObjects.Add(solutionObject);
-                                    //}
-                                    //else
-                                    //{
-                                    //    ConsoleLogger.Log(newCustomer.ToString() +
-                                    //                      " was not possible to be served, for " + vehicle.ToString());
-
-                                    //}
                                 }
 
                         }
 
                         var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
                             allExpectedCustomers);
+                        dataModel.PrintPickupDeliveries();
+                        dataModel.PrintTimeWindows();
+                        
                         var solver = new DarpSolver(false, 10);
                         var solution = solver.TryGetFastSolution(dataModel);
                         if (solution != null)
                         {
                             solver.PrintSolution(solution);
                             TotalServedDynamicRequests++;
-                            ConsoleLogger.Log(newCustomer.ToString() + " was possible to be served");
+                            ConsoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service, request time:"+customerRequestEvent.Time );
 
+                            var solutionObject = solver.GetSolutionObject(solution);
+                            customerRequestEvent.SolutionObject = solutionObject;
                         }
                         else
                         {
                             ConsoleLogger.Log(newCustomer.ToString() + " was not possible to be served");
                         }
-                        //if (solutionObjects.Count > 0)
-                        //{
-                        //    DarpSolutionObject bestSolutionObject = null;
-                        //    long bestAvgDistanceTraveledPerCustomer = long.MaxValue;
-                        //    foreach (var solutionObject in solutionObjects)
-                        //    {
-                        //        var currentAvgDistanceTraveledPerCustomer = solutionObject.TotalDistanceInMeters / solutionObject.CustomerNumber;
-
-                        //        bestAvgDistanceTraveledPerCustomer = Math.Min(bestAvgDistanceTraveledPerCustomer,currentAvgDistanceTraveledPerCustomer); // gets the min between the best avg distance and the current avg distance
-                        //        if (bestAvgDistanceTraveledPerCustomer == currentAvgDistanceTraveledPerCustomer)
-                        //        {
-
-                        //            bestSolutionObject = solutionObject;//new best solution object is the current solution object
-                        //        }
-                        //    }
-
-                        //    if (bestSolutionObject != null)
-                        //        ConsoleLogger.Log("Total solution objects: "+solutionObjects.Count+" - Best solution object was found for vehicle:" +
-                        //                          bestSolutionObject.IndexToVehicle(0).Id);
-                        //}
                     }
                     break;
             }

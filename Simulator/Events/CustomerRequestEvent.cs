@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.DARP;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Events
@@ -11,11 +12,14 @@ namespace Simulator.Events
     {
         public Customer Customer { get; internal set; }
 
+        public DarpSolutionObject SolutionObject;
+
         public CustomerRequestEvent(int category, int time, Customer customer) : base(category, time)
         {
             Time = time;
             Category = category;
             Customer = customer;
+            SolutionObject = null;
         }
 
 
