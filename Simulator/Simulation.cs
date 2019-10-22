@@ -145,8 +145,8 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new long[] { 2300, 2900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
-           
-            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,0);
+            long[] startDepotsArrivalTime = new long[] { 0, 0 };
+            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -281,7 +281,8 @@ namespace Simulator
                             TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),
                             TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)
                         }, new long[] {4500, 6000}, 0));
-                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,0);
+                    long[] startDepotsArrivalTime = new long[]{0,0};
+                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,startDepotsArrivalTime);
                     darpM.PrintTimeMatrix();
                     darpM.PrintPickupDeliveries();
                     darpM.PrintTimeWindows();
@@ -724,39 +725,49 @@ namespace Simulator
                 {
                     var route = solutionObject.GetVehicleStops(vehicle);
                     var timeWindows = solutionObject.GetVehicleTimeWindows(vehicle);
-                    if (vehicle.TripIterator.Current != null && vehicle.TripIterator.Current.Stops == route)
-                    {
-                        Console.WriteLine(vehicle.ToString()+" route is the same");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Old route:");
+
                         if (vehicle.TripIterator.Current != null)
                         {
                             var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
-                            var currentStopList = new List<Stop>(vehicle.TripIterator.Current.Stops);
+                            var currentStopList = new List<Stop>(vehicle.TripIterator.Current.Stops); //current stoplist without the already visited stops
+                            var currentTimeWindows = new List<long[]>(vehicle.TripIterator.Current.ExpectedTimeWindows);
                             for (int i = 0; i < currentStopIndex; i++)
                             {
-                                currentStopList.RemoveAt(0);
+                                currentStopList.RemoveAt(0); //removes the already visited stops (the first ones on the list) until it reaches the currentStopIndex
+                                currentTimeWindows.RemoveAt(0); //removes the already visited time windows for those stops as well, so that the timeWindow list is of the same size of the currentStopList
                             }
-                            foreach (var stop in currentStopList)
-                            {
-                                
-                                Console.WriteLine(stop);
-                            }
-                        }
 
-                        Console.WriteLine("new route:");
-                        for (int x=0;x<route.Count;x++)
-                        {
-                            if (route[x] != null)
+                            if (route != currentStopList)
                             {
-                                Console.WriteLine(route[x] +" - TW:{"+timeWindows[x][0]+","+timeWindows[x][1]+"}");
+
+                                ConsoleLogger.Log("Route is different for vehicle "+vehicle.Id+":");
+                                ConsoleLogger.Log("Old route:");
+                                for (int z=0;z<currentStopList.Count;z++)
+                                {
+                                    
+                                    ConsoleLogger.Log(currentStopList[z]+ " - TW:{" + currentTimeWindows[z][0] + "," + currentTimeWindows[z][1] + "}");
+                                }
+                                ConsoleLogger.Log("New route:");
+                                for (int x=0;x<route.Count;x++)
+                                {
+                                    if (route[x] != null)
+                                    {
+                                        ConsoleLogger.Log(route[x] +" - TW:{"+timeWindows[x][0]+","+timeWindows[x][1]+"}");
+                                    }
+                                }
                             }
+                            else
+                            {
+                                ConsoleLogger.Log("Route is the same for vehicle "+vehicle.Id);
+                            }
+
+                            var vehicleEvents = Events.FindAll(e => e is VehicleStopEvent vse && vse.Vehicle == vehicle && e.Time >= evt.Time); //gets all next vehicle depart or arrive events
+                            foreach (var vEvent in vehicleEvents)
+                            {
+                                ConsoleLogger.Log(vEvent.GetTraceMessage());
+                            }
+
                         }
-                        
-                    }
-                    ConsoleLogger.Log("Asd");
                 }
                 
             }
@@ -855,14 +866,20 @@ namespace Simulator
                                     if (!allExpectedCustomers.Contains(newCustomer))
                                     {
                                         allExpectedCustomers.Add(newCustomer);
-                                    }                                    
-                            }
+                                    }
+                                }
 
                         }
+                        //--------------------------------------------------------------------------------------------------------------------------
                         //Calculation of baseArrivalTime, if there is any moving vehicle, otherwise baseArrivalTime will be the current event Time
-                        int baseArrivalTime = evt.Time;
-                        var movingVehicles = VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);                    
-                        if (movingVehicles.Count > 0)
+                        
+                        var movingVehicles = VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);
+                        long[] startDepotsArrivalTimes = new long[dataModelVehicles.Count];
+                        for (int i = 0; i < dataModelVehicles.Count ; i++)
+                        {
+                            startDepotsArrivalTimes[i] = evt.Time+1; //initializes startDepotArrivalTimes with the current event time +1 second
+                        }
+                        if (movingVehicles.Count > 0)//if there is a moving vehicle calculates the baseArrivalTime
                         {
                             ConsoleLogger.Log("Moving vehicles total:" + movingVehicles.Count);
                             foreach (var movingVehicle in movingVehicles)
@@ -876,21 +893,28 @@ namespace Simulator
                                         if (movingVehicle.TripIterator.Current != null && movingVehicle.TripIterator.Current.StopsIterator.CurrentStop ==vehicleStopEvent.Stop)
                                         {
                                             ConsoleLogger.Log(vehicleStopEvent.GetTraceMessage());
-                                            baseArrivalTime = Math.Max(baseArrivalTime, vehicleStopEvent.Time); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time
+                                            var currentStartDepotArrivalTime = startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)];
+                                            startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)] = Math.Max(vehicleStopEvent.Time+1, (int)currentStartDepotArrivalTime); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time, and updates its value on the array
                                         }
                                     }
                                 }
                             }
                         }
+                        //debug
+                        for (int r = 0; r < dataModelVehicles.Count; r++)
+                        {
+                            ConsoleLogger.Log("Next arrival time for vehicle " + dataModelVehicles[r].Id+ " : " + startDepotsArrivalTimes[r]);
+                        }
+                        //end of debug
                         //end of base arrivalTimeCalculation
+                        //--------------------------------------------------------------------------------------------------------------------------
 
 
-                        ConsoleLogger.Log("Base arrival time:" + baseArrivalTime);
                         var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
-                            allExpectedCustomers,baseArrivalTime);
+                            allExpectedCustomers,startDepotsArrivalTimes);
                         dataModel.PrintPickupDeliveries();
                         dataModel.PrintTimeWindows();
-                        dataModel.PrintTimeMatrix();
+                        //dataModel.PrintTimeMatrix();
                         
                         var solver = new DarpSolver(false, 10);
                         var solution = solver.TryGetFastSolution(dataModel);

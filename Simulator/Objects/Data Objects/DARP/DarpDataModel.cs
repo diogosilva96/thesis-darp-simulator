@@ -30,29 +30,32 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int[][] PickupsDeliveries;
 
-        public int DepotArrivalTime;
+        public long[] StartDepotsArrivalTimes;//minimum time to be at the depot for each vehicle
 
-        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,int arrivalTime) //if different end and start depot
+        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,long[] startDepotsArrivalTimes) //if different end and start depot
         {
-            DepotArrivalTime = arrivalTime; //Minimum time for the depot arrival
-            Init(startDepots, endDepots, customers, vehicles);
+            if (startDepotsArrivalTimes.Length != startDepots.Count || vehicles.Count != startDepots.Count ||
+                startDepots.Count != endDepots.Count)
+            {
+                throw new ArgumentException("Data model input arguments do not have the same size");
+            }
+            else
+            {
+                StartDepotsArrivalTimes = startDepotsArrivalTimes;
+                VehicleSpeed = vehicles[0].Speed;
+                var stops = GetStops(startDepots, endDepots, customers);
+                IndexManager = new DataModelIndexManager(stops, vehicles, customers);
+                Starts = GetVehicleDepots(startDepots, IndexManager);
+                Ends = GetVehicleDepots(endDepots, IndexManager);
+                VehicleCapacities = GetVehicleCapacities(IndexManager);
+                TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
+                TimeWindows = GetTimeWindows(IndexManager);
+                InitializeDepotTimeWindows();
+                PickupsDeliveries = GetPickupDeliveries(IndexManager);
+                Demands = GetDemands(IndexManager);
+            }
         }
 
-        private void Init(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers,List<Vehicle> vehicles)
-        {
-            VehicleSpeed = vehicles[0].Speed;
-            var stops = GetStops(startDepots, endDepots, customers);
-            IndexManager = new DataModelIndexManager(stops, vehicles,customers);
-            Starts = GetVehicleDepots(startDepots, IndexManager);
-            Ends = GetVehicleDepots(endDepots, IndexManager);
-            VehicleCapacities = GetVehicleCapacities(IndexManager);
-            TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
-            TimeWindows = GetTimeWindows(IndexManager);
-            InitializeDepotTimeWindows();
-            PickupsDeliveries = GetPickupDeliveries(IndexManager);
-            Demands = GetDemands(IndexManager);
-
-        }
 
         private void InitializeDepotTimeWindows()
         {
@@ -62,7 +65,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 for (int j = 0; j < Starts.Length; j++)
                 {
                     
-                    TimeWindows[Starts[j], 0] = DepotArrivalTime;
+                    TimeWindows[Starts[j], 0] = StartDepotsArrivalTimes[j];
                     TimeWindows[Starts[j], 1] = DayInSeconds;
                 }
             }
