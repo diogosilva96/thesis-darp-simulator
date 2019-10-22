@@ -171,6 +171,7 @@ namespace Simulator
                 {
                     darpSolver.PrintSolution(timeWindowSolution);
                     darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
+                   
 
                 }
 
@@ -722,6 +723,7 @@ namespace Simulator
                 foreach (var vehicle in VehicleFleet)
                 {
                     var route = solutionObject.GetVehicleStops(vehicle);
+                    var timeWindows = solutionObject.GetVehicleTimeWindows(vehicle);
                     if (vehicle.TripIterator.Current != null && vehicle.TripIterator.Current.Stops == route)
                     {
                         Console.WriteLine(vehicle.ToString()+" route is the same");
@@ -731,7 +733,6 @@ namespace Simulator
                         Console.WriteLine("Old route:");
                         if (vehicle.TripIterator.Current != null)
                         {
-                            var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                             var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                             var currentStopList = new List<Stop>(vehicle.TripIterator.Current.Stops);
                             for (int i = 0; i < currentStopIndex; i++)
@@ -746,15 +747,16 @@ namespace Simulator
                         }
 
                         Console.WriteLine("new route:");
-                        foreach (var stop in route)
+                        for (int x=0;x<route.Count;x++)
                         {
-                            if (stop != null)
+                            if (route[x] != null)
                             {
-                                Console.WriteLine(stop);
+                                Console.WriteLine(route[x] +" - TW:{"+timeWindows[x][0]+","+timeWindows[x][1]+"}");
                             }
                         }
-                        ConsoleLogger.Log("Asd");
+                        
                     }
+                    ConsoleLogger.Log("Asd");
                 }
                 
             }
@@ -844,8 +846,9 @@ namespace Simulator
                                         }
                                     }
                                                        
-                                var dummyStop = new Stop(currentStop.Id, currentStop.Code,"dummy "+currentStop.Name, currentStop.Latitude,
+                                    var dummyStop = new Stop(currentStop.Id, currentStop.Code,"dummy "+currentStop.Name, currentStop.Latitude,
                                         currentStop.Longitude);//need to use dummyStop otherwise the solver will fail, because the startDepot stop is also a pickup delivery stop
+                                    dummyStop.IsDummy = true;
                                     startDepots.Add(dummyStop);
                                     endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                                     expectedCustomers.Add(newCustomer); //adds the new dynamic customer
