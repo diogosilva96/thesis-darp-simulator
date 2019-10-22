@@ -102,7 +102,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 _routingModel.AddDimensionWithVehicleCapacity(
                     _demandCallbackIndex, 0,  // null capacity slack
                     _darpDataModel.VehicleCapacities,   // vehicle maximum capacities
-                    true,                      // start cumul to zero
+                    false,                      // start cumul to zero
                     "Capacity");
 
             }
@@ -114,7 +114,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             {
                 // Add Distance constraints
                 _routingModel.AddDimension(_transitCallbackIndex, 9999999, 99999999,
-                    true, // start cumul to zero
+                    false, // start cumul to zero
                     "PickupDelivery");
                 RoutingDimension pickupDeliveryDimension = _routingModel.GetMutableDimension("PickupDelivery");
                 pickupDeliveryDimension.SetGlobalSpanCostCoefficient(100);
@@ -158,13 +158,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 {
                     long index = _routingIndexManager.NodeToIndex(i); //gets the node index
                   
-                    //Console.WriteLine("index:"+i);
-                        if (index == -1)
-                        {
-                            Console.WriteLine("solution maxupperbound limit:" + maxUpperBoundLimitInSeconds);
-                            Console.WriteLine("index == -1  at " + i);
-                        }
-                        else
+                        if (index != -1)   
                         {
                             timeDimension.CumulVar(index)
                                 .SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit

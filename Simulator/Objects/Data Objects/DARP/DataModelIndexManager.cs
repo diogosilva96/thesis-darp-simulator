@@ -53,7 +53,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
 
         public Stop GetStop(int index)
-        {       
+        {                  
             if (index >= Stops.Count || index <0)
             {
 
@@ -65,6 +65,11 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
         public int GetStopIndex(Stop stop)
         {
+            var numStops = Stops.FindAll(s => s == stop).Count;
+            if (numStops > 1)
+            {
+
+            }
             var index = Stops.FindIndex(s => s == stop);
             return index;
         }

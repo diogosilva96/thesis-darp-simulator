@@ -37,7 +37,8 @@ namespace Simulator
 
         public int TotalSimulationTime => SimulationTimeWindow[0] >= 0 && SimulationTimeWindow[1] >= 0 && SimulationTimeWindow[1] != 0 ? SimulationTimeWindow[1] - SimulationTimeWindow[0] : 0; //in seconds
 
-        private readonly double _dynamicRequestProbabilityThreshold; //randomly generated value has to be lower than this in order to generate a dynamic request
+        private readonly double _dynamicRequestProbabilityThreshold; //randomly generated value has to be
+                                                                     //than this in order to generate a dynamic request
 
 
         public Simulation()
@@ -145,7 +146,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
            
-            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed);
+            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,0);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -162,6 +163,8 @@ namespace Simulator
                 DarpSolver darpSolver = new DarpSolver(false, 10);
 
                 var timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
+                
+                DarpDataModel.DistanceMatrix = new MatrixBuilder().GetDistanceMatrix(DarpDataModel.IndexManager.Stops);
                 DarpSolutionObject darpSolutionObject = null;
 ;
                 if (timeWindowSolution != null)
@@ -277,7 +280,7 @@ namespace Simulator
                             TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),
                             TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)
                         }, new long[] {4500, 6000}, 0));
-                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers);
+                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,0);
                     darpM.PrintTimeMatrix();
                     darpM.PrintPickupDeliveries();
                     darpM.PrintTimeWindows();
@@ -798,8 +801,7 @@ namespace Simulator
                                     var stops = vehicle.TripIterator.Current.Stops;
                                     var expectedVehicleTimeWindow = vehicle.TripIterator.Current.ExpectedTimeWindows;
                                     var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
-                                    var currentStopIndex = stops.FindIndex(s => s == currentStop);
-
+                                    var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                                     foreach (var customer in currentCustomers)
                                     {
                                         var index = 0;
@@ -841,23 +843,51 @@ namespace Simulator
                                             allExpectedCustomers.Add(customer);
                                         }
                                     }
-
-                                    //startDepots.Add(currentStop);// dummy depot
-                                    endDepots.Add(null);
+                                                       
+                                var dummyStop = new Stop(currentStop.Id, currentStop.Code,"dummy "+currentStop.Name, currentStop.Latitude,
+                                        currentStop.Longitude);//need to use dummyStop otherwise the solver will fail, because the startDepot stop is also a pickup delivery stop
+                                    startDepots.Add(dummyStop);
                                     endDepots.Add(TransportationNetwork.Stops.Find(s => s.Id == 2183));
                                     expectedCustomers.Add(newCustomer); //adds the new dynamic customer
                                     if (!allExpectedCustomers.Contains(newCustomer))
                                     {
                                         allExpectedCustomers.Add(newCustomer);
-                                    }
-                                }
+                                    }                                    
+                            }
 
                         }
+                        //Calculation of baseArrivalTime, if there is any moving vehicle, otherwise baseArrivalTime will be the current event Time
+                        int baseArrivalTime = evt.Time;
+                        var movingVehicles = VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);                    
+                        if (movingVehicles.Count > 0)
+                        {
+                            ConsoleLogger.Log("Moving vehicles total:" + movingVehicles.Count);
+                            foreach (var movingVehicle in movingVehicles)
+                            {
+                                var vehicleArrivalEvents = Events.FindAll(e =>
+                                    e is VehicleStopEvent vse && e.Category == 0 && e.Time >= evt.Time && vse.Vehicle == movingVehicle);
+                                foreach (var arrivalEvent in vehicleArrivalEvents)
+                                {
+                                    if (arrivalEvent is VehicleStopEvent vehicleStopEvent)
+                                    {
+                                        if (movingVehicle.TripIterator.Current != null && movingVehicle.TripIterator.Current.StopsIterator.CurrentStop ==vehicleStopEvent.Stop)
+                                        {
+                                            ConsoleLogger.Log(vehicleStopEvent.GetTraceMessage());
+                                            baseArrivalTime = Math.Max(baseArrivalTime, vehicleStopEvent.Time); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        //end of base arrivalTimeCalculation
 
+
+                        ConsoleLogger.Log("Base arrival time:" + baseArrivalTime);
                         var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
-                            allExpectedCustomers);
+                            allExpectedCustomers,baseArrivalTime);
                         dataModel.PrintPickupDeliveries();
                         dataModel.PrintTimeWindows();
+                        dataModel.PrintTimeMatrix();
                         
                         var solver = new DarpSolver(false, 10);
                         var solution = solver.TryGetFastSolution(dataModel);
