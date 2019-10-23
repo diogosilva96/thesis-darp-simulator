@@ -47,6 +47,8 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public List<Stop> VisitedStops;
 
+        public List<long[]> StopsTimeWindows;
+
         public double TotalDistanceTraveled;
 
         public bool HasStarted { get; set; } // true if the service has already started or been completed
@@ -57,9 +59,17 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             Headsign = headsign;
             Stops = new List<Stop>();
             VisitedStops = new List<Stop>();
+            StopsTimeWindows = new List<long[]>();
             Reset();
         }
 
+        public void AssignStops(List<Stop> stops, List<long[]> expectedTimeWindows, int currentIndex) //assign route stops
+        {
+            Stops = stops;
+            ExpectedTimeWindows = expectedTimeWindows;
+            StopsIterator = new StopsIterator(stops);
+            StopsIterator.Init(currentIndex);
+        }
         public void Reset()
         {
             EndTime = 0;

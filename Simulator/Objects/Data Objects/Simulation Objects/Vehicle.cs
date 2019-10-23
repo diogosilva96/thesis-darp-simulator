@@ -81,6 +81,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
                 Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
                 TripIterator.Current.VisitedStops.Add(stop); //adds the current stop to the visited stops
+                TripIterator.Current.StopsTimeWindows.Add(new long[] {time,time}); //adds the current time window
                 
                 if (TripIterator.Current.StopsIterator.IsDone && Customers.Count == 0
                 ) //this means that the trip is complete
@@ -116,6 +117,8 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 Console.WriteLine(ToString() + "DEPARTED from " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
                 var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
                     TripIterator.Current.StopsIterator.NextStop);
+                var currentStopIndex = TripIterator.Current.StopsIterator.CurrentIndex;
+                TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
                 ArcDictionary.TryGetValue(tuple, out var distance);
                 TransverseToNextStop(distance, time);
                 return true;

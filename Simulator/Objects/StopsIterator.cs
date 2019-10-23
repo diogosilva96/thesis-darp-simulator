@@ -8,10 +8,9 @@ namespace Simulator.Objects
 {
     public class StopsIterator
     {
-        public Stop CurrentStop;
+        public Stop CurrentStop => _stops[_currentIndex];
 
-        public Stop NextStop;
-
+        public Stop NextStop => _currentIndex + 1 >= _stops.Count ? null:_stops[_currentIndex + 1];
 
         public int TotalStops => _stops.Count;
 
@@ -31,6 +30,15 @@ namespace Simulator.Objects
             Reset();
         }
 
+
+        public void Init(int index)
+        {
+            if (index < _stops.Count && index >= 0)
+            {
+                _currentIndex = index;
+            }
+        }
+
         public void Reset()
         {
             if (_stops != null)
@@ -38,9 +46,7 @@ namespace Simulator.Objects
                 _currentIndex = 0;
                 if (_stops.Count > 0)
                 {
-                    CurrentStop = _stops[_currentIndex];
                     IsDone = false;
-                    NextStop = _stops[_currentIndex+1];
                 }
             } 
         }
@@ -56,14 +62,10 @@ namespace Simulator.Objects
                 _currentIndex++;
                 if (_currentIndex +1 <= _stops.Count - 1)
                 {
-                    CurrentStop = _stops[_currentIndex];
-                    NextStop = _stops[_currentIndex + 1];
                     return true;
                 }
                 else
                 {
-                    CurrentStop = _stops[_currentIndex];
-                    NextStop = null;
                     IsDone = true;
                     return true;
                 }
