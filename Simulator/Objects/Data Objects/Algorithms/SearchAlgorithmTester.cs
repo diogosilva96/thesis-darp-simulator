@@ -9,7 +9,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 {
     class SearchAlgorithmTester:AlgorithmTester
     {
-        public SearchAlgorithmTester(DarpDataModel dataModel,bool allowDropNodes,int maxAllowedRideDurationMultiplier,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel,allowDropNodes,maxAllowedRideDurationMultiplier)
+        public SearchAlgorithmTester(DarpDataModel dataModel,bool allowDropNodes,int maxAllowedRideDurationMultiplier,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel,allowDropNodes)
         {
             AlgorithmValue = algorithmValue;
             SearchTimeLimitInSeconds = searchTimeLimitInSecondsInSeconds;

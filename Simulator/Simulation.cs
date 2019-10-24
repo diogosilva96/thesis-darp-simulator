@@ -22,7 +22,6 @@ namespace Simulator
 
         private int _validationsCounter;
 
-
         public DarpDataModel DarpDataModel;
 
         private readonly int _vehicleSpeed;
@@ -34,6 +33,10 @@ namespace Simulator
         public int TotalServedDynamicRequests;
 
         public int[] SimulationTimeWindow;
+
+        public int MaxCustomerRideTime = 45* 60; //max customer ride time 
+
+        public int MaxAllowedUpperBoundTime = 30 * 60;//max delay of timeWindows upperBound (relative to desired timeWindows)
 
         public Stop Depot; //the stop that every flexible service vehicle starts and ends at 
 
@@ -149,7 +152,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
             long[] startDepotsArrivalTime = new long[] { 0, 0 };
-            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime);
+            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
             DarpDataModel.PrintPickupDeliveries();
@@ -163,7 +166,7 @@ namespace Simulator
             InitDataModel(2);
             if (DarpDataModel != null)
             {
-                DarpSolver darpSolver = new DarpSolver(false, 10);
+                DarpSolver darpSolver = new DarpSolver(false);
 
                 var timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
                 
@@ -191,7 +194,7 @@ namespace Simulator
 
 
 
-            DarpSolver darpSolver = new DarpSolver(false,4);
+            DarpSolver darpSolver = new DarpSolver(false);
             Assignment timeWindowSolution = null;
             timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
             if (timeWindowSolution != null)
@@ -200,7 +203,7 @@ namespace Simulator
                 DarpSolutionObject darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
 
                 ///////////////////////////////////////////////////////////////////////
-               var darps1 = new DarpSolver(false, 10);
+               var darps1 = new DarpSolver(false);
                 List<DarpSolutionObject> solutionObjects = new List<DarpSolutionObject>();
                 for (int j = 0; j < darpSolutionObject.VehicleNumber; j++)
                 {
@@ -285,7 +288,7 @@ namespace Simulator
                             TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)
                         }, new long[] {4500, 6000}, 0));
                     long[] startDepotsArrivalTime = new long[]{0,0};
-                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,startDepotsArrivalTime);
+                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
                     darpM.PrintTimeMatrix();
                     darpM.PrintPickupDeliveries();
                     darpM.PrintTimeWindows();
@@ -750,19 +753,21 @@ namespace Simulator
                             List<long[]> visitedTimeWindows = new List<long[]>();
                             ConsoleLogger.Log("Vehicle "+vehicle.Id+":");
                             ConsoleLogger.Log("Visited stops:");
+                            //construction of already visited stops list
                             for (int index = 0; index < currentStopIndex; index++ )
                             {
                                 visitedStops.Add(currentStopList[index]);       
                                 visitedTimeWindows.Add(currentTimeWindows[index]);
                                 ConsoleLogger.Log(currentStopList[index].ToString()+ " - TW:{" + currentTimeWindows[index][0] + "," + currentTimeWindows[index][1] + "}");
                             }
-
-
-                                for (int e = visitedStops.Count-1;e>=0;e--)
-                                {
-                                    solutionRoute.Insert(0,visitedStops[e]);
-                                    solutionTimeWindows.Insert(0,visitedTimeWindows[e]);
-                                }
+                            //end of visited stops list construction
+                            //inserts the already visited stops at the beginning of the  solutionRoute list
+                            for (int e = visitedStops.Count-1;e>=0;e--)
+                            {
+                                solutionRoute.Insert(0,visitedStops[e]);
+                                solutionTimeWindows.Insert(0,visitedTimeWindows[e]);
+                            }
+                            //end of visited stops insertion
                             if (solutionRoute != currentStopList)
                             {
 
@@ -944,12 +949,12 @@ namespace Simulator
 
 
                         var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
-                            allExpectedCustomers,startDepotsArrivalTimes);
+                            allExpectedCustomers,startDepotsArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
                         dataModel.PrintPickupDeliveries();
                         //dataModel.PrintTimeWindows();
-                        dataModel.PrintTimeMatrix();
+                        //dataModel.PrintTimeMatrix();
                         
-                        var solver = new DarpSolver(false, 10);
+                        var solver = new DarpSolver(false);
                         var solution = solver.TryGetFastSolution(dataModel);
                         if (solution != null)
                         {

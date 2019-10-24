@@ -32,7 +32,11 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public long[] StartDepotsArrivalTimes;//minimum time to be at the depot for each vehicle
 
-        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,long[] startDepotsArrivalTimes) //if different end and start depot
+        public int MaxCustomerRideTime; //maximum time a customer can spend in a vehicle (in seconds)
+
+        public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by DarpSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
+
+        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,long[] startDepotsArrivalTimes,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
             if (startDepotsArrivalTimes.Length != startDepots.Count || vehicles.Count != startDepots.Count ||
                 startDepots.Count != endDepots.Count)
@@ -41,6 +45,8 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
             else
             {
+                MaxAllowedUpperBoundTime = maxAllowedUpperBound;
+                MaxCustomerRideTime = maxCustomerRideTime;
                 StartDepotsArrivalTimes = startDepotsArrivalTimes;
                 VehicleSpeed = vehicles[0].Speed;
                 var stops = GetStops(startDepots, endDepots, customers);
@@ -50,26 +56,12 @@ namespace Simulator.Objects.Data_Objects.DARP
                 VehicleCapacities = GetVehicleCapacities(IndexManager);
                 TimeMatrix = new MatrixBuilder().GetTimeMatrix(IndexManager.Stops, VehicleSpeed);
                 TimeWindows = GetTimeWindows(IndexManager);
-                InitializeDepotTimeWindows();
                 PickupsDeliveries = GetPickupDeliveries(IndexManager);
                 Demands = GetDemands(IndexManager);
             }
         }
 
 
-        private void InitializeDepotTimeWindows()
-        {
-            //start depot timewindows initialization, this is done so that the routing process doesnt need to start at time 0, meaning it can start at a later time
-            if (Starts != null && TimeWindows != null)
-            {
-                for (int j = 0; j < Starts.Length; j++)
-                {
-                    
-                    TimeWindows[Starts[j], 0] = StartDepotsArrivalTimes[j];
-                    TimeWindows[Starts[j], 1] = DayInSeconds;
-                }
-            }
-        }
 
         private int[] GetVehicleDepots(List<Stop> depots, DataModelIndexManager indexManager)
         {
@@ -271,6 +263,17 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
+            //depot timewindows initialization
+            if (Starts != null && timeWindows != null)
+            {
+                for (int j = 0; j < Starts.Length; j++)
+                {
+
+                    timeWindows[Starts[j], 0] = StartDepotsArrivalTimes[j];
+                    timeWindows[Starts[j], 1] = DayInSeconds;
+                }
+            }
+            // end of depot timewindow initialization
             return timeWindows;
         }
 

@@ -14,15 +14,12 @@ namespace Simulator.Objects.Data_Objects.DARP
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
         public bool DropNodesAllowed;
-        public int MaxUpperBound; //the current upper bound limit of the found solution, which is lesser or equal than _maxUpperBoundLimit
-        public int MaxAllowedUpperBound;
-        public int MaxAllowedRideDurationMultiplier;
+        public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
+        
 
-        public DarpSolver(bool dropNodesAllowed,int maxAllowedRideDurationMultiplier)
+        public DarpSolver(bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
-            MaxAllowedUpperBound = 30;
-            MaxAllowedRideDurationMultiplier = maxAllowedRideDurationMultiplier; 
             MaxUpperBound = 0; //default value
             
         }
@@ -89,7 +86,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
             _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
             AddPickupDeliveryDimension(); //Adds the pickup delivery dimension, which contains the pickup and delivery constraints
-            AddTimeWindowDimension(MaxUpperBound*60); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
+            AddTimeWindowDimension(MaxUpperBound); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
             AddCapacityDimension();
 
         }
@@ -174,9 +171,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                 for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     long index = _routingModel.Start(i);
-                    timeDimension.CumulVar(index).SetRange(
-                        _darpDataModel.TimeWindows[0, 0],
-                        _darpDataModel.TimeWindows[0, 1]); //this guarantees that a vehicle must visit the location during its time window
+                    var startDepotIndex = _darpDataModel.Starts[i];
+                    timeDimension.CumulVar(index).SetRange(_darpDataModel.TimeWindows[startDepotIndex, 0], _darpDataModel.TimeWindows[startDepotIndex, 1]); //this guarantees that a vehicle must visit the location during its time window
                 }
 
                 for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
@@ -190,20 +186,17 @@ namespace Simulator.Objects.Data_Objects.DARP
 
                 var solver = _routingModel.solver();
                 //Add client max ride time constraint, enabling better service quality
-                //for (int i = 0; i < _routingModel.Size(); i++)
-                //{
-                //    var pickupDeliveryPairs = Array.FindAll(_darpDataModel.PickupsDeliveries,
-                //        pickupDelivery => pickupDelivery[0] == i); //finds all the pickupdelivery pairs with pickup index i 
-                //    foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
-                //    {
-                //        var deliveryIndex = pickupDelivery[1];
-                //        var minRideTimeDuration = _darpDataModel.TimeMatrix[i, deliveryIndex];
-                //        var maxRideTimeDuration = MaxAllowedRideDurationMultiplier * minRideTimeDuration;
-                //        var realRideTimeDuration =
-                //            timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
-                //        solver.Add(realRideTimeDuration < maxRideTimeDuration); //adds the constraint so that the current ride time duration does not exceed the maxRideTimeDuration
-                //    }
-                //}
+                for (int i = 0; i < _routingModel.Size(); i++)
+                {
+                    var pickupDeliveryPairs = Array.FindAll(_darpDataModel.PickupsDeliveries,
+                        pickupDelivery => pickupDelivery[0] == i); //finds all the pickupdelivery pairs with pickup index i 
+                    foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
+                    {
+                        var deliveryIndex = pickupDelivery[1];
+                        var realRideTimeDuration = timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
+                        solver.Add(realRideTimeDuration < _darpDataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the maxCustomerRideTime Duration
+                    }
+                }
             }
         }
 
@@ -223,7 +216,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             _darpDataModel = darpDataModel;
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < MaxAllowedUpperBound; maxUpperBound++)
+            for (int maxUpperBound = 0; maxUpperBound < _darpDataModel.MaxAllowedUpperBoundTime; maxUpperBound=maxUpperBound+60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
             {
                 MaxUpperBound = maxUpperBound;
                 Init();
@@ -273,7 +266,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             _darpDataModel = darpDataModel;
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < MaxAllowedUpperBound; maxUpperBound++)
+            for (int maxUpperBound = 0; maxUpperBound < _darpDataModel.MaxAllowedUpperBoundTime; maxUpperBound++)
             {
                 MaxUpperBound = maxUpperBound;
                 Init();
@@ -500,8 +493,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
-                Console.WriteLine("Max Upper Bound limit:" + MaxUpperBound + " minutes");
-                Console.WriteLine("Max allowed ride time multiplier: "+MaxAllowedRideDurationMultiplier + "x");
+                Console.WriteLine("Maximum Upper Bound limit:" + TimeSpan.FromSeconds(MaxUpperBound).TotalMinutes + " minutes");
+                Console.WriteLine("Maximum Customer Ride Time Duration: "+TimeSpan.FromSeconds(_darpDataModel.MaxCustomerRideTime).TotalMinutes + " minutes");
                 var printableList = GetSolutionPrintableList(solution);
                 foreach (var stringToBePrinted in printableList)
                 {
