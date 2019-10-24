@@ -118,7 +118,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
                     TripIterator.Current.StopsIterator.NextStop);
                 var currentStopIndex = TripIterator.Current.StopsIterator.CurrentIndex;
-                TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
+                //TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
                 ArcDictionary.TryGetValue(tuple, out var distance);
                 TransverseToNextStop(distance, time);
                 return true;

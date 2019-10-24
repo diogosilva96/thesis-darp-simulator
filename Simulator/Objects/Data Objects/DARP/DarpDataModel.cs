@@ -74,7 +74,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     foreach (var vehicle in indexManager.Vehicles)
                     {
                         var vehicleIndex = indexManager.GetVehicleIndex(vehicle);
-                        vehicleDepots[vehicleIndex] =indexManager.GetStopIndex(depots[vehicleIndex]); //finds the index of the start depot stop in the stop list
+                        vehicleDepots[vehicleIndex] = indexManager.GetStopIndex(depots[vehicleIndex]); //finds the index of the start depot stop in the stop list
                     }
                 }
             }
