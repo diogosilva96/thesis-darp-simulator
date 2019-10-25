@@ -350,6 +350,10 @@ namespace Simulator.Objects.Data_Objects.DARP
                         }
                         else
                         {
+                            if (currentStop.IsDummy && currentStop != null)
+                            {
+                                currentStop = TransportationNetwork.Stops.Find(s => s.Id == currentStop.Id); //finds the non dummy stop
+                            }
                             routeStops.Add(currentStop); //adds the current stop
                             //timeWindow add       
                             timeWindow = new[] {solution.Min(timeVar), solution.Max(timeVar)};

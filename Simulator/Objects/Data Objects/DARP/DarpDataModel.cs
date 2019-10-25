@@ -198,6 +198,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public void PrintTimeMatrix()
         {
+
             Console.WriteLine(ToString() + "TimeMatrix:");
             var counter = 0;
             foreach (var val in TimeMatrix)
@@ -211,6 +212,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     Console.Write(val + " ");
                     counter++;
                 }
+            Console.WriteLine("---------------------------------------------------------------");
         }
 
 
@@ -218,7 +220,10 @@ namespace Simulator.Objects.Data_Objects.DARP
         {
             Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows (total: " + IndexManager.Customers.Count + "):");
             foreach (var customer in IndexManager.Customers)
+            {
                 customer.PrintPickupDelivery();
+            }
+            Console.WriteLine("---------------------------------------------------------------");
         }
 
         private static long[,] GetInitialTimeWindowsArray(long[,] timeWindows)
@@ -296,6 +301,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     }
                 }
             }
+            Console.WriteLine("---------------------------------------------------------------");
 
         }
 

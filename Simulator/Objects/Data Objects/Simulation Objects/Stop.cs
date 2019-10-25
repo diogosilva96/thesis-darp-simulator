@@ -28,7 +28,13 @@ namespace Simulator.Objects.Data_Objects
 
         public override string ToString()
         {
-            return "Stop("+Id+")";
+            string toString = "Stop(" + Id + ")";
+            if (IsDummy)
+            {
+                toString = "Dummy " + toString;
+            }
+
+            return toString;
         }
 
     }

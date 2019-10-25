@@ -4,43 +4,42 @@ using System.Text;
 
 namespace Simulator.Objects.Data_Objects
 {
-    public class TransportationNetwork//Class that contains all data for the transportation network such as arc distances, all the routes, all the stops, the demands for each stop
+    public static class TransportationNetwork//Class that contains all data for the transportation network such as arc distances, all the routes, all the stops, the demands for each stop
     {
-        public List<Route> Routes;
+        public static List<Route> Routes => _simulationDataLoader.Routes;
 
-        public List<Stop> Stops;
+        public static List<Stop> Stops => _simulationDataLoader.Stops;
 
-        public Dictionary<Tuple<Stop, Stop>, double> ArcDictionary; //Dictionary with tuples of stops and its respective distances
-
-        public DemandsDataObject DemandsDataObject;
-
-        public TransportationNetwork()
+        public static Dictionary<Tuple<Stop, Stop>, double> ArcDictionary
         {
-            var routesDataObject = new SimulationDataLoader(true);
-            Routes = routesDataObject.Routes;
-            Stops = routesDataObject.Stops;
-            DemandsDataObject = routesDataObject.DemandsDataObject;
-            ArcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
-            LoadArcDictionary();
-        }
-
-        private void LoadArcDictionary()
-        {
-            ArcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
-            foreach (var stopO in Stops)
-            {
-                foreach (var stopD in Stops)
+            get {
+                if (_arcDictionary == null)
                 {
-                    var distance = DistanceCalculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
-                        stopD.Latitude, stopD.Longitude);
-                    var tuple = Tuple.Create(stopO, stopD);
-                    if (!ArcDictionary.ContainsKey(tuple))
+                    _arcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
+                    foreach (var stopSource in Stops)
                     {
-                        ArcDictionary.Add(tuple,distance);
+                        foreach (var stopDestination in Stops)
+                        {
+                            var distance = DistanceCalculator.CalculateHaversineDistance(stopSource.Latitude,
+                                stopSource.Longitude,
+                                stopDestination.Latitude, stopDestination.Longitude);
+                            var tuple = Tuple.Create(stopSource, stopDestination);
+                            if (!_arcDictionary.ContainsKey(tuple))
+                            {
+                                _arcDictionary.Add(tuple, distance);
+                            }
+                        }
                     }
                 }
+
+                return _arcDictionary;
             }
-        }
-        
+        } //Dictionary with tuples of stops and its respective distances
+
+        private static Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
+        public static DemandsDataObject DemandsDataObject => _simulationDataLoader.DemandsDataObject;
+
+        private static SimulationDataLoader _simulationDataLoader = new SimulationDataLoader(true);
+   
     }
 }

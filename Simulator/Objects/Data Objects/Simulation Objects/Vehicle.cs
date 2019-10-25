@@ -11,14 +11,13 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public IEnumerator<Trip> TripIterator;
 
-        public Vehicle(int speed, int capacity, Dictionary<Tuple<Stop, Stop>, double> arcDictionary, bool flexibleRouting)
+        public Vehicle(int speed, int capacity, bool flexibleRouting)
         {
             Id = Interlocked.Increment(ref _nextId);
             Speed = speed;
             Capacity = capacity;
             Customers = new List<Customer>(Capacity);
             ServiceTrips = new List<Trip>();
-            ArcDictionary = arcDictionary;
             FlexibleRouting = flexibleRouting;
             IsIdle = true;
         }
@@ -29,8 +28,6 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         public int Capacity { get; internal set; }
 
         public string SeatsState => "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] ";
-
-        public Dictionary<Tuple<Stop,Stop>,double> ArcDictionary { get; internal set; }
 
         public bool IsFull => Customers.Count >= Capacity;
 
@@ -119,7 +116,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     TripIterator.Current.StopsIterator.NextStop);
                 var currentStopIndex = TripIterator.Current.StopsIterator.CurrentIndex;
                 //TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
-                ArcDictionary.TryGetValue(tuple, out var distance);
+                TransportationNetwork.ArcDictionary.TryGetValue(tuple, out var distance);
                 TransverseToNextStop(distance, time);
                 return true;
             }

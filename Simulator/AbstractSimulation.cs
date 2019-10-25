@@ -22,8 +22,6 @@ namespace Simulator
 
         protected Logger.Logger ConsoleLogger;
 
-        protected TransportationNetwork TransportationNetwork;
-
         protected EventGenerator EventGenerator;
 
         protected int TotalEventsHandled;
@@ -42,8 +40,7 @@ namespace Simulator
 
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-            
-            TransportationNetwork = new TransportationNetwork();
+           
             EventGenerator = EventGenerator.GetEventGenerator();
             TotalEventsHandled = 0;
         }
