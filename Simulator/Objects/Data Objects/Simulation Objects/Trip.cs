@@ -39,7 +39,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public List<Customer> ServicedCustomers { get; internal set; }
 
-        public List<long[]> ExpectedTimeWindows;
+        public List<long[]> ScheduledTimeWindows;
 
         public List<Customer> ExpectedCustomers;
 
@@ -66,7 +66,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         public void AssignStops(List<Stop> stops, List<long[]> expectedTimeWindows, int currentIndex) //assign route stops
         {
             Stops = stops;
-            ExpectedTimeWindows = expectedTimeWindows;
+            ScheduledTimeWindows = expectedTimeWindows;
             StopsIterator = new StopsIterator(stops);
             StopsIterator.Init(currentIndex);
         }

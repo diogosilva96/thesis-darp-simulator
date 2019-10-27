@@ -145,8 +145,8 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //Add Time window constraints
                 _routingModel.AddDimension(
                     _transitCallbackIndex, // transit callback
-                    999999, // allow waiting time 
-                    999999, // maximum travel time per vehicle
+                    60*30, // allow waiting time 
+                    60*24*60, // maximum travel time per vehicle
                     false, // start cumul to zero
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");

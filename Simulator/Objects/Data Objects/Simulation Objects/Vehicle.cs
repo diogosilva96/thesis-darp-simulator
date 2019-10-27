@@ -145,7 +145,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 TripIterator.Current.TotalDistanceTraveled =
                     TripIterator.Current.TotalDistanceTraveled + distance;
                 Console.WriteLine(ToString() + "started traveling to " +
-                                  TripIterator.Current.StopsIterator.NextStop + " at " + t + ".");
+                                  TripIterator.Current.StopsIterator.NextStop + " (Distance: "+Math.Round(distance)+" meters) at " + t + ".");
                 
                 return true;
             }
