@@ -108,7 +108,7 @@ namespace Simulator.Events
                         Customer customer = new Customer(new Stop[] { stop, dropOffStop},time);
                         if (!vehicle.IsFull)
                         { 
-                            enterTime++;
+                            enterTime+=2;
                         }
 
                         var customerEnterVehicleEvent =

@@ -335,22 +335,20 @@ namespace Simulator.Objects.Data_Objects.DARP
                         //routeStops add
                         currentStop = _darpDataModel.IndexManager.GetStop(nodeIndex);
                         var timeVar = timeDim.CumulVar(index);
-                        if (previousStop != null && currentStop != null && currentStop.Id == previousStop.Id )
+                        if (currentStop != null && previousStop != null && currentStop.Id == previousStop.Id)
                         {
-                            if (previousStop.IsDummy)
-                            {
-                                    routeStops.Remove(previousStop); //removes previous stop
-                                    routeTimeWindows.Remove(timeWindow);//removes previous time window
-                                    routeStops.Add(currentStop); //adds current stop
-                                    var joinedTimeWindow = new[] {timeWindow[0], solution.Max(timeVar)};//adds the new timewindow the junction of the previous min time from the dummy stop
-                                    //with max timewindow value for the currentstop (the real stop)
-                                    routeTimeWindows.Add(joinedTimeWindow); 
-                            }
-                            
+
+                            routeStops.Remove(previousStop); //removes previous stop
+                            routeStops.Add(currentStop); //adds current stop
+                            var joinedTimeWindow = new[] {timeWindow[0], solution.Max(timeVar)}; //adds the new timewindow the junction of the previous min time from the dummy stop
+                            //with max timewindow value for the currentstop (the real stop)
+                            routeTimeWindows.Remove(timeWindow); //removes previous time window
+                            routeTimeWindows.Add(joinedTimeWindow);
+
                         }
                         else
                         {
-                            if (currentStop.IsDummy && currentStop != null)
+                            if (currentStop != null && currentStop.IsDummy)
                             {
                                 currentStop = TransportationNetwork.Stops.Find(s => s.Id == currentStop.Id); //finds the non dummy stop
                             }
@@ -414,7 +412,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     long routeLoad = 0;
                     long routeDistance = 0;
                     long previousRouteLoad = 0;
-                    printableList.Add("Vehicle "+i+" Route:");
+                    printableList.Add("Vehicle "+_darpDataModel.IndexManager.Vehicles[i].Id+" Route:");
                     var index = _routingModel.Start(i);
                     string concatenatedString = "";
                     while (_routingModel.IsEnd(index) == false)
@@ -434,7 +432,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                         {
                             concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
                                                   solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
-                                                  routeLoad + ") --[" + distance + "m]--> ";
+                                                  routeLoad + ") --[" + Math.Round(distance) + "m = "+timeToTravel+" secs]--> ";
                         }
                         if (_darpDataModel.IndexManager.GetStop(_routingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {

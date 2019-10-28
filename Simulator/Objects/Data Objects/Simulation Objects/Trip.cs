@@ -78,6 +78,8 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             TotalDistanceTraveled = 0;
             HasStarted = false;
         }
+
+      
         public bool Start(int time)
         {
             if (!IsDone)

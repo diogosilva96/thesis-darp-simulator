@@ -62,6 +62,52 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             return false;
         }
 
+        public void PrintRoute(List<Stop> stops, List<long[]> timeWindows, List<Customer> routeCustomers)
+        {
+            if (stops != null)
+            {
+                Console.WriteLine("Route for Vehicle "+this.Id +" (Total stops: "+stops.Count+"):");
+                var totalEnterVehicle = 0;
+                var totalLeaveVehicle = 0;
+                for (int i = 0; i < stops.Count; i++)
+                {
+                    var stopTimeWindow = "";
+                    var load = "";
+                    if (timeWindows != null && timeWindows.Count == stops.Count)
+                    {
+                        stopTimeWindow = "T(" + timeWindows[i][0] + ", " + timeWindows[i][1] + ")";
+                    }
+
+                    if (routeCustomers != null && timeWindows != null)
+                    {
+                        //need to check
+                        var numCustomersEnterAtCurrentStop = routeCustomers.FindAll(c =>
+                            c.PickupDelivery[0] == stops[i] && stops.Contains(c.PickupDelivery[1]) && i <= stops.IndexOf(c.PickupDelivery[1]) && c.DesiredTimeWindow[0] <= timeWindows[i][1]).Count;
+                        var numCustomersLeaveAtCurrentStop =
+                            routeCustomers.FindAll(c => c.PickupDelivery[1] == stops[i] && stops.Contains(c.PickupDelivery[0]) && stops.IndexOf(c.PickupDelivery[0]) <= i && timeWindows[i][0] >= c.DesiredTimeWindow[0]).Count;
+                        var currentLoad = numCustomersEnterAtCurrentStop - numCustomersLeaveAtCurrentStop;
+                        totalEnterVehicle += numCustomersEnterAtCurrentStop;
+                        totalLeaveVehicle += numCustomersLeaveAtCurrentStop;
+                        //load = " , ENTER(" + (numCustomersEnterAtCurrentStop) + ") , " + "LEAVE(" + (numCustomersLeaveAtCurrentStop) + ")";
+
+                    }
+                    if (i == stops.Count - 1)
+                    {
+                        Console.WriteLine(stops[i] + ":" + stopTimeWindow + load);
+                        break;
+                    }
+                    Console.Write(stops[i] + ": "+stopTimeWindow+ load +" -> ");
+                   
+                }
+                Console.WriteLine("Total enters: "+totalEnterVehicle);
+                Console.WriteLine("Total Leave: "+totalLeaveVehicle);
+            }
+            else
+            {
+                throw new Exception("Stops == null");
+            }
+        }
+
         public bool Arrive(Stop stop, int time)
         {
             IsIdle = true;
@@ -88,6 +134,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                                       TimeSpan.FromSeconds(time) + ", Duration:" +
                                       Math.Round(TimeSpan.FromSeconds(TripIterator.Current.RouteDuration)
                                           .TotalMinutes) + " minutes.");
+              
                     TripIterator.MoveNext();
                     if (TripIterator.Current == null)
                     {
@@ -115,7 +162,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
                     TripIterator.Current.StopsIterator.NextStop);
                 var currentStopIndex = TripIterator.Current.StopsIterator.CurrentIndex;
-                //TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
+                TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
                 TransportationNetwork.ArcDictionary.TryGetValue(tuple, out var distance);
                 TransverseToNextStop(distance, time);
                 return true;
