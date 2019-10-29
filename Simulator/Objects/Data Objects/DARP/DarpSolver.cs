@@ -8,20 +8,33 @@ namespace Simulator.Objects.Data_Objects.DARP
 {
     public class DarpSolver //pickup delivery with time windows solver
     {
-        private DarpDataModel _darpDataModel;
+        public DarpDataModel DataModel;
         private RoutingIndexManager _routingIndexManager;
         private RoutingModel _routingModel;
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
         public bool DropNodesAllowed;
+        private long _maximumWaitTime;
+        private long _maximumRouteTravelTime;
         public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
-        
 
-        public DarpSolver(bool dropNodesAllowed)
+
+        public DarpSolver(DarpDataModel dataModel, bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxUpperBound = 0; //default value
-            
+            _maximumWaitTime = 60 * 30; //30mins
+            _maximumRouteTravelTime = 60 * 60 * 24; //24hours
+            if (dataModel.TimeWindows.GetLength(0) == dataModel.TimeMatrix.GetLength(0))
+            {
+                DataModel = dataModel;
+            }
+            else
+            {
+                throw new ArgumentException("There is a problem in DataModel inputs");
+            }
+
+
         }
 
         public override string ToString()
@@ -31,173 +44,165 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public void Init()
         {
-            // Create RoutingModel Index RoutingIndexManager
-            if (_darpDataModel.Starts != null && _darpDataModel != null)
+            if (DataModel != null)
             {
-                _routingIndexManager = new RoutingIndexManager(
-                    _darpDataModel.TimeMatrix.GetLength(0),
-                    _darpDataModel.IndexManager.Vehicles.Count,
-                    _darpDataModel.Starts, _darpDataModel.Ends);
-            }
-            else
-            {
-                _routingIndexManager = new RoutingIndexManager(
-                    _darpDataModel.TimeMatrix.GetLength(0),
-                    _darpDataModel.IndexManager.Vehicles.Count,
-                    0);
-            }
-
-            //Create routing model
-            _routingModel = new RoutingModel(_routingIndexManager);
-            // Create and register a transit callback.
-            _transitCallbackIndex = _routingModel.RegisterTransitCallback(
-                (long fromIndex, long toIndex) =>
+                // Create RoutingModel Index RoutingIndexManager
+                if (DataModel.Starts != null && DataModel.Ends != null)
                 {
-                    // Convert from routing variable Index to time matrix or distance matrix NodeIndex.
-                    var fromNode = _routingIndexManager.IndexToNode(fromIndex);
-                    var toNode = _routingIndexManager.IndexToNode(toIndex);
-                    return _darpDataModel.TimeMatrix[fromNode, toNode];
+                    _routingIndexManager = new RoutingIndexManager(
+                        DataModel.TimeMatrix.GetLength(0),
+                        DataModel.IndexManager.Vehicles.Count,
+                        DataModel.Starts, DataModel.Ends);
                 }
-            );
+                else
+                {
+                    throw new Exception("Starts or Ends in DataModel is null");
+                }
 
-            //Create and register demand callback
-            _demandCallbackIndex = _routingModel.RegisterUnaryTransitCallback(
-                (long fromIndex) => {
-                    // Convert from routing variable Index to demand NodeIndex.
-                    var fromNode = _routingIndexManager.IndexToNode(fromIndex);
-                    return _darpDataModel.Demands[fromNode];
-                }
-            );
+                //Create routing model
+                _routingModel = new RoutingModel(_routingIndexManager);
+                // Create and register a transit callback.
+                _transitCallbackIndex = _routingModel.RegisterTransitCallback(
+                    (long fromIndex, long toIndex) =>
+                    {
+                        // Convert from routing variable Index to time matrix or distance matrix NodeIndex.
+                        var fromNode = _routingIndexManager.IndexToNode(fromIndex);
+                        var toNode = _routingIndexManager.IndexToNode(toIndex);
+                        return DataModel.TimeMatrix[fromNode, toNode];
+                    }
+                );
+
+                //Create and register demand callback
+                _demandCallbackIndex = _routingModel.RegisterUnaryTransitCallback(
+                    (long fromIndex) => {
+                        // Convert from routing variable Index to demand NodeIndex.
+                        var fromNode = _routingIndexManager.IndexToNode(fromIndex);
+                        return DataModel.Demands[fromNode];
+                    }
+                );
 
  
-            if (DropNodesAllowed)
-            {
-                // Allow to drop nodes.
-                //The penalty should be larger than the sum of all travel times locations (excluding the depot).
-                //As a result, after dropping one location to make the problem feasible, the solver won't drop any additional locations,
-                //because the penalty for doing so would exceed any further reduction in travel time.
-                //If we want to make as many deliveries as possible, penalty value should be larger than the sum of all travel times between locations
-                long penalty = 9999999;
-                for (int i = 1; i < _darpDataModel.TimeMatrix.GetLength(0); ++i)
+                if (DropNodesAllowed)
                 {
-                    _routingModel.AddDisjunction(new long[] {_routingIndexManager.NodeToIndex(i)}, penalty);
+                    // Allow to drop nodes.
+                    //The penalty should be larger than the sum of all travel times locations (excluding the depot).
+                    //As a result, after dropping one location to make the problem feasible, the solver won't drop any additional locations,
+                    //because the penalty for doing so would exceed any further reduction in travel time.
+                    //If we want to make as many deliveries as possible, penalty value should be larger than the sum of all travel times between locations
+                    long penalty = 9999999;
+                    for (int i = 1; i < DataModel.TimeMatrix.GetLength(0); ++i)
+                    {
+                        _routingModel.AddDisjunction(new long[] {_routingIndexManager.NodeToIndex(i)}, penalty);
+                    }
                 }
-            }
 
-            _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
-            AddPickupDeliveryDimension(); //Adds the pickup delivery dimension, which contains the pickup and delivery constraints
-            AddTimeWindowDimension(MaxUpperBound); //Adds the time window dimension, which contains the timewindow constraints, upper bound limit = maxupperbound*60seconds
-            AddCapacityDimension();
+                _routingModel.SetArcCostEvaluatorOfAllVehicles(_transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
 
-        }
-
-        private void AddCapacityDimension()
-        {
-            if (_darpDataModel != null)
-            {
-                //Adds capacity constraints
-                _routingModel.AddDimensionWithVehicleCapacity(
-                    _demandCallbackIndex, 0,  // null capacity slack
-                    _darpDataModel.VehicleCapacities,   // vehicle maximum capacities
-                    false,                      // start cumul to zero
-                    "Capacity");
-
-            }
-        }
-
-        private void AddPickupDeliveryDimension()
-        {
-            if (_darpDataModel != null)
-            {
-                // Add Distance constraints
-                _routingModel.AddDimension(_transitCallbackIndex, 9999999, 99999999,
-                    false, // start cumul to zero
-                    "PickupDelivery");
-                RoutingDimension pickupDeliveryDimension = _routingModel.GetMutableDimension("PickupDelivery");
-                pickupDeliveryDimension.SetGlobalSpanCostCoefficient(100);
-                //SetGlobalSpanCostCoefficient sets a large coefficient(100) for the global span of the routes, which in this example is the maximum of the distances of the routes.
-                //This makes the global span the predominant factor in the objective function, so the program minimizes the length of the longest route.
-
-                // Define Transportation Requests (pickup and delivery) and its respective constraints.
-                var solver = _routingModel.solver(); //Gets the underlying constraint solver
-                for (int i = 0; i < _darpDataModel.PickupsDeliveries.GetLength(0); i++)
-                {
-                    long pickupIndex =
-                        _routingIndexManager.NodeToIndex(_darpDataModel.PickupsDeliveries[i][0]); //pickup index
-                    long deliveryIndex =
-                        _routingIndexManager.NodeToIndex(_darpDataModel.PickupsDeliveries[i][1]); //delivery index
-                    _routingModel.AddPickupAndDelivery(pickupIndex, deliveryIndex); //Notifies that the pickupIndex and deliveryIndex form a pair of nodes which should belong to the same route.
-                    solver.Add(solver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
-                    solver.Add(solver.MakeLessOrEqual(pickupDeliveryDimension.CumulVar(pickupIndex), pickupDeliveryDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
-                }
-               
-            }
-        }
-
-
-        private void AddTimeWindowDimension(int maxUpperBoundLimitInSeconds)
-        {
-            //Max upper bound limit received as parameter, defines the maximum arrival time at the delivery location (e.g a request with {10,20} the maximum arrival time at the delivery location will be 20 + maxUpperBoundLimitInSeconds)
-            // this is used to relax the problem, if needed in cases such as if the problem isn't possible to be solved with the current timewindow requests.
-            if (_darpDataModel != null)
-            {
+            
 
                 //Add Time window constraints
                 _routingModel.AddDimension(
                     _transitCallbackIndex, // transit callback
-                    60*30, // allow waiting time 
-                    60*24*60, // maximum travel time per vehicle
+                    _maximumWaitTime, // allow waiting time 
+                    _maximumRouteTravelTime, // maximum travel time per vehicle
                     false, // start cumul to zero
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");
+                timeDimension.SetGlobalSpanCostCoefficient(100);
                 // Add time window constraints for each location except depot.
-                for (int i = 0; i < _darpDataModel.TimeWindows.GetLength(0); ++i)
+                for (int i = 0; i < DataModel.TimeWindows.GetLength(0); i++)
                 {
                     long index = _routingIndexManager.NodeToIndex(i); //gets the node index
-                  
-                        if (index != -1)   
-                        {
-                            timeDimension.CumulVar(index)
-                                .SetMin(_darpDataModel.TimeWindows[i, 0]); //Sets the minimum upper bound limit
-                            timeDimension.CumulVar(index)
-                                .SetMax(_darpDataModel.TimeWindows[i, 1] +
-                                        maxUpperBoundLimitInSeconds); //Sets the maximum upper bound limit
-                            timeDimension.SetCumulVarSoftUpperBound(index, _darpDataModel.TimeWindows[i, 1],
-                                1000); //adds soft upper bound limit which is the requested time window
-                        }
+                    if (index != -1)
+                    {
+                        var lowerBound = DataModel.TimeWindows[i, 0]; //minimum time to be at current index (lower bound for the timeWindow of current Index)
+                        var softUpperBound = DataModel.TimeWindows[i, 1]; //soft maxUpperBound for the timeWindow at current index
+                        var upperBound = softUpperBound + MaxUpperBound; //maxUpperBound to be at current index (upperbound for the timeWindow at current index)
+                        //softupperbound and upperbound are different because the upperbound is usually bigger than the softuppberbound in order to soften the current timeWindows, enabling to generate a solution that accomodates more requests
+                        timeDimension.CumulVar(index).SetRange(lowerBound, upperBound); //sets the maximum upper bound and lower bound limit for the timeWindow at the current index
+                        timeDimension.SetCumulVarSoftUpperBound(index, softUpperBound, 1000); //adds soft upper bound limit which is the requested time window
+                        _routingModel.AddToAssignment(timeDimension.SlackVar(index)); //add slack var for current index to the assignment
+                        _routingModel.AddToAssignment(timeDimension.TransitVar(index)); // add transit var for current index to the assignment
+                    }
                 }
 
                 // Add time window constraints for each vehicle start node.
-                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; i++)
                 {
                     long index = _routingModel.Start(i);
-                    var startDepotIndex = _darpDataModel.Starts[i];
-                    timeDimension.CumulVar(index).SetRange(_darpDataModel.TimeWindows[startDepotIndex, 0], _darpDataModel.TimeWindows[startDepotIndex, 1]); //this guarantees that a vehicle must visit the location during its time window
+                    var startDepotIndex = DataModel.Starts[i];
+                    timeDimension.CumulVar(index).SetRange(DataModel.TimeWindows[startDepotIndex, 0], DataModel.TimeWindows[startDepotIndex, 1]); //this guarantees that a vehicle must visit the location during its time 
+
+                    //timeDimension.SlackVar(index).SetRange(0, _maximumWaitTime);
+                    _routingModel.AddToAssignment(timeDimension.SlackVar(index)); //add slack var for depot index for vehicle i to assignment
+                    _routingModel.AddToAssignment(timeDimension.TransitVar(index));//add transit var for depot index for vehicle i to assignment
                 }
 
-                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; i++)
                 {
                     _routingModel.AddVariableMinimizedByFinalizer(
                         timeDimension.CumulVar(_routingModel.Start(i)));
                     _routingModel.AddVariableMinimizedByFinalizer(
                         timeDimension.CumulVar(_routingModel.End(i)));
-
                 }
 
                 var solver = _routingModel.solver();
                 //Add client max ride time constraint, enabling better service quality
                 for (int i = 0; i < _routingModel.Size(); i++)
                 {
-                    var pickupDeliveryPairs = Array.FindAll(_darpDataModel.PickupsDeliveries,
-                        pickupDelivery => pickupDelivery[0] == i); //finds all the pickupdelivery pairs with pickup index i 
+                    var pickupDeliveryPairs = Array.FindAll(DataModel.PickupsDeliveries, pickupDelivery => pickupDelivery[0] == i); //finds all the pickupdelivery pairs with pickup index i 
                     foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
                     {
                         var deliveryIndex = pickupDelivery[1];
                         var realRideTimeDuration = timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
-                        solver.Add(realRideTimeDuration < _darpDataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the maxCustomerRideTime Duration
+                        solver.Add(realRideTimeDuration < DataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the maxCustomerRideTime Duration
                     }
                 }
+
+                for (int i = 0; i < DataModel.PickupsDeliveries.GetLength(0); i++)
+                {
+                    long pickupIndex = _routingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][0]); //pickup index
+                    long deliveryIndex = _routingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][1]); //delivery index
+                    _routingModel.AddPickupAndDelivery(pickupIndex, deliveryIndex); //Notifies that the pickupIndex and deliveryIndex form a pair of nodes which should belong to the same route.
+                    solver.Add(solver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
+                    solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
+                }
+
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; i++)
+                {
+                    foreach (var customerInsideVehicle in DataModel.IndexManager.Vehicles[i].Customers)
+                    {
+                        long index = _routingModel.Start(i);//vehicle that starts at i
+                        var deliveryIndex = _routingIndexManager.NodeToIndex(DataModel.IndexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]));
+                        solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index), _routingModel.VehicleVar(deliveryIndex))); //vehicle i has to be the one that delivers customer with deliveryIndex;
+                        //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
+                    }
+                }
+
+                //Adds capacity constraints
+                    _routingModel.AddDimensionWithVehicleCapacity(
+                    _demandCallbackIndex, 0,  // null capacity slack
+                    DataModel.VehicleCapacities,   // vehicle maximum capacities
+                    false,     // start cumul to zero
+                    "Capacity");
+                RoutingDimension capacityDimension = _routingModel.GetMutableDimension("Capacity");
+                //Add transit vars for Capacity Dimension to the Assignment
+                for (int i = 0; i < DataModel.TimeWindows.GetLength(0); i++)
+                {
+                    long index = _routingIndexManager.NodeToIndex(i); //gets the node index
+                    if (index != -1)
+                    {
+                        _routingModel.AddToAssignment(capacityDimension.TransitVar(index)); //add transit var for index i
+                    }
+                }
+
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; i++)
+                {
+                    long index = _routingModel.Start(i);
+                    _routingModel.AddToAssignment(capacityDimension.TransitVar(index));//add transit var for vehicle i depot
+                }
             }
+
         }
 
         private RoutingSearchParameters GetDefaultSearchParameters()
@@ -211,12 +216,11 @@ namespace Simulator.Objects.Data_Objects.DARP
             return searchParameters;
         }
 
-        public Assignment TryGetFastSolution(DarpDataModel darpDataModel)
+        public Assignment TryGetFastSolution()
         {
-            _darpDataModel = darpDataModel;
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < _darpDataModel.MaxAllowedUpperBoundTime; maxUpperBound=maxUpperBound+60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
+            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound=maxUpperBound+60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
             {
                 MaxUpperBound = maxUpperBound;
                 Init();
@@ -263,10 +267,10 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
         public Assignment TryGetSolutionWithSearchStrategy(DarpDataModel darpDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
-            _darpDataModel = darpDataModel;
+            DataModel = darpDataModel;
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < _darpDataModel.MaxAllowedUpperBoundTime; maxUpperBound++)
+            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound++)
             {
                 MaxUpperBound = maxUpperBound;
                 Init();
@@ -315,11 +319,18 @@ namespace Simulator.Objects.Data_Objects.DARP
             if (solution != null)
             {
                
-                List<Customer> allCustomers = _darpDataModel.IndexManager.Customers;
+                List<Customer> allCustomers = new List<Customer>(DataModel.IndexManager.ExpectedCustomers);
+                foreach (var customerInVehicle in DataModel.IndexManager.CustomersInsideVehicle)
+                {
+                        if (!allCustomers.Contains(customerInVehicle))
+                        {
+                            allCustomers.Add(customerInVehicle);
+                        }
+                }
                 vehicleStopCustomerTimeWindowsDictionary =
                     new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
                 var timeDim = _routingModel.GetMutableDimension("Time");
-                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     List<Stop> routeStops = new List<Stop>();
                     int nodeIndex = 0;
@@ -333,7 +344,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                     {
                         nodeIndex = _routingIndexManager.IndexToNode(index);
                         //routeStops add
-                        currentStop = _darpDataModel.IndexManager.GetStop(nodeIndex);
+                        currentStop = DataModel.IndexManager.GetStop(nodeIndex);
                         var timeVar = timeDim.CumulVar(index);
                         if (currentStop != null && previousStop != null && currentStop.Id == previousStop.Id)
                         {
@@ -368,23 +379,30 @@ namespace Simulator.Objects.Data_Objects.DARP
                     routeTimeWindows.Add(timeWindow);
 
                     //routeStops add
-                    currentStop = _darpDataModel.IndexManager.GetStop(nodeIndex);
+                    currentStop = DataModel.IndexManager.GetStop(nodeIndex);
                     routeStops.Add(currentStop); //adds the current stop
                     foreach (var customer in allCustomers) //loop to add the customers to the routecustomers
                     {
                         var pickupStop = customer.PickupDelivery[0];
                         var deliveryStop = customer.PickupDelivery[1];
-                        if (routeStops.Contains(pickupStop) &&
-                            routeStops.Contains(deliveryStop)) //If the route contains the pickup and delivery stop
+                        if (routeStops.Contains(pickupStop) && routeStops.Contains(deliveryStop)) //If the route contains the pickup and delivery stop
                         {
-                            if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop)) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                            if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop) && !routeCustomers.Contains(customer)) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                            {
+                                routeCustomers.Add(customer);
+                            }
+                        }
+
+                        if (routeStops.Contains(deliveryStop))//for the cases where there is a customer already in the vehicle, and the pickup index was already calculated previously, and therefore only needs to account for the deliveryStop
+                        {
+                            if (routeStops.IndexOf(deliveryStop) >= 0 && routeStops.IndexOf(pickupStop) == -1 && !routeCustomers.Contains(customer))
                             {
                                 routeCustomers.Add(customer);
                             }
                         }
                     }
                     var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
-                    vehicleStopCustomerTimeWindowsDictionary.Add(_darpDataModel.IndexManager.GetVehicle(i),
+                    vehicleStopCustomerTimeWindowsDictionary.Add(DataModel.IndexManager.GetVehicle(i),
                         tuple); //adds the vehicle index + tuple with the customer and routestop list
                 }
             }
@@ -399,45 +417,50 @@ namespace Simulator.Objects.Data_Objects.DARP
             if (solution != null)
             {
                 var timeDim = _routingModel.GetMutableDimension("Time");
-                var pickupDeliveryDim = _routingModel.GetMutableDimension("PickupDelivery");
                 var capacityDim = _routingModel.GetMutableDimension("Capacity");
                 long totalTime = 0;
                 long totalDistance = 0;
                 long totalLoad = 0;
                 
                 var solutionObject = GetSolutionObject(solution);
-                for (int i = 0; i < _darpDataModel.IndexManager.Vehicles.Count; ++i)
+                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     int nodeIndex = 0;
                     long routeLoad = 0;
                     long routeDistance = 0;
                     long previousRouteLoad = 0;
-                    printableList.Add("Vehicle "+_darpDataModel.IndexManager.Vehicles[i].Id+" Route:");
+                    printableList.Add("Vehicle "+DataModel.IndexManager.Vehicles[i].Id+" Route:");
                     var index = _routingModel.Start(i);
                     string concatenatedString = "";
                     while (_routingModel.IsEnd(index) == false)
                     {
                         previousRouteLoad = routeLoad;
-                        var timeVar = timeDim.CumulVar(index);
+                        var timeCumulVar = timeDim.CumulVar(index);
+                        var timeSlackVar = timeDim.SlackVar(index);
+                        var timeTransitVar = timeDim.TransitVar(index);
+                        var capacityCumulVar = capacityDim.CumulVar(index);
+                        var capacityTransitVar = capacityDim.TransitVar(index);
                         nodeIndex = _routingIndexManager.IndexToNode(index);
-                        routeLoad += _darpDataModel.Demands[nodeIndex];
+                        routeLoad += DataModel.Demands[nodeIndex];
 
                         var previousIndex = index;
                         index = solution.Value(_routingModel.NextVar(index));
                         //printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(index))); //current capacity
-                        double timeToTravel = _routingModel.GetArcCostForVehicle(previousIndex, index,
-                            0);
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,_darpDataModel.VehicleSpeed);
-                        if (_darpDataModel.IndexManager.GetStop(nodeIndex) != null)
+                        double timeToTravel = solution.Value(timeTransitVar);
+                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.VehicleSpeed);
+                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex)+" Time Dimension - Cumul: ("+solution.Min(timeCumulVar)+","+solution.Max(timeCumulVar)+") - Slack: ("+solution.Min(timeSlackVar)+","+solution.Max(timeSlackVar)+") - Transit: ("+solution.Value(timeTransitVar)+")");
+                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) +" Capacity Dimension - Cumul:"+solution.Value(capacityCumulVar)+" Transit:"+solution.Value(capacityTransitVar));
+                        if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
-                                                  solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
-                                                  routeLoad + ") --[" + Math.Round(distance) + "m = "+timeToTravel+" secs]--> ";
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                                                  solution.Min(timeCumulVar) + "," + solution.Max(timeCumulVar) + "), L(" +
+                                                  routeLoad + ") --[" + Math.Round(distance) + "m = "+ solution.Value(timeTransitVar)+ " secs]--> ";
+
                         }
-                        if (_darpDataModel.IndexManager.GetStop(_routingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
+                        if (DataModel.IndexManager.GetStop(_routingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {
-                            concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
-                                                  solution.Min(timeVar) + "," + solution.Max(timeVar) + "), L(" +
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                                                  solution.Min(timeCumulVar) + "," + solution.Max(timeCumulVar) + "), L(" +
                                                   routeLoad + ")";
                         }
 
@@ -446,23 +469,23 @@ namespace Simulator.Objects.Data_Objects.DARP
 
                     }
 
-                    var endPickupDeliveryVar = pickupDeliveryDim.CumulVar(index);      
+                    var endTimeDeliveryVar = timeDim.CumulVar(index);      
                     var endTimeVar = timeDim.CumulVar(index);
                     nodeIndex = _routingIndexManager.IndexToNode(index);
-                    routeLoad += _darpDataModel.Demands[nodeIndex];
+                    routeLoad += DataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
-                    if (_darpDataModel.IndexManager.GetStop(nodeIndex) != null)
+                    if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                     {
-                        concatenatedString += _darpDataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
+                        concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
                                               solution.Min(endTimeVar) + "," + solution.Max(endTimeVar) + "), L(" +
                                               routeLoad + ")";
                     }
 
                     printableList.Add(concatenatedString);
-                    //long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), _darpDataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
+                    //long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), DataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     printableList.Add("Route time: "+ TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes + " minutes");
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
-                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), _darpDataModel.VehicleSpeed));//NEED TO CHANGE
+                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeDeliveryVar), DataModel.VehicleSpeed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
                     printableList.Add("Average distance traveled per request: " + routeDistance/ solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count + " meters.");
@@ -475,7 +498,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 printableList.Add("Total time of all routes: "+ TimeSpan.FromSeconds(totalTime).TotalMinutes+" minutes");
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
-                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ _darpDataModel.IndexManager.Customers.Count);
+                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.ExpectedCustomers.Count);
             }
             else
             {
@@ -496,7 +519,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
                 Console.WriteLine("Maximum Upper Bound limit:" + TimeSpan.FromSeconds(MaxUpperBound).TotalMinutes + " minutes");
-                Console.WriteLine("Maximum Customer Ride Time Duration: "+TimeSpan.FromSeconds(_darpDataModel.MaxCustomerRideTime).TotalMinutes + " minutes");
+                Console.WriteLine("Maximum Customer Ride Time Duration: "+TimeSpan.FromSeconds(DataModel.MaxCustomerRideTime).TotalMinutes + " minutes");
                 var printableList = GetSolutionPrintableList(solution);
                 foreach (var stringToBePrinted in printableList)
                 {
@@ -505,7 +528,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
             else
             {
-                throw new ArgumentNullException("solution = null");
+                throw new ArgumentNullException("Solution is null");
             }
         }
 
@@ -517,8 +540,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             {
                 
                 var timeDim = _routingModel.GetMutableDimension("Time");
-                var pickupDeliveryDim = _routingModel.GetMutableDimension("PickupDelivery");
-                var vehicleNumber = _darpDataModel.IndexManager.Vehicles.Count;
+                var vehicleNumber = DataModel.IndexManager.Vehicles.Count;
                 //route metrics each index is the vehicle index
                 long[] routeTimes = new long[vehicleNumber];
                 long[] routeDistances = new long[vehicleNumber];
@@ -534,15 +556,15 @@ namespace Simulator.Objects.Data_Objects.DARP
                     {
                         var previousIndex = index;                      
                         previousRouteLoad = routeLoad;
-                        routeLoad += _darpDataModel.Demands[_routingIndexManager.IndexToNode(index)];
+                        routeLoad += DataModel.Demands[_routingIndexManager.IndexToNode(index)];
+                        var timeTransitVar = timeDim.TransitVar(index);
                         index = solution.Value(_routingModel.NextVar(index));
-                        double timeToTravel = _routingModel.GetArcCostForVehicle(previousIndex, index,
-                            0);
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, _darpDataModel.VehicleSpeed);
+                        double timeToTravel = solution.Value(timeTransitVar);
+                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, DataModel.VehicleSpeed);
                         routeDistance += (long)distance;
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     }
-                    routeLoad += _darpDataModel.Demands[_routingIndexManager.IndexToNode(index)];
+                    routeLoad += DataModel.Demands[_routingIndexManager.IndexToNode(index)];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     var endTimeVar = timeDim.CumulVar(index);
                     routeLoads[i] = totalLoad;

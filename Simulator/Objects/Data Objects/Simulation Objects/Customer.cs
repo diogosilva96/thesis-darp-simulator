@@ -95,6 +95,10 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 var customerLeft = vehicle.RemoveCustomer(this);
                 if (customerLeft)
                 {
+                    if (vehicle.TripIterator.Current.ExpectedCustomers.Contains(this))
+                    {
+                        vehicle.TripIterator.Current.ExpectedCustomers.Remove(this);
+                    }
                     TimeSpan t = TimeSpan.FromSeconds(time);
                     RealTimeWindow[1] = time; //assigns the real leave time of the time window
                     IsInVehicle = false;

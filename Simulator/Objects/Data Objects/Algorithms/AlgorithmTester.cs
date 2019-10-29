@@ -22,7 +22,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         {
             DataModel = dataModel;
             SolutionIsFeasible = false;
-            Solver = new DarpSolver(allowDropNodes);
+            Solver = new DarpSolver(dataModel,allowDropNodes);
         }
 
         public override string ToString()

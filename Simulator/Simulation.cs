@@ -153,7 +153,7 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 1884) }, new long[] { 2300, 2900 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
-            long[] startDepotsArrivalTime = new long[] { 0, 0 };
+            long[] startDepotsArrivalTime = new long[dataModelVehicles.Count];
             DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             //Print datamodel data
             DarpDataModel.PrintTimeMatrix();
@@ -168,9 +168,9 @@ namespace Simulator
             InitDataModel(2);
             if (DarpDataModel != null)
             {
-                DarpSolver darpSolver = new DarpSolver(false);
+                DarpSolver darpSolver = new DarpSolver(DarpDataModel,false);
 
-                var timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
+                var timeWindowSolution = darpSolver.TryGetFastSolution();
                 
                 DarpDataModel.DistanceMatrix = new MatrixBuilder().GetDistanceMatrix(DarpDataModel.IndexManager.Stops);
                 DarpSolutionObject darpSolutionObject = null;
@@ -196,16 +196,16 @@ namespace Simulator
 
 
 
-            DarpSolver darpSolver = new DarpSolver(false);
+            DarpSolver darpSolver = new DarpSolver(DarpDataModel,false);
             Assignment timeWindowSolution = null;
-            timeWindowSolution = darpSolver.TryGetFastSolution(DarpDataModel);
+            timeWindowSolution = darpSolver.TryGetFastSolution();
             if (timeWindowSolution != null)
             {
                 darpSolver.PrintSolution(timeWindowSolution);
                 DarpSolutionObject darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
 
                 ///////////////////////////////////////////////////////////////////////
-               var darps1 = new DarpSolver(false);
+               
                 List<DarpSolutionObject> solutionObjects = new List<DarpSolutionObject>();
                 for (int j = 0; j < darpSolutionObject.VehicleNumber; j++)
                 {
@@ -294,7 +294,8 @@ namespace Simulator
                     darpM.PrintTimeMatrix();
                     darpM.PrintPickupDeliveries();
                     darpM.PrintTimeWindows();
-                    var sol = darps1.TryGetFastSolution(darpM);
+                    var darps1 = new DarpSolver(darpM, false);
+                    var sol = darps1.TryGetFastSolution();
                     if (sol != null)
                     {
                         solutionObjects.Add(darps1.GetSolutionObject(sol));
@@ -514,20 +515,21 @@ namespace Simulator
                             alreadyHandledEvents.Count + " out of " + Events.Count + ".");
             if (alreadyHandledEvents.Count <= Events.Count)
             {
-                foreach (var alreadyHandledEvent in alreadyHandledEvents)
+                var notHandledEvents = Events.FindAll(e => !e.AlreadyHandled);
+                foreach (var notHandledEvent in notHandledEvents)
                 {
-                    ConsoleLogger.Log(alreadyHandledEvent.ToString());
+                    ConsoleLogger.Log(notHandledEvent.ToString());
                 }
             }
             toPrintList.Add(ToString() + "Vehicle Fleet Size: " + VehicleFleet.Count + " vehicle(s).");
-            toPrintList.Add(ToString()+ "Average dynamic requests per hour: "+TotalDynamicRequests / TimeSpan.FromSeconds(TotalSimulationTime).TotalHours);
+            toPrintList.Add(ToString()+ "Average Dynamic requests per hour: "+TotalDynamicRequests / TimeSpan.FromSeconds(TotalSimulationTime).TotalHours);
             toPrintList.Add(ToString() + "Total simulation time: "+TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours.");
             toPrintList.Add("-------------------------------------");
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
             foreach (var vehicle in VehicleFleet.FindAll(v=>v.FlexibleRouting))
             {
-                vehicle.PrintRoute(vehicle.TripIterator.Current.Stops, vehicle.TripIterator.Current.ScheduledTimeWindows,vehicle.TripIterator.Current.ExpectedCustomers); //scheduled route
+                vehicle.PrintRoute(vehicle.TripIterator.Current.Stops, vehicle.TripIterator.Current.ScheduledTimeWindows,vehicle.TripIterator.Current.ServicedCustomers); //scheduled route
                 vehicle.PrintRoute(vehicle.TripIterator.Current.VisitedStops, vehicle.TripIterator.Current.StopsTimeWindows, vehicle.TripIterator.Current.ServicedCustomers); //simulation route
             }
             foreach (var route in TransportationNetwork.Routes)
@@ -824,7 +826,7 @@ namespace Simulator
                                 vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,vehicle.TripIterator.Current.ScheduledTimeWindows,null);
 
                         var vehicleEvents = Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time)  || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
-                        ConsoleLogger.Log("ALL NEXT VEHICLE EVENTS (COUNT:"+vehicleEvents.Count+") (TIME >=" +evt.Time+ "):");
+                        ConsoleLogger.Log("ALL NEXT VEHICLE "+vehicle.Id+" EVENTS (COUNT:"+vehicleEvents.Count+") (TIME >=" +evt.Time+ "):");
                             foreach (var vEvent in vehicleEvents)
                             {
                                 if (vEvent is VehicleStopEvent vehicleStopArriveEvent && vEvent.Category == 0) //vehicle arrive stop event
@@ -900,61 +902,25 @@ namespace Simulator
                                 if (vehicle.TripIterator.Current != null)
                                 {
                                     List<Customer> expectedCustomers = new List<Customer>(vehicle.TripIterator.Current.ExpectedCustomers);
-                                    //ConsoleLogger.Log("Vehicle "+vehicle.Id+":");
-                                    //ConsoleLogger.Log("Expected Customers:");
                                     foreach (var customer in expectedCustomers)
                                     {
-                                        //ConsoleLogger.Log(customer.ToString());
-                                        allExpectedCustomers.Add(customer);
-                                    }
-                                    List<Customer> currentCustomers = vehicle.Customers;
-                                    
-                                    var stops = vehicle.TripIterator.Current.Stops;
-                                    var expectedVehicleTimeWindow = vehicle.TripIterator.Current.ScheduledTimeWindows;
-                                    var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
-                                    var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
-                                    foreach (var customer in currentCustomers)
-                                    {
-                                        var index = 0;
-                                        foreach (var stop in stops)
+                                        if (!allExpectedCustomers.Contains(customer))
                                         {
-                                            if (index > currentStopIndex)
-                                            {
-                                                break;
-                                            }
-
-                                            if (customer.PickupDelivery[0] == stop &&
-                                                stops.FindIndex(s => s == customer.PickupDelivery[1]) >
-                                                currentStopIndex)
-                                            {
-                                                customer.PickupDelivery[0] = stops[currentStopIndex];
-
-                                            }
-
-                                            index++;
-                                        }
-                                    }
-
-                                    var customersToBeUpdated = currentCustomers.FindAll(c => c.PickupDelivery[0] == currentStop);
-                                    foreach (var customer in customersToBeUpdated)
-                                    {
-                                        var newPickupTimeIndex = vehicle.TripIterator.Current.Stops.FindIndex(s => s == currentStop);
-                                        customer.DesiredTimeWindow[0] =
-                                            (int) expectedVehicleTimeWindow[
-                                                    newPickupTimeIndex]
-                                                [0]; //updates the time window so that it uses the current time of the simulation
-                                    }
-                                    //ConsoleLogger.Log("Current Customers:");
-                                    foreach (var customer in currentCustomers)
-                                    {
-                                        //ConsoleLogger.Log(customer.ToString());
-                                        if (!expectedCustomers.Contains(customer))
-                                        {
-                                            expectedCustomers.Add(customer);
                                             allExpectedCustomers.Add(customer);
                                         }
                                     }
-                                                       
+                                    List<Customer> currentCustomers = vehicle.Customers;
+
+                                    if (vehicle.Customers.Count > 0)
+                                    {
+                                        ConsoleLogger.Log("Customers inside vehicle: "+vehicle.Customers.Count);
+                                        foreach (var customer in vehicle.Customers)
+                                        {
+                                            
+                                            ConsoleLogger.Log("Already visited: "+customer.PickupDelivery[0]+", Need to visit:"+customer.PickupDelivery[1]);
+                                        }
+                                    }
+                                    var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                                     var dummyStop = new Stop(currentStop.Id, currentStop.Code,"dummy "+currentStop.Name, currentStop.Latitude,
                                         currentStop.Longitude);//need to use dummyStop otherwise the solver will fail, because the startDepot stop is also a pickup delivery stop
                                     dummyStop.IsDummy = true;
@@ -968,9 +934,9 @@ namespace Simulator
                                 }
 
                         }
-                        //--------------------------------------------------------------------------------------------------------------------------
-                        //Calculation of baseArrivalTime, if there is any moving vehicle, otherwise baseArrivalTime will be the current event Time
                         
+                        //--------------------------------------------------------------------------------------------------------------------------
+                        //Calculation of startDepotArrivalTime, if there is any moving vehicle, otherwise startDepotArrivalTime will be the current event Time
                         var movingVehicles = VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);
                         long[] startDepotsArrivalTimes = new long[dataModelVehicles.Count];
                         for (int i = 0; i < dataModelVehicles.Count ; i++)
@@ -990,7 +956,6 @@ namespace Simulator
                                     {
                                         if (movingVehicle.TripIterator.Current != null && movingVehicle.TripIterator.Current.StopsIterator.CurrentStop == vehicleStopEvent.Stop)
                                         {
-                                            ConsoleLogger.Log(vehicleStopEvent.GetTraceMessage());
                                             var currentStartDepotArrivalTime = startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)];
                                             startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)] = Math.Max(vehicleStopEvent.Time, (int)currentStartDepotArrivalTime); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time, and updates its value on the array
                                         }
@@ -998,15 +963,30 @@ namespace Simulator
                                 }
                             }
                         }
-                        var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles,
-                            allExpectedCustomers,startDepotsArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
-                        var solver = new DarpSolver(false);
-                        var solution = solver.TryGetFastSolution(dataModel);
+                        //end of calculation of startDepotsArrivalTime
+                        //--------------------------------------------------------------------------------------------------------------------------
+
+                        List<Customer> exCustomers = new List<Customer>(allExpectedCustomers);
+                        foreach (var vehicle in VehicleFleet)
+                        {
+                            foreach (var customer in allExpectedCustomers)
+                            {
+                                if (vehicle.Customers.Contains(customer))
+                                {
+                                    exCustomers.Remove(customer);
+                                }
+                            }
+                            
+                        }
+                        allExpectedCustomers = exCustomers;
+                        var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles, allExpectedCustomers,startDepotsArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+                        var solver = new DarpSolver(dataModel,false);
+                        var solution = solver.TryGetFastSolution();
                         if (solution != null)
                         {
                             dataModel.PrintPickupDeliveries();
                             dataModel.PrintTimeWindows();
-                            dataModel.PrintTimeMatrix();
+                            //dataModel.PrintTimeMatrix();
                             solver.PrintSolution(solution);
                             TotalServedDynamicRequests++;
                             ConsoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString() );

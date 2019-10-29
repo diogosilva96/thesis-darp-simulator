@@ -45,11 +45,12 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
             else
             {
+                
                 MaxAllowedUpperBoundTime = maxAllowedUpperBound;
                 MaxCustomerRideTime = maxCustomerRideTime;
                 StartDepotsArrivalTimes = startDepotsArrivalTimes;
                 VehicleSpeed = vehicles[0].Speed;
-                var stops = GetStops(startDepots, endDepots, customers);
+                var stops = GetStops(startDepots, endDepots, customers,vehicles);
                 IndexManager = new DataModelIndexManager(stops, vehicles, customers);
                 Starts = GetVehicleDepots(startDepots, IndexManager);
                 Ends = GetVehicleDepots(endDepots, IndexManager);
@@ -82,7 +83,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             return vehicleDepots;
         }
 
-        private List<Stop> GetStops(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers)
+        private List<Stop> GetStops(List<Stop> startDepots, List<Stop> endDepots, List<Customer> customers, List<Vehicle> vehicles)
         {
             var stops = new List<Stop>(); //clears stop list
             // initializes the list with the start depots
@@ -119,6 +120,17 @@ namespace Simulator.Objects.Data_Objects.DARP
                     }
                 }
             }
+            //adds the delivery stops for the customers that are alreadyInsideTheVehicle
+            foreach (var vehicle in vehicles)
+            {
+                foreach (var customerInsideVehicle in vehicle.Customers)
+                {
+                    if (!stops.Contains(customerInsideVehicle.PickupDelivery[1])) //adds the delivery stop if it doesnt exist in the list
+                    {
+                        stops.Add(customerInsideVehicle.PickupDelivery[1]);
+                    }
+                }
+            }
 
             return stops;
         }
@@ -126,7 +138,7 @@ namespace Simulator.Objects.Data_Objects.DARP
     
         private int[][] GetPickupDeliveries(DataModelIndexManager indexManager) //returns the pickupdelivery stop matrix using indexes (based on the stop list) instead of stop id's
         {
-            var customers = indexManager.Customers;
+            var customers = indexManager.ExpectedCustomers;
             int[][] pickupsDeliveries = new int[customers.Count][];
             //Transforms the data from stop the list into index matrix list in order to use it in google Or tools
             foreach (var customer in customers)
@@ -142,7 +154,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         private long[] GetDemands(DataModelIndexManager indexManager)
         {
             long[] demands = null;
-            var customers = indexManager.Customers;
+            var expectedCustomers = indexManager.ExpectedCustomers;
             var stops = indexManager.Stops;
             if (stops.Count > 0)
             {
@@ -153,9 +165,9 @@ namespace Simulator.Objects.Data_Objects.DARP
                     demands[i] = 0; //init demand at 0 at each index
                 }
 
-                if (customers.Count > 0)
+                if (expectedCustomers.Count > 0)
                 {
-                    foreach (var customer in customers)
+                    foreach (var customer in expectedCustomers)
                     {
                         var pickupIndex = IndexManager.GetStopIndex(customer.PickupDelivery[0]); //gets the index of the pickup stop
                         var deliveryIndex =
@@ -164,15 +176,21 @@ namespace Simulator.Objects.Data_Objects.DARP
                         demands[deliveryIndex] -= 1; //subtracts 1  to the demand of the delivery index
                     }
                 }
+
+                foreach (var customerInsideVehicle in indexManager.CustomersInsideVehicle)
+                {
+                    var deliveryIndex = IndexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]); //gets the index of the delivery stop
+                    demands[deliveryIndex] -= 1;//subtracts 1 to the demand of the delivery index
+                }
+
+                foreach (var vehicle in indexManager.Vehicles)
+                {
+                    demands[Starts[indexManager.GetVehicleIndex(vehicle)]] = vehicle.Customers.Count;//the demand at the start depot for the current vehicle will be the number of customers inside the vehicle
+                }
             }
 
             return demands;
         }
-
-        //public void UpdateDemands(int index, long value)
-        //{
-        //    Demands[index] = value;
-        //}
 
         private long[] GetVehicleCapacities(DataModelIndexManager indexManager)
         {
@@ -218,10 +236,23 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public void PrintPickupDeliveries()
         {
-            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows (total: " + IndexManager.Customers.Count + "):");
-            foreach (var customer in IndexManager.Customers)
+            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows for the expected Customers(total: " + IndexManager.ExpectedCustomers.Count + "):");
+            foreach (var customer in IndexManager.ExpectedCustomers)
             {
                 customer.PrintPickupDelivery();
+            }
+            
+            foreach (var vehicle in IndexManager.Vehicles)
+            {
+                if (vehicle.Customers.Count > 0)
+                {
+                    Console.WriteLine("Pickup and deliveries for the customer already inside the vehicle(s):");
+                    Console.WriteLine("Vehicle "+vehicle.Id+":");
+                }
+                foreach (var customersInsideVehicle in vehicle.Customers)
+                {
+                    customersInsideVehicle.PrintPickupDelivery();
+                }
             }
             Console.WriteLine("---------------------------------------------------------------");
         }
@@ -244,7 +275,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             var stops = indexManager.Stops;
             long[,] timeWindows = new long[stops.Count, 2];
             timeWindows = GetInitialTimeWindowsArray(timeWindows);
-            foreach (var customer in indexManager.Customers)
+            foreach (var customer in indexManager.ExpectedCustomers)
             {
                 //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
@@ -268,6 +299,20 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
+            //timeWindows for the deliveryIndices of the customers that are already inside the vehicle (does not need to add the pickup index timeWindow, because it was already served along the way)
+            foreach (var vehicle in indexManager.Vehicles)
+            {
+                foreach (var customerInsideVehicle in vehicle.Customers)
+                {
+                    var deliveryIndex = indexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]);
+                    var customerMaxTimeWindow = customerInsideVehicle.DesiredTimeWindow[1];
+                    var arrayMaxTimeWindow = timeWindows[deliveryIndex, 1];
+                    var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current timeWindow in the array and the current customer upperBound Time;
+                    timeWindows[deliveryIndex, 1] = upperBoundValue;
+                }
+            }
+            //end of timeWindow for the deliveryIndices of the customers that are already inside the vehicle
+
             //depot timewindows initialization
             if (Starts != null && timeWindows != null)
             {

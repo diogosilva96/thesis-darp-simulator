@@ -6,7 +6,7 @@ namespace Simulator.Events
 {
     public class DynamicRequestCheckEvent:Event
     {
-        private double _probability;
+        private readonly double _probability;
         private  double _probabilityThreshold;
         public bool GenerateNewDynamicRequest => _probability <= _probabilityThreshold;
         public DynamicRequestCheckEvent(int category, int time) : base(category, time)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
@@ -9,23 +10,36 @@ namespace Simulator.Objects.Data_Objects.DARP
     {
         public readonly List<Stop> Stops;
         public readonly List<Vehicle> Vehicles;
-        public readonly List<Customer> Customers;
+        public readonly List<Customer> ExpectedCustomers;
+        public List<Customer> CustomersInsideVehicle;
 
 
-        public DataModelIndexManager(List<Stop> stops, List<Vehicle> vehicles, List<Customer> customers)
+        public DataModelIndexManager(List<Stop> stops, List<Vehicle> vehicles, List<Customer> expectedCustomers)
         {
             Stops = stops;
             Vehicles = vehicles;
-            Customers = customers;
+            ExpectedCustomers = expectedCustomers;
+            CustomersInsideVehicle = new List<Customer>();
+            foreach (var vehicle in vehicles)
+            {
+                foreach (var customerInsideVehicle in vehicle.Customers)
+                {
+                    if (!CustomersInsideVehicle.Contains(customerInsideVehicle))
+                    {
+                        CustomersInsideVehicle.Add(customerInsideVehicle);
+                    }
+                }
+            }
         }
+
 
         public int GetCustomerIndex(Customer customer)
         {
-            return Customers.FindIndex(c=>c == customer);
+            return ExpectedCustomers.FindIndex(c=>c == customer);
         }
         public Customer GetCustomer(int index)
         {
-            return Customers[index];
+            return ExpectedCustomers[index];
         }
         public int GetVehicleIndex(Vehicle vehicle)
         {
@@ -34,7 +48,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int[] GetPickupDeliveryStopIndices(Customer customer) //returns the pickupdelivery stop indices for the customer received as argument
         {
-            if (Customers.Contains(customer))
+            if (ExpectedCustomers.Contains(customer))
             {
                 return new int[] { GetStopIndex(customer.PickupDelivery[0]), GetStopIndex(customer.PickupDelivery[1]) };
             }

@@ -61,7 +61,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public List<string> GetPrintableStatisticsList(List<AlgorithmTester> testedAlgorithms)
         {
             List<string> toPrintList = new List<string>();
-            var customers = DataModel.IndexManager.Customers;
+            var customers = DataModel.IndexManager.ExpectedCustomers;
             var vehicles = DataModel.IndexManager.Vehicles;
             toPrintList.Add("----------------------------");
             toPrintList.Add("| Data Model Configuration |");
