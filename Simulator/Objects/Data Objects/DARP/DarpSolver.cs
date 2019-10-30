@@ -168,16 +168,21 @@ namespace Simulator.Objects.Data_Objects.DARP
                     solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
                 }
 
-                for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; i++)
-                {
-                    foreach (var customerInsideVehicle in DataModel.IndexManager.Vehicles[i].Customers)
+                    foreach (var customer in DataModel.IndexManager.Customers)
                     {
-                        long index = _routingModel.Start(i);//vehicle that starts at i
-                        var deliveryIndex = _routingIndexManager.NodeToIndex(DataModel.IndexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]));
-                        solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index), _routingModel.VehicleVar(deliveryIndex))); //vehicle i has to be the one that delivers customer with deliveryIndex;
-                        //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
+                        if (customer.IsInVehicle)
+                        {
+                            var vehicleIndex = DataModel.IndexManager.Vehicles.FindIndex(v => v.Customers.Contains(customer));
+                            long index = _routingModel.Start(vehicleIndex); //vehicle that starts at i
+                            var deliveryIndex = _routingIndexManager.NodeToIndex(
+                                DataModel.IndexManager.GetStopIndex(customer.PickupDelivery[1]));
+                            solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index),
+                                _routingModel
+                                    .VehicleVar(
+                                        deliveryIndex))); //vehicle i has to be the one that delivers customer with deliveryIndex;
+                            //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
+                        }
                     }
-                }
 
                 //Adds capacity constraints
                     _routingModel.AddDimensionWithVehicleCapacity(
@@ -319,14 +324,7 @@ namespace Simulator.Objects.Data_Objects.DARP
             if (solution != null)
             {
                
-                List<Customer> allCustomers = new List<Customer>(DataModel.IndexManager.ExpectedCustomers);
-                foreach (var customerInVehicle in DataModel.IndexManager.CustomersInsideVehicle)
-                {
-                        if (!allCustomers.Contains(customerInVehicle))
-                        {
-                            allCustomers.Add(customerInVehicle);
-                        }
-                }
+                List<Customer> allCustomers = new List<Customer>(DataModel.IndexManager.Customers);
                 vehicleStopCustomerTimeWindowsDictionary =
                     new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
                 var timeDim = _routingModel.GetMutableDimension("Time");
@@ -385,19 +383,28 @@ namespace Simulator.Objects.Data_Objects.DARP
                     {
                         var pickupStop = customer.PickupDelivery[0];
                         var deliveryStop = customer.PickupDelivery[1];
-                        if (routeStops.Contains(pickupStop) && routeStops.Contains(deliveryStop)) //If the route contains the pickup and delivery stop
+                        if (!customer.IsInVehicle) //if the customer is not in the vehicle needs to check if the route contians the pickup and delivery stop and its precedence constraint
                         {
-                            if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop) && !routeCustomers.Contains(customer)) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                            if (routeStops.Contains(pickupStop) && routeStops.Contains(deliveryStop)
+                            ) //If the route contains the pickup and delivery stop
                             {
-                                routeCustomers.Add(customer);
+                                if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop) &&
+                                    !routeCustomers.Contains(customer)
+                                ) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                                {
+                                    routeCustomers.Add(customer);
+                                }
                             }
                         }
-
-                        if (routeStops.Contains(deliveryStop))//for the cases where there is a customer already in the vehicle, and the pickup index was already calculated previously, and therefore only needs to account for the deliveryStop
+                        else
                         {
-                            if (routeStops.IndexOf(deliveryStop) >= 0 && routeStops.IndexOf(pickupStop) == -1 && !routeCustomers.Contains(customer))
+                            if (routeStops.Contains(deliveryStop)) //for the cases where there is a customer already in the vehicle and therefore only needs to account for the deliveryStop
                             {
-                                routeCustomers.Add(customer);
+                                if (routeStops.IndexOf(deliveryStop) >= 0 && routeStops.IndexOf(pickupStop) == -1 &&
+                                    !routeCustomers.Contains(customer))
+                                {
+                                    routeCustomers.Add(customer);
+                                }
                             }
                         }
                     }
@@ -498,7 +505,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 printableList.Add("Total time of all routes: "+ TimeSpan.FromSeconds(totalTime).TotalMinutes+" minutes");
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
-                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.ExpectedCustomers.Count);
+                printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.Customers.Count);
             }
             else
             {

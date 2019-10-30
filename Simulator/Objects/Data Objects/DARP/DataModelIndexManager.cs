@@ -10,36 +10,24 @@ namespace Simulator.Objects.Data_Objects.DARP
     {
         public readonly List<Stop> Stops;
         public readonly List<Vehicle> Vehicles;
-        public readonly List<Customer> ExpectedCustomers;
-        public List<Customer> CustomersInsideVehicle;
+        public readonly List<Customer> Customers;
 
 
-        public DataModelIndexManager(List<Stop> stops, List<Vehicle> vehicles, List<Customer> expectedCustomers)
+        public DataModelIndexManager(List<Stop> stops, List<Vehicle> vehicles, List<Customer> customers)
         {
             Stops = stops;
             Vehicles = vehicles;
-            ExpectedCustomers = expectedCustomers;
-            CustomersInsideVehicle = new List<Customer>();
-            foreach (var vehicle in vehicles)
-            {
-                foreach (var customerInsideVehicle in vehicle.Customers)
-                {
-                    if (!CustomersInsideVehicle.Contains(customerInsideVehicle))
-                    {
-                        CustomersInsideVehicle.Add(customerInsideVehicle);
-                    }
-                }
-            }
+            Customers = customers;
         }
 
 
         public int GetCustomerIndex(Customer customer)
         {
-            return ExpectedCustomers.FindIndex(c=>c == customer);
+            return Customers.FindIndex(c=>c == customer);
         }
         public Customer GetCustomer(int index)
         {
-            return ExpectedCustomers[index];
+            return Customers[index];
         }
         public int GetVehicleIndex(Vehicle vehicle)
         {
@@ -48,7 +36,7 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int[] GetPickupDeliveryStopIndices(Customer customer) //returns the pickupdelivery stop indices for the customer received as argument
         {
-            if (ExpectedCustomers.Contains(customer))
+            if (Customers.Contains(customer))
             {
                 return new int[] { GetStopIndex(customer.PickupDelivery[0]), GetStopIndex(customer.PickupDelivery[1]) };
             }

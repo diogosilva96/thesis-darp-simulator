@@ -597,21 +597,21 @@ namespace Simulator
         
 
             //INSERTION (APPEND) OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS AND GENERATION OF THE DEPART EVENT FROM THE CURRENT STOP---------------------------------------
-            if (evt.Category == 0 && evt is VehicleStopEvent eventArrive)
+            if (evt.Category == 0 && evt is VehicleStopEvent arriveEvent)
             {
                 var arrivalTime = evt.Time;
-                var customerLeaveVehicleEvents = EventGenerator.GenerateCustomerLeaveVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, arrivalTime); //Generates customer leave vehicle event
+                var customerLeaveVehicleEvents = EventGenerator.GenerateCustomerLeaveVehicleEvents(arriveEvent.Vehicle, arriveEvent.Stop, arrivalTime); //Generates customer leave vehicle event
                 var lastInsertedLeaveTime = 0;
                 var lastInsertedEnterTime = 0;
                 lastInsertedLeaveTime = customerLeaveVehicleEvents.Count > 0 ? customerLeaveVehicleEvents[customerLeaveVehicleEvents.Count - 1].Time : arrivalTime;
 
                 List<Event> customersEnterVehicleEvents = null;
-                if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.TripIterator.Current.HasStarted)
+                if (arriveEvent.Vehicle.TripIterator.Current != null && arriveEvent.Vehicle.TripIterator.Current.HasStarted)
                 {
                     int expectedDemand = 0;
                     try
                     {
-                        expectedDemand = !eventArrive.Vehicle.FlexibleRouting ? TransportationNetwork.DemandsDataObject.GetDemand(eventArrive.Stop.Id, eventArrive.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(eventArrive.Time).Hours) : 0;
+                        expectedDemand = !arriveEvent.Vehicle.FlexibleRouting ? TransportationNetwork.DemandsDataObject.GetDemand(arriveEvent.Stop.Id, arriveEvent.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(arriveEvent.Time).Hours) : 0;
                  
                     }
                     catch (Exception)
@@ -619,7 +619,7 @@ namespace Simulator
                         expectedDemand = 0;
                     }
 
-                    customersEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(eventArrive.Vehicle, eventArrive.Stop, lastInsertedLeaveTime, expectedDemand);
+                    customersEnterVehicleEvents = EventGenerator.GenerateCustomersEnterVehicleEvents(arriveEvent.Vehicle, arriveEvent.Stop, lastInsertedLeaveTime, expectedDemand);
                     if (customersEnterVehicleEvents.Count > 0)
                         lastInsertedEnterTime = customersEnterVehicleEvents[customersEnterVehicleEvents.Count - 1].Time;
                 }
@@ -633,14 +633,14 @@ namespace Simulator
                 //INSERTION OF CUSTOMER ENTER VEHICLE FOR THE FLEXIBLE REQUESTS!
         
                    
-                        if (eventArrive.Vehicle.TripIterator.Current != null && eventArrive.Vehicle.FlexibleRouting)
+                        if (arriveEvent.Vehicle.TripIterator.Current != null && arriveEvent.Vehicle.FlexibleRouting)
                         {
-                            var currentVehicleTrip = eventArrive.Vehicle.TripIterator.Current;
-                            var customersToEnterAtCurrentStop = currentVehicleTrip.ExpectedCustomers.FindAll(c => c.PickupDelivery[0] == eventArrive.Stop && !c.IsInVehicle); //gets all the customers that have the current stop as the pickup stop
+                            var currentVehicleTrip = arriveEvent.Vehicle.TripIterator.Current;
+                            var customersToEnterAtCurrentStop = currentVehicleTrip.ExpectedCustomers.FindAll(c => c.PickupDelivery[0] == arriveEvent.Stop && !c.IsInVehicle); //gets all the customers that have the current stop as the pickup stop
 
                             if (customersToEnterAtCurrentStop.Count > 0) //check if there is customers to enter at current stop
                             {
-                                var sameStops = currentVehicleTrip.Stops.FindAll(s => s == eventArrive.Stop && currentVehicleTrip.Stops.IndexOf(s) >= currentVehicleTrip.StopsIterator.CurrentIndex);
+                                var sameStops = currentVehicleTrip.Stops.FindAll(s => s == arriveEvent.Stop && currentVehicleTrip.Stops.IndexOf(s) >= currentVehicleTrip.StopsIterator.CurrentIndex);
                                 foreach (var customer in customersToEnterAtCurrentStop) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
                                 {
                                     ConsoleLogger.Log("Vehicle expected depart time" + currentVehicleTrip.ScheduledTimeWindows[currentVehicleTrip.StopsIterator.CurrentIndex][1] + " customer arrival time:" + customer.DesiredTimeWindow[0]);
@@ -653,7 +653,7 @@ namespace Simulator
                                     {
                                         var enterTime = maxInsertedTime > customer.DesiredTimeWindow[0] ? maxInsertedTime + 1 : customer.DesiredTimeWindow[0]+1; //case maxinserted time is greather than desired time window the maxinserted time +1 will be the new enterTime of the customer, othersie it is the customer's desiredtimewindow
                                         var customerEnterVehicleEvt =
-                                            EventGenerator.GenerateCustomerEnterVehicleEvent(eventArrive.Vehicle, (int)enterTime, customer); //generates the enter event
+                                            EventGenerator.GenerateCustomerEnterVehicleEvent(arriveEvent.Vehicle, (int)enterTime, customer); //generates the enter event
                                         AddEvent(customerEnterVehicleEvt); //adds to the event list
                                         maxInsertedTime = (int)enterTime; //updates the maxInsertedTime
                                     }
@@ -667,30 +667,30 @@ namespace Simulator
 
                 //VEHICLE DEPART STOP EVENT
                
-                        if (eventArrive.Vehicle.TripIterator.Current?.ScheduledTimeWindows != null)
+                        if (arriveEvent.Vehicle.TripIterator.Current?.ScheduledTimeWindows != null)
                         {
-                            var currentStopIndex = eventArrive.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
-                            var newDepartTime = eventArrive.Vehicle.TripIterator.Current.ScheduledTimeWindows[currentStopIndex][1]; //gets the expected depart time
+                            var currentStopIndex = arriveEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
+                            var newDepartTime = arriveEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[currentStopIndex][1]; //gets the expected depart time
                             maxInsertedTime = newDepartTime != 0 ? (int)Math.Max(maxInsertedTime, newDepartTime) : maxInsertedTime; //if new depart time != 0,new maxInsertedTime will be the max between maxInsertedtime and the newDepartTime, else the value stays the same.
                             //If maxInsertedTime is still max value between the previous maxInsertedTime and newDepartTime, this means that there has been a delay in the flexible trip (compared to the model generated by the solver)
                         }
 
-                var departEvent = EventGenerator.GenerateVehicleDepartEvent(eventArrive.Vehicle, maxInsertedTime + 2);
-                AddEvent(departEvent);
+                var nextDepartEvent = EventGenerator.GenerateVehicleDepartEvent(arriveEvent.Vehicle, maxInsertedTime + 2);
+                AddEvent(nextDepartEvent);
 
 
             }
             //END OF INSERTION OF CUSTOMER ENTER, LEAVE VEHICLE EVENTS AND OF VEHICLE DEPART EVENT--------------------------------------
             //--------------------------------------------------------------------------------------------------------
             //INSERTION (APPEND) OF VEHICLE NEXT STOP ARRIVE EVENT
-            if (evt.Category == 1 && evt is VehicleStopEvent eventDepart)
+            if (evt.Category == 1 && evt is VehicleStopEvent departEvent)
             {
-                    var departTime = eventDepart.Time; //the time the vehicle departed on the previous depart event
+                    var departTime = departEvent.Time; //the time the vehicle departed on the previous depart event
 
-                    if (eventDepart.Vehicle.TripIterator.Current != null)
+                    if (departEvent.Vehicle.TripIterator.Current != null)
                     {
-                        var  currentStop = eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
-                        var  nextStop = eventDepart.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == eventDepart.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id) : eventDepart.Vehicle.TripIterator.Current.StopsIterator.NextStop;
+                        var  currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
+                        var  nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
                         var stopTuple = Tuple.Create(currentStop,nextStop);
                         TransportationNetwork.ArcDictionary.TryGetValue(stopTuple, out var distance);
 
@@ -698,16 +698,16 @@ namespace Simulator
                         {
                             distance = DistanceCalculator.CalculateHaversineDistance(currentStop.Latitude,currentStop.Longitude,nextStop.Latitude,nextStop.Longitude);
                         }
-                        var travelTime = DistanceCalculator.DistanceToTravelTime(eventDepart.Vehicle.Speed, distance); //Gets the time it takes to travel from the currentStop to the nextStop
+                        var travelTime = DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed, distance); //Gets the time it takes to travel from the currentStop to the nextStop
                         var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
-                        eventDepart.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
-                        var arriveEvent = EventGenerator.GenerateVehicleArriveEvent(eventDepart.Vehicle, nextArrivalTime); //generates the arrive event
-                        AddEvent(arriveEvent);
+                        departEvent.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
+                        var nextArriveEvent = EventGenerator.GenerateVehicleArriveEvent(departEvent.Vehicle, nextArrivalTime); //generates the arrive event
+                        AddEvent(nextArriveEvent);
                         //DEBUG!
-                        if (eventDepart.Vehicle.FlexibleRouting)
+                        if (departEvent.Vehicle.FlexibleRouting)
                         {
-                            var scheduledArrivalTime = eventDepart.Vehicle.TripIterator.Current.ScheduledTimeWindows[
-                                eventDepart.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
+                            var scheduledArrivalTime = departEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[
+                                departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
 
                             ConsoleLogger.Log("Event arrival time:"+nextArrivalTime+", Scheduled arrival time:"+scheduledArrivalTime);
                         }
@@ -721,10 +721,10 @@ namespace Simulator
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUESTS-----------------------------------------------------------
           
-            if (evt.Category == 5 && evt is DynamicRequestCheckEvent eventDRCE && evt.Time <= SimulationTimeWindow[1]) // if the event is a dynamic request check event and the current event time is lower than the end time of the simulation
+            if (evt.Category == 5 && evt is DynamicRequestCheckEvent dynamicRequestCheckEvent && evt.Time <= SimulationTimeWindow[1]) // if the event is a dynamic request check event and the current event time is lower than the end time of the simulation
             {
 
-                if (eventDRCE.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
+                if (dynamicRequestCheckEvent.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
                 {
                     var rnd = new Random();
                     var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
@@ -747,9 +747,9 @@ namespace Simulator
                     var deliveryTime = rnd.Next(pickupTime + 15 * 60, pickupTime + 30 * 60);//delivery time will be at minimum 15 minutes above the pickuptime and at max 30 minutes from the pickup time
                     Stop[] pickupDelivery = new[] { pickup, delivery };
                     long[] desiredTimeWindow = new[] { (long)pickupTime, (long)deliveryTime };
-                    var eventReq =
+                    var nextCustomerRequestEvent =
                         EventGenerator.GenerateCustomerRequestEvent(evt.Time + 1, pickupDelivery,desiredTimeWindow); //Generates a pickup and delivery customer request (dynamic)
-                    AddEvent(eventReq);
+                    AddEvent(nextCustomerRequestEvent);
                 }
 
                 var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(evt.Time + 10,DynamicRequestProbabilityThreshold); //generates a new dynamic request check 10 seconds later than the current evt
@@ -759,9 +759,9 @@ namespace Simulator
             //END OF INSERTION OF PICKUP DELIVERY CUSTOMER REQUEST-----------------------------------------------------------
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF EVENTS FOR THE NEWLY GENERATED ROUTE ( after a dynamic request has been accepted)
-            if (evt.Category == 4 && evt is CustomerRequestEvent eventCRE && eventCRE.SolutionObject != null)
+            if (evt.Category == 4 && evt is CustomerRequestEvent customerRequestEvent && customerRequestEvent.SolutionObject != null)
             {            
-                var solutionObject = eventCRE.SolutionObject;
+                var solutionObject = customerRequestEvent.SolutionObject;
                 var vehicleFlexibleRouting = VehicleFleet.FindAll(v => v.FlexibleRouting);
                 ConsoleLogger.Log("Flexible routing vehicles count: "+vehicleFlexibleRouting.Count);
                 foreach (var vehicle in vehicleFlexibleRouting)
@@ -774,7 +774,7 @@ namespace Simulator
                             var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                             var currentStopList = new List<Stop>(vehicle.TripIterator.Current.Stops); //current stoplist for vehicle (before adding the new request)
                             var currentTimeWindows = new List<long[]>(vehicle.TripIterator.Current.ScheduledTimeWindows);
-                            var expectedCustomers = solutionObject.GetVehicleCustomers(vehicle);
+                            var customers = solutionObject.GetVehicleCustomers(vehicle); //contains all customers (already inside and not yet in vehicle)
                             List<Stop> visitedStops = new List<Stop>();
                             List<long[]> visitedTimeWindows = new List<long[]>();
                             ConsoleLogger.Log("Vehicle "+vehicle.Id+":");
@@ -801,29 +801,9 @@ namespace Simulator
                                     solutionRoute.Insert(0, visitedStops[e]);
                                     solutionTimeWindows.Insert(0, visitedTimeWindows[e]);
                             }
-                            //end of visited stops insertion
-                            
-
-                            //ConsoleLogger.Log("Route is different!");
-                            //ConsoleLogger.Log("Old route:");
-                            //for (int z = 0; z < currentStopList.Count; z++)
-                            //{
-
-                            //    ConsoleLogger.Log(currentStopList[z] + " - TW:{" + currentTimeWindows[z][0] + "," + currentTimeWindows[z][1] + "}");
-                            //}
-                            //ConsoleLogger.Log("New route:");
-                            //    for (int x=0;x<solutionRoute.Count;x++)
-                            //    {
-                            //        if (solutionRoute[x] != null)
-                            //        {
-                            //            ConsoleLogger.Log(solutionRoute[x] +" - TW:{"+solutionTimeWindows[x][0] +"("+TimeSpan.FromSeconds(solutionTimeWindows[x][0]).ToString() +")"+ ","+solutionTimeWindows[x][1]+ "(" + TimeSpan.FromSeconds(solutionTimeWindows[x][1]).ToString() + ")}");
-                            //        }
-                            //    }
-                        
-
                                 vehicle.TripIterator.Current.AssignStops(solutionRoute,solutionTimeWindows,currentStopIndex);
-                                vehicle.TripIterator.Current.ExpectedCustomers = expectedCustomers;
-                                vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,vehicle.TripIterator.Current.ScheduledTimeWindows,null);
+                                vehicle.TripIterator.Current.ExpectedCustomers = customers.FindAll(c=>!c.IsInVehicle);//the expected customers for the current vehicle are the ones that are not in that vehicle
+                                vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,vehicle.TripIterator.Current.ScheduledTimeWindows,customers);
 
                         var vehicleEvents = Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time)  || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
                         ConsoleLogger.Log("ALL NEXT VEHICLE "+vehicle.Id+" EVENTS (COUNT:"+vehicleEvents.Count+") (TIME >=" +evt.Time+ "):");
@@ -844,23 +824,11 @@ namespace Simulator
                                     }
                                 }
 
-                                if (vEvent is CustomerVehicleEvent customerEnterVehicleEvent && vEvent.Category == 2) //customer enter vehicle
+                                if (vEvent is CustomerVehicleEvent customerVehicleEvent && (vEvent.Category == 2 || vEvent.Category == 3)) //if customer enter vehicle or leave vehicle event
                                 {
-
-                                    //need to handle this!
-                                    ConsoleLogger.Log(customerEnterVehicleEvent.GetTraceMessage());
-                                    Events.Remove(vEvent);
-                                    
-
+                                    ConsoleLogger.Log(customerVehicleEvent.GetTraceMessage());
+                                    Events.Remove(vEvent);     
                                 }
-
-                                if (vEvent is CustomerVehicleEvent customerLeaveVehicleEvent && vEvent.Category == 3)//Customer leave vehicle event
-                                {
-                                   
-                                    ConsoleLogger.Log(customerLeaveVehicleEvent.GetTraceMessage());
-                                    Events.Remove(vEvent);
-                                }
-                                
                             }
 
                         }
@@ -910,16 +878,24 @@ namespace Simulator
                                         }
                                     }
                                     List<Customer> currentCustomers = vehicle.Customers;
-
-                                    if (vehicle.Customers.Count > 0)
+                                    foreach (var currentCustomer in currentCustomers)
                                     {
-                                        ConsoleLogger.Log("Customers inside vehicle: "+vehicle.Customers.Count);
-                                        foreach (var customer in vehicle.Customers)
+                                        if (!allExpectedCustomers.Contains(currentCustomer))
                                         {
-                                            
-                                            ConsoleLogger.Log("Already visited: "+customer.PickupDelivery[0]+", Need to visit:"+customer.PickupDelivery[1]);
+                                            allExpectedCustomers.Add(currentCustomer);
                                         }
                                     }
+                                  
+
+                                   foreach (var customer in allExpectedCustomers)
+                                   {
+                                       if (customer.IsInVehicle)
+                                       {
+                                           var v = VehicleFleet.Find(veh => veh.Customers.Contains(customer));
+                                           ConsoleLogger.Log(" Customer "+customer.Id+" is already inside vehicle"+v.Id+": Already visited: " + customer.PickupDelivery[0] +
+                                                             ", Need to visit:" + customer.PickupDelivery[1]);
+                                       }
+                                   }
                                     var currentStop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                                     var dummyStop = new Stop(currentStop.Id, currentStop.Code,"dummy "+currentStop.Name, currentStop.Latitude,
                                         currentStop.Longitude);//need to use dummyStop otherwise the solver will fail, because the startDepot stop is also a pickup delivery stop
@@ -966,19 +942,6 @@ namespace Simulator
                         //end of calculation of startDepotsArrivalTime
                         //--------------------------------------------------------------------------------------------------------------------------
 
-                        List<Customer> exCustomers = new List<Customer>(allExpectedCustomers);
-                        foreach (var vehicle in VehicleFleet)
-                        {
-                            foreach (var customer in allExpectedCustomers)
-                            {
-                                if (vehicle.Customers.Contains(customer))
-                                {
-                                    exCustomers.Remove(customer);
-                                }
-                            }
-                            
-                        }
-                        allExpectedCustomers = exCustomers;
                         var dataModel = new DarpDataModel(startDepots, endDepots, dataModelVehicles, allExpectedCustomers,startDepotsArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
                         var solver = new DarpSolver(dataModel,false);
                         var solution = solver.TryGetFastSolution();

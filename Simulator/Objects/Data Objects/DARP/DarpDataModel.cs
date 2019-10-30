@@ -112,38 +112,42 @@ namespace Simulator.Objects.Data_Objects.DARP
 
             foreach (var customer in customers) //loop to add the pickup and delivery stops for each customer, to the stop list
             {
-                foreach (var pickupDelivery in customer.PickupDelivery)
+                if (!customer.IsInVehicle)//if the customer isnt in a vehicle adds both pickup and delivery stops
                 {
-                    if (!stops.Contains(pickupDelivery))
+                    foreach (var pickupDelivery in customer.PickupDelivery)
                     {
-                        stops.Add(pickupDelivery); //if the pickup stop isn't in the list, add it to the stop list
+                        if (!stops.Contains(pickupDelivery))
+                        {
+                            stops.Add(pickupDelivery); //if the pickup stop isn't in the list, add it to the stop list
+                        }
+                    }
+                }
+                else //if the customer is in a vehicle only adds the delivery stop
+                {
+                    if (!stops.Contains(customer.PickupDelivery[1]))
+                    {
+                        stops.Add(customer.PickupDelivery[1]);
                     }
                 }
             }
-            //adds the delivery stops for the customers that are alreadyInsideTheVehicle
-            foreach (var vehicle in vehicles)
-            {
-                foreach (var customerInsideVehicle in vehicle.Customers)
-                {
-                    if (!stops.Contains(customerInsideVehicle.PickupDelivery[1])) //adds the delivery stop if it doesnt exist in the list
-                    {
-                        stops.Add(customerInsideVehicle.PickupDelivery[1]);
-                    }
-                }
-            }
-
             return stops;
         }
 
     
         private int[][] GetPickupDeliveries(DataModelIndexManager indexManager) //returns the pickupdelivery stop matrix using indexes (based on the stop list) instead of stop id's
         {
-            var customers = indexManager.ExpectedCustomers;
-            int[][] pickupsDeliveries = new int[customers.Count][];
+            var customers = indexManager.Customers;
+            var numberOfCustomersOutsideOfVehicle = indexManager.Customers.FindAll(c => !c.IsInVehicle).Count;
+            int[][] pickupsDeliveries = new int[numberOfCustomersOutsideOfVehicle][];
             //Transforms the data from stop the list into index matrix list in order to use it in google Or tools
+            var index = 0;
             foreach (var customer in customers)
             {
-                pickupsDeliveries[indexManager.GetCustomerIndex(customer)] = indexManager.GetPickupDeliveryStopIndices(customer);
+                if (!customer.IsInVehicle) //if customer is not in a vehicle gets the pickup and delivery
+                {
+                    pickupsDeliveries[index] = indexManager.GetPickupDeliveryStopIndices(customer);
+                    index++;
+                }
             }
 
             return pickupsDeliveries;
@@ -154,7 +158,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         private long[] GetDemands(DataModelIndexManager indexManager)
         {
             long[] demands = null;
-            var expectedCustomers = indexManager.ExpectedCustomers;
+            var customers = indexManager.Customers;
             var stops = indexManager.Stops;
             if (stops.Count > 0)
             {
@@ -165,27 +169,25 @@ namespace Simulator.Objects.Data_Objects.DARP
                     demands[i] = 0; //init demand at 0 at each index
                 }
 
-                if (expectedCustomers.Count > 0)
+                if (customers.Count > 0)
                 {
-                    foreach (var customer in expectedCustomers)
+                    foreach (var customer in customers)
                     {
-                        var pickupIndex = IndexManager.GetStopIndex(customer.PickupDelivery[0]); //gets the index of the pickup stop
-                        var deliveryIndex =
-                            IndexManager.GetStopIndex(customer.PickupDelivery[1]); //gets the index of the delivery stop
-                        demands[pickupIndex] += 1; //adds 1 to the demand of the pickup index
+                        if (!customer.IsInVehicle) //if customer is not in vehicle adds pickup and delivery, otherwise only adds the delivery indices
+                        {
+                            var pickupIndex =
+                                IndexManager.GetStopIndex(
+                                    customer.PickupDelivery[0]); //gets the index of the pickup stop
+                            demands[pickupIndex] += 1; //adds 1 to the demand of the pickup index
+                        }
+
+                        var deliveryIndex = IndexManager.GetStopIndex(customer.PickupDelivery[1]); //gets the index of the delivery stop
                         demands[deliveryIndex] -= 1; //subtracts 1  to the demand of the delivery index
                     }
                 }
-
-                foreach (var customerInsideVehicle in indexManager.CustomersInsideVehicle)
-                {
-                    var deliveryIndex = IndexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]); //gets the index of the delivery stop
-                    demands[deliveryIndex] -= 1;//subtracts 1 to the demand of the delivery index
-                }
-
                 foreach (var vehicle in indexManager.Vehicles)
                 {
-                    demands[Starts[indexManager.GetVehicleIndex(vehicle)]] = vehicle.Customers.Count;//the demand at the start depot for the current vehicle will be the number of customers inside the vehicle
+                    demands[Starts[indexManager.GetVehicleIndex(vehicle)]] = vehicle.Customers.FindAll(c=>c.IsInVehicle).Count;//the demand at the start depot for the current vehicle will be the number of customers inside that vehicle
                 }
             }
 
@@ -236,24 +238,21 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public void PrintPickupDeliveries()
         {
-            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows for the expected Customers(total: " + IndexManager.ExpectedCustomers.Count + "):");
-            foreach (var customer in IndexManager.ExpectedCustomers)
+            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows for the expected Customers(total: " + IndexManager.Customers.Count + "):");
+            foreach (var customer in IndexManager.Customers)
             {
-                customer.PrintPickupDelivery();
-            }
-            
-            foreach (var vehicle in IndexManager.Vehicles)
-            {
-                if (vehicle.Customers.Count > 0)
+                if (!customer.IsInVehicle)
                 {
-                    Console.WriteLine("Pickup and deliveries for the customer already inside the vehicle(s):");
-                    Console.WriteLine("Vehicle "+vehicle.Id+":");
+                    customer.PrintPickupDelivery();
                 }
-                foreach (var customersInsideVehicle in vehicle.Customers)
+                else
                 {
-                    customersInsideVehicle.PrintPickupDelivery();
+                    var vehicle = IndexManager.Vehicles.Find(v => v.Customers.Contains(customer));
+                    Console.Write("Already in vehicle "+vehicle.Id+ " - ");
+                    customer.PrintPickupDelivery();
                 }
             }
+           
             Console.WriteLine("---------------------------------------------------------------");
         }
 
@@ -275,19 +274,25 @@ namespace Simulator.Objects.Data_Objects.DARP
             var stops = indexManager.Stops;
             long[,] timeWindows = new long[stops.Count, 2];
             timeWindows = GetInitialTimeWindowsArray(timeWindows);
-            foreach (var customer in indexManager.ExpectedCustomers)
+            foreach (var customer in indexManager.Customers)
             {
-                //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
-                var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
-                var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]);//gets stop pickup index
-                var arrayMinTimeWindow = timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
-                                                                      //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
-                                                                      //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
+                if (!customer.IsInVehicle) //if customer is not inside a vehicle adds the pickup and delivery time windows otherwise only adds the delivery time window
+                {
+                    //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
+                    var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
+                    var pickupIndex = indexManager.GetStopIndex(customer.PickupDelivery[0]); //gets stop pickup index
+                    var arrayMinTimeWindow =
+                        timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
+                    //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
+                    //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
 
-                var lowerBoundValue = Math.Max((long)arrayMinTimeWindow, (long)customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
-                //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
-                timeWindows[pickupIndex, 0] = lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
-
+                    var lowerBoundValue =
+                        Math.Max((long) arrayMinTimeWindow,
+                            (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
+                    //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
+                    timeWindows[pickupIndex, 0] =
+                        lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+                }
 
                 //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
                 var customerMaxTimeWindow = customer.DesiredTimeWindow[1]; //customer max time window in seconds
@@ -299,20 +304,6 @@ namespace Simulator.Objects.Data_Objects.DARP
                 //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
-            //timeWindows for the deliveryIndices of the customers that are already inside the vehicle (does not need to add the pickup index timeWindow, because it was already served along the way)
-            foreach (var vehicle in indexManager.Vehicles)
-            {
-                foreach (var customerInsideVehicle in vehicle.Customers)
-                {
-                    var deliveryIndex = indexManager.GetStopIndex(customerInsideVehicle.PickupDelivery[1]);
-                    var customerMaxTimeWindow = customerInsideVehicle.DesiredTimeWindow[1];
-                    var arrayMaxTimeWindow = timeWindows[deliveryIndex, 1];
-                    var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current timeWindow in the array and the current customer upperBound Time;
-                    timeWindows[deliveryIndex, 1] = upperBoundValue;
-                }
-            }
-            //end of timeWindow for the deliveryIndices of the customers that are already inside the vehicle
-
             //depot timewindows initialization
             if (Starts != null && timeWindows != null)
             {

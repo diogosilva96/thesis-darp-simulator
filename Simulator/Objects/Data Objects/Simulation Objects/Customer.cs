@@ -55,6 +55,10 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 TimeSpan t = TimeSpan.FromSeconds(time);
                 if (customerAdded)
                 {
+                    if (v.TripIterator.Current.ExpectedCustomers.Contains(this))
+                    {
+                        v.TripIterator.Current.ExpectedCustomers.Remove(this);
+                    }
                     RealTimeWindow[0] = time; //assigns the real enter time of the timewindow
                     IsInVehicle = true;
                     var waitTimeStr = "";
@@ -94,11 +98,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             {
                 var customerLeft = vehicle.RemoveCustomer(this);
                 if (customerLeft)
-                {
-                    if (vehicle.TripIterator.Current.ExpectedCustomers.Contains(this))
-                    {
-                        vehicle.TripIterator.Current.ExpectedCustomers.Remove(this);
-                    }
+                {                   
                     TimeSpan t = TimeSpan.FromSeconds(time);
                     RealTimeWindow[1] = time; //assigns the real leave time of the time window
                     IsInVehicle = false;
