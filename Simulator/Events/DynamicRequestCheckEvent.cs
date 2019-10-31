@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Simulator.Objects;
 
 namespace Simulator.Events
 {
@@ -11,8 +12,7 @@ namespace Simulator.Events
         public bool GenerateNewDynamicRequest => _probability <= _probabilityThreshold;
         public DynamicRequestCheckEvent(int category, int time) : base(category, time)
         {
-            Random rnd = new Random();
-            _probability = rnd.NextDouble();
+            _probability = RandomNumberGenerator.Random.NextDouble();
             _probabilityThreshold = 0.02;
         }
 

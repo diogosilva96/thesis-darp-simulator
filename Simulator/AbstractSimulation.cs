@@ -41,7 +41,7 @@ namespace Simulator
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
            
-            EventGenerator = EventGenerator.GetEventGenerator();
+            EventGenerator = EventGenerator.Instance();
             TotalEventsHandled = 0;
         }
 

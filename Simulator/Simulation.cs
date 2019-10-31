@@ -65,13 +65,13 @@ namespace Simulator
 
         public override void Init()
         {
+            RandomNumberGenerator.Seed = new Random().Next(int.MaxValue); //initiates the random number generator seed
             TotalEventsHandled = 0;
             TotalDynamicRequests = 0;
             TotalServedDynamicRequests = 0;
             _validationsCounter = 1;
             Events.Clear(); //clears all events 
             VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
-            
         }
         public override void InitEvents()
         {
@@ -191,7 +191,6 @@ namespace Simulator
         {
             SimulationTimeWindow[0] = 0;
             SimulationTimeWindow[1] = (int)TimeSpan.FromHours(3).TotalSeconds;
-            Random rand = new Random();
             InitDataModel(2);
 
 
@@ -473,6 +472,7 @@ namespace Simulator
             ConsoleLogger.Log("-------------------------------");
             ConsoleLogger.Log("|     Simulation Settings     |");
             ConsoleLogger.Log("-------------------------------");
+            ConsoleLogger.Log("Random Number Generator Seed: "+RandomNumberGenerator.Seed);
             ConsoleLogger.Log("Number of vehicles:" + VehicleFleet.Count);
             ConsoleLogger.Log("Vehicle average speed: " + _vehicleSpeed + " km/h.");
             ConsoleLogger.Log("Vehicle capacity: " + _vehicleCapacity + " seats.");
@@ -726,11 +726,11 @@ namespace Simulator
 
                 if (dynamicRequestCheckEvent.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
                 {
-                    var rnd = new Random();
-                    var pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+                    var rng = RandomNumberGenerator.Random;
+                    var pickup = TransportationNetwork.Stops[rng.Next(0, TransportationNetwork.Stops.Count)];
                     while (pickup == Depot) //if the pickup is the depot has to generate another pickup stop
                     {
-                        pickup = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+                        pickup = TransportationNetwork.Stops[rng.Next(0, TransportationNetwork.Stops.Count)];
                     }
                     var delivery = pickup;
                     var distance = DistanceCalculator.CalculateHaversineDistance(pickup.Latitude, pickup.Longitude,
@@ -739,12 +739,12 @@ namespace Simulator
                     while (delivery == pickup || distance < 1000 || delivery == Depot) //if the delivery stop is equal to the pickup stop or depot stop or its direct ride distance is lower than 1000 meters, it needs to generate a different delivery stop
                     {
                        
-                        delivery = TransportationNetwork.Stops[rnd.Next(0, TransportationNetwork.Stops.Count)];
+                        delivery = TransportationNetwork.Stops[rng.Next(0, TransportationNetwork.Stops.Count)];
                         distance = DistanceCalculator.CalculateHaversineDistance(pickup.Latitude, pickup.Longitude,
                             delivery.Latitude, delivery.Longitude);
                     }
-                    var pickupTime = rnd.Next(requestTime + 5*60, requestTime + 60 * 60);//the minimum pickup time is 5 minutes above the requestTime and maximum pickup 30 minutes after the request time, 
-                    var deliveryTime = rnd.Next(pickupTime + 15 * 60, pickupTime + 30 * 60);//delivery time will be at minimum 15 minutes above the pickuptime and at max 30 minutes from the pickup time
+                    var pickupTime = rng.Next(requestTime + 5*60, requestTime + 60 * 60);//the minimum pickup time is 5 minutes above the requestTime and maximum pickup 30 minutes after the request time, 
+                    var deliveryTime = rng.Next(pickupTime + 15 * 60, pickupTime + 30 * 60);//delivery time will be at minimum 15 minutes above the pickuptime and at max 30 minutes from the pickup time
                     Stop[] pickupDelivery = new[] { pickup, delivery };
                     long[] desiredTimeWindow = new[] { (long)pickupTime, (long)deliveryTime };
                     var nextCustomerRequestEvent =

@@ -16,12 +16,11 @@ namespace Simulator.Events
 
         private EventFactory _eventFactory;
 
-        private IDistribution _distribution;
 
         //Lock syncronization object for multithreading (might not be needed)
         private static object syncLock = new object();
 
-        public static EventGenerator GetEventGenerator() //Singleton
+        public static EventGenerator Instance() //Singleton
         {
             // Support multithreaded apps through Double checked locking pattern which (once the instance exists) avoids locking each time the method is invoked
 
@@ -40,11 +39,6 @@ namespace Simulator.Events
         public EventGenerator()
         {
             _eventFactory= new EventFactory();
-        }
-        public int Lambda
-        {
-            get => Lambda;
-            set { _distribution = new Poisson(value); }
         }
 
 
@@ -101,8 +95,8 @@ namespace Simulator.Events
                     var enterTime = time;
                     for (int i = 1; i <= sample; i++)
                     {
-                        var rnd = new Random();
-                        int dropOffStopIndex = rnd.Next(currentStopIndex + 1,
+                        var rng = RandomNumberGenerator.Random;
+                        int dropOffStopIndex = rng.Next(currentStopIndex + 1,
                             vehicle.TripIterator.Current.StopsIterator.TotalStops - 1);
                         Stop dropOffStop = vehicle.TripIterator.Current.Stops[dropOffStopIndex];
                         Customer customer = new Customer(new Stop[] { stop, dropOffStop},time);
