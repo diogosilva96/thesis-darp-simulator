@@ -26,18 +26,10 @@ namespace Simulator
 
         protected int TotalEventsHandled;
 
-        protected string LoggerPath;
-
         protected AbstractSimulation()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             ConsoleLogger = new Logger.Logger(consoleRecorder);
-            LoggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
-            if (!Directory.Exists(LoggerPath))
-            {
-                Directory.CreateDirectory(LoggerPath);
-            }
-
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
            

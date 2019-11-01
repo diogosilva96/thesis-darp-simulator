@@ -15,8 +15,9 @@ namespace Simulator.Logger
         }
         public void Record(string message)
         {
-            _streamWriter.Flush();
+            
             _streamWriter.WriteLine(message);
+            _streamWriter.Flush();
         }
 
         public FileRecorder(string path, string header)

@@ -24,8 +24,6 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int VehicleSpeed;
 
-        public long[,] DistanceMatrix;
-
         private const int DayInSeconds = 60 * 60 * 24; //24hours = 86400 seconds = 60 secs * 60 mins * 24 hours
 
         public int[][] PickupsDeliveries;

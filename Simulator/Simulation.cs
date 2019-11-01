@@ -16,13 +16,11 @@ namespace Simulator
 {
     public class Simulation : AbstractSimulation
     {
-        private readonly Logger.Logger _eventLogger;
+        private Logger.Logger _eventLogger;
 
-        private readonly Logger.Logger _validationsLogger;
+        private Logger.Logger _validationsLogger;
 
         private int _validationsCounter;
-
-        public DarpDataModel DarpDataModel;
 
         private readonly int _vehicleSpeed;
 
@@ -44,14 +42,22 @@ namespace Simulator
 
         public double DynamicRequestProbabilityThreshold; //randomly generated value has to be
                                                                      //than this in order to generate a dynamic request
+        private string _loggerBasePath;
+        private string _currentSimulationLoggerPath;
 
 
         public Simulation(int maxCustomerRideTimeSeconds, int maxAllowedUpperBoundTimeSeconds, double dynamicRequestProbability)
         {
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(LoggerPath, @"event_logs.txt"));
-            _eventLogger = new Logger.Logger(fileRecorder);
-            IRecorder validationsRecorder = new FileRecorder(Path.Combine(LoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
-            _validationsLogger = new Logger.Logger(validationsRecorder);
+            var loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
+            if (!Directory.Exists(loggerPath))
+            {
+                Directory.CreateDirectory(loggerPath);
+            }
+            _loggerBasePath = Path.Combine(loggerPath, DateTime.Now.ToString("MMMM dd"));
+            if (!Directory.Exists(_loggerBasePath))
+            {
+                Directory.CreateDirectory(_loggerBasePath);
+            }
             _vehicleCapacity = 20;
             _vehicleSpeed = 30;
             DynamicRequestProbabilityThreshold = dynamicRequestProbability;
@@ -65,6 +71,18 @@ namespace Simulator
 
         public override void Init()
         {
+            var currentTime = DateTime.Now.ToString("HH:mm:ss");
+            var auxTime = currentTime.Split(":");
+            currentTime = auxTime[0] + auxTime[1] +auxTime[2];
+            _currentSimulationLoggerPath = Path.Combine(_loggerBasePath, currentTime);
+            if (!Directory.Exists(_currentSimulationLoggerPath))
+            {
+                Directory.CreateDirectory(_currentSimulationLoggerPath);
+            }
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(_currentSimulationLoggerPath, @"event_logs.txt"));
+            _eventLogger = new Logger.Logger(fileRecorder);
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(_currentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
+            _validationsLogger = new Logger.Logger(validationsRecorder);
             RandomNumberGenerator.Seed = new Random().Next(int.MaxValue); //initiates the random number generator seed
             TotalEventsHandled = 0;
             TotalDynamicRequests = 0;
@@ -98,7 +116,7 @@ namespace Simulator
             ConsoleLogger.Log("1 - Standard Bus route simulation");
             ConsoleLogger.Log("2 - Flexible Bus route simulation");
             ConsoleLogger.Log("3 - Algorithms Test & Results");
-            ConsoleLogger.Log("4 - Single Bus route flexible simulation");
+            ConsoleLogger.Log("4 - Exit");
             int key = 0;
             wrongKeyLabel:
             try
@@ -122,14 +140,15 @@ namespace Simulator
                     break;
                 case 3:AlgorithmComparisonOption();
                     break;
-                case 4:SingleBusRouteFlexibleOption();
+                case 4:
+                    Environment.Exit(0);
                     break;
                 default: StandardBusRouteOption();
                     break;
             }
         }
 
-        public void InitDataModel(int vehicleNumber)
+        public DarpDataModel GetInitialDataModel(int vehicleNumber)
         {
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
@@ -154,25 +173,20 @@ namespace Simulator
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 399), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 555) }, new long[] { 1900, 2300 }, 0));
             customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops.Find(stop1 => stop1.Id == 430), TransportationNetwork.Stops.Find(stop1 => stop1.Id == 2200) }, new long[] { 1500, 3000 }, 0));
             long[] startDepotsArrivalTime = new long[dataModelVehicles.Count];
-            DarpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
-            //Print datamodel data
-            DarpDataModel.PrintTimeMatrix();
-            DarpDataModel.PrintPickupDeliveries();
-            DarpDataModel.PrintTimeWindows();
+            var darpDataModel = new DarpDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+            return darpDataModel;
         }
 
         public void FlexibleBusRouteOption()
         {
             SimulationTimeWindow[0] = 0;
             SimulationTimeWindow[1] = (int)TimeSpan.FromHours(3).TotalSeconds;
-            InitDataModel(2);
-            if (DarpDataModel != null)
+            var dataModel=GetInitialDataModel(2);
+            if (dataModel != null)
             {
-                DarpSolver darpSolver = new DarpSolver(DarpDataModel,false);
+                DarpSolver darpSolver = new DarpSolver(dataModel, false);
 
                 var timeWindowSolution = darpSolver.TryGetFastSolution();
-                
-                DarpDataModel.DistanceMatrix = new MatrixBuilder().GetDistanceMatrix(DarpDataModel.IndexManager.Stops);
                 DarpSolutionObject darpSolutionObject = null;
 ;
                 if (timeWindowSolution != null)
@@ -187,157 +201,12 @@ namespace Simulator
             }
 
         }
-        public void SingleBusRouteFlexibleOption()
-        {
-            SimulationTimeWindow[0] = 0;
-            SimulationTimeWindow[1] = (int)TimeSpan.FromHours(3).TotalSeconds;
-            InitDataModel(2);
-
-
-
-            DarpSolver darpSolver = new DarpSolver(DarpDataModel,false);
-            Assignment timeWindowSolution = null;
-            timeWindowSolution = darpSolver.TryGetFastSolution();
-            if (timeWindowSolution != null)
-            {
-                darpSolver.PrintSolution(timeWindowSolution);
-                DarpSolutionObject darpSolutionObject = darpSolver.GetSolutionObject(timeWindowSolution);
-
-                ///////////////////////////////////////////////////////////////////////
-               
-                List<DarpSolutionObject> solutionObjects = new List<DarpSolutionObject>();
-                for (int j = 0; j < darpSolutionObject.VehicleNumber; j++)
-                {
-                    List<Stop> startDepots = new List<Stop>();
-                    List<Stop> endDepots = new List<Stop>();
-                    List<Vehicle> vehicles = new List<Vehicle>();
-                    var vehicle = darpSolutionObject.IndexToVehicle(j);
-                    vehicles.Add(vehicle);
-                    var stops = darpSolutionObject.GetVehicleStops(vehicle);
-                    var vehicleTW = darpSolutionObject.GetVehicleTimeWindows(vehicle);
-                    List<Customer> customers = darpSolutionObject.GetVehicleCustomers(vehicle);
-
-
-
-                    List<Customer> customersToBeRemoved = new List<Customer>();
-                    var numStops = 2;
-                    var baseStop = stops[numStops + 1];
-                    foreach (var customer in customers)
-                    {
-                        var index = 0;
-                        foreach (var stop in stops)
-                        {
-                            if (index > numStops)
-                            {
-                                break;
-                            }
-
-                            if (stops.FindIndex(s => s == customer.PickupDelivery[0]) <=
-                                stops.FindIndex(s => s == customer.PickupDelivery[1]) &&
-                                customer.PickupDelivery[1] == stop)
-                            {
-                                customersToBeRemoved.Add(customer);
-
-                            }
-
-                            if (customer.PickupDelivery[0] == stop &&
-                                stops.FindIndex(s => s == customer.PickupDelivery[1]) > numStops)
-                            {
-                                customer.PickupDelivery[0] = stops[numStops + 1];
-
-                            }
-
-                            index++;
-                        }
-
-                        if (customer.PickupDelivery[1] == stops[numStops + 1])
-                        {
-                            customersToBeRemoved.Add(customer);
-                        }
-                    }
-
-                    foreach (var cust in customersToBeRemoved)
-                    {
-                        customers.Remove(cust);
-                    }
-
-
-
-                    for (int i = 0; i <= numStops; i++)
-                    {
-                        stops.RemoveAt(0); //removes the first numstops of the stops list
-                        vehicleTW.RemoveAt(0);
-                    }
-
-                    var customersToBeUpdated = customers.FindAll(c => c.PickupDelivery[0] == baseStop);
-                    foreach (var cust in customersToBeUpdated)
-                    {
-                        var newPickupTimeIndex =
-                            darpSolutionObject.GetVehicleStops(vehicle).FindIndex(s => s == baseStop);
-                        cust.DesiredTimeWindow[0] =
-                            (int) vehicleTW[
-                                    newPickupTimeIndex]
-                                [0]; //updates the timewindow so that it uses the current time of the simulation
-                    }
-
-                    startDepots.Add(null);
-                    endDepots.Add(Depot);
-                    customers.Add(new Customer(
-                        new Stop[]
-                        {
-                            TransportationNetwork.Stops.Find(stop1 => stop1.Id == 450),
-                            TransportationNetwork.Stops.Find(stop1 => stop1.Id == 385)
-                        }, new long[] {4500, 6000}, 0));
-                    long[] startDepotsArrivalTime = new long[]{0,0};
-                    var darpM = new DarpDataModel(startDepots, endDepots, vehicles, customers,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
-                    darpM.PrintTimeMatrix();
-                    darpM.PrintPickupDeliveries();
-                    darpM.PrintTimeWindows();
-                    var darps1 = new DarpSolver(darpM, false);
-                    var sol = darps1.TryGetFastSolution();
-                    if (sol != null)
-                    {
-                        solutionObjects.Add(darps1.GetSolutionObject(sol));
-                    }
-                    else
-                    {
-                        ConsoleLogger.Log("No sol");
-                    }
-                }
-
-                if (solutionObjects.Count > 0)
-                {
-                    foreach (var solution in solutionObjects)
-                    {
-                        ConsoleLogger.Log("Solution:");
-                        ConsoleLogger.Log("Total Distance: "+solution.TotalDistanceInMeters);
-                        ConsoleLogger.Log("Load: "+solution.TotalLoad);
-                        ConsoleLogger.Log("Total Time: "+solution.TotalTimeInSeconds);
-                        ConsoleLogger.Log("Route:");
-                        foreach (var stop in solution.GetVehicleStops(solution.IndexToVehicle(0)))
-                        {
-                            if (stop != null)
-                            {
-                                ConsoleLogger.Log(stop.ToString());
-                            }
-                        }
-                        ConsoleLogger.Log("");
-                    }
-                }
-                AssignVehicleFlexibleTrips(darpSolutionObject,SimulationTimeWindow[0]);
-            }
-            else
-            {
-                ConsoleLogger.Log("Solution not found!");
-            }
-        }
-
-
+        
         public void AlgorithmComparisonOption()
         {
             bool allowDropNodes = AllowDropNodesMenu();
-            InitDataModel(2);
-            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(DarpDataModel);
+            var dataModel = GetInitialDataModel(2);
+            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(dataModel);
             var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
             var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
             foreach (var printableItem in printList)
@@ -473,32 +342,30 @@ namespace Simulator
             ConsoleLogger.Log("|     Simulation Settings     |");
             ConsoleLogger.Log("-------------------------------");
             ConsoleLogger.Log("Random Number Generator Seed: "+RandomNumberGenerator.Seed);
+            ConsoleLogger.Log("Maximum Allowed UpperBound Time: "+TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
+            ConsoleLogger.Log("Maximum Customer ride time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");
+            ConsoleLogger.Log("Dynamic request check probability threshold: "+DynamicRequestProbabilityThreshold);
+            ConsoleLogger.Log("Simulation Start Time: "+TimeSpan.FromSeconds(SimulationTimeWindow[0]).ToString());
+            ConsoleLogger.Log("Simulation End Time: "+ TimeSpan.FromSeconds(SimulationTimeWindow[1]).ToString());
+            ConsoleLogger.Log("Simulation Duration: " + TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours");
             ConsoleLogger.Log("Number of vehicles:" + VehicleFleet.Count);
             ConsoleLogger.Log("Vehicle average speed: " + _vehicleSpeed + " km/h.");
             ConsoleLogger.Log("Vehicle capacity: " + _vehicleCapacity + " seats.");
-            List<Route> distinctRoutes = new List<Route>();
-            foreach (var vehicle in VehicleFleet)
-            {
-                if (vehicle.TripIterator != null)
-                {
-                    vehicle.TripIterator.Reset();
 
-                    while (vehicle.TripIterator.MoveNext()) //iterates over each vehicle service
-                    {
-                        if (vehicle.TripIterator.Current != null)
-                        {
-                            var route = vehicle.TripIterator.Current.Route;
-                            if (!distinctRoutes.Contains(route)) //if the route isn't in distinct routes list adds it
-                            {
-                                distinctRoutes.Add(route);
-                            }
-                        }
-                    }
-                    vehicle.TripIterator.Reset();
-                    vehicle.TripIterator.MoveNext();
-                }
-            }
-            ConsoleLogger.Log("Number of distinct routes:"+distinctRoutes.Count);
+            //logs into a file the settings
+            IRecorder settingsFileRecorder = new FileRecorder(Path.Combine(_currentSimulationLoggerPath, @"settings.txt"));
+            var settingsLogger = new Logger.Logger(settingsFileRecorder);
+            settingsLogger.Log(nameof(RandomNumberGenerator.Seed)+ ": "+RandomNumberGenerator.Seed);
+            settingsLogger.Log(nameof(MaxAllowedUpperBoundTime)+": "+MaxAllowedUpperBoundTime);
+            settingsLogger.Log(nameof(MaxCustomerRideTime)+": "+MaxCustomerRideTime);
+            settingsLogger.Log(nameof(DynamicRequestProbabilityThreshold)+": "+DynamicRequestProbabilityThreshold);
+            settingsLogger.Log(nameof(SimulationTimeWindow)+"[0]: "+SimulationTimeWindow[0]);
+            settingsLogger.Log(nameof(SimulationTimeWindow) + "[1]: " + SimulationTimeWindow[1]);
+            settingsLogger.Log(nameof(VehicleFleet)+nameof(VehicleFleet.Count)+": "+VehicleFleet.Count);
+            settingsLogger.Log(nameof(_vehicleSpeed)+": "+_vehicleSpeed);
+            settingsLogger.Log(nameof(_vehicleCapacity)+": "+_vehicleCapacity);
+
+
 
         }
 
