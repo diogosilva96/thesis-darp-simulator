@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Google.OrTools.ConstraintSolver;
-using Simulator.Objects.Data_Objects.DARP;
+using Simulator.Objects.Data_Objects.Routing;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
@@ -9,14 +9,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
     {
         private List<FirstSolutionStrategy.Types.Value> _firstSolutionAlgorithms;
         private List<LocalSearchMetaheuristic.Types.Value> _searchStrategyAlgorithms;
-        public DarpDataModel DataModel;
+        public RoutingDataModel DataModel;
 
         public override string ToString()
         {
             return "["+this.GetType().Name+"]";
         }
 
-        public AlgorithmStatistics(DarpDataModel dataModel)
+        public AlgorithmStatistics(RoutingDataModel dataModel)
         {
            InitFirstSolutionList();
            InitSearchStrategyList();
@@ -68,6 +68,8 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             toPrintList.Add("----------------------------");
             toPrintList.Add("Total Requests: "+customers.Count);
             toPrintList.Add("Number of available vehicles: " + vehicles.Count);
+            toPrintList.Add("Maximum Customer ride time: "+TimeSpan.FromSeconds(DataModel.MaxCustomerRideTime).TotalMinutes +" minutes");
+            toPrintList.Add("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(DataModel.MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
             string capacitiesString = "Vehicle Capacities: ";
             foreach (var vehicle in vehicles)
             {
@@ -92,6 +94,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 toPrintList.Add("Total time: "+TimeSpan.FromSeconds(algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalTimeInSeconds).TotalMinutes+" minutes.");
                 toPrintList.Add("Total Load: "+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad);
                 toPrintList.Add("Average Distance traveled per request:"+algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalDistanceInMeters / algorithm.Solver.GetSolutionObject(algorithm.Solution).TotalLoad+" meters.");
+                toPrintList.Add("Solution Objective value: "+algorithm.Solution.ObjectiveValue());
                 toPrintList.Add("-----------------------------");
 
             }

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using Google.OrTools.ConstraintSolver;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.DARP
+namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class DarpDataModel //pickup delivery with time windows data model
+    public class RoutingDataModel //pickup delivery with time windows data model
     {
         public long[] VehicleCapacities;
 
@@ -32,9 +30,9 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         public int MaxCustomerRideTime; //maximum time a customer can spend in a vehicle (in seconds)
 
-        public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by DarpSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
+        public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
-        public DarpDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,long[] startDepotsArrivalTimes,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
+        public RoutingDataModel(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers,long[] startDepotsArrivalTimes,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
             if (startDepotsArrivalTimes.Length != startDepots.Count || vehicles.Count != startDepots.Count ||
                 startDepots.Count != endDepots.Count)
@@ -151,8 +149,6 @@ namespace Simulator.Objects.Data_Objects.DARP
             return pickupsDeliveries;
         }
 
-     
-
         private long[] GetDemands(DataModelIndexManager indexManager)
         {
             long[] demands = null;
@@ -233,6 +229,14 @@ namespace Simulator.Objects.Data_Objects.DARP
             Console.WriteLine("---------------------------------------------------------------");
         }
 
+        public void PrintDataModelSettings()
+        {
+            Console.WriteLine("Data model settings: ");
+            Console.WriteLine("Number of vehicles: "+IndexManager.Vehicles.Count);
+            Console.WriteLine("Number of customers: "+IndexManager.Customers.Count);
+            Console.WriteLine("Maximum Customer Ride Time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");
+            Console.WriteLine("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
+        }
 
         public void PrintPickupDeliveries()
         {

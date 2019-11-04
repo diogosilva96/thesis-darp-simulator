@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.OrTools.ConstraintSolver;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.DARP
+namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class DarpSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
+    public class RoutingSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
     {
 
         private readonly Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
@@ -44,7 +43,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         }
 
 
-        public DarpSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary,Dictionary<string,long[]> solutionMetricsDictionary)
+        public RoutingSolutionObject(Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> solutionDictionary,Dictionary<string,long[]> solutionMetricsDictionary)
         {
             _vehicleSolutionDictionary = solutionDictionary;
             solutionMetricsDictionary.TryGetValue("routeDistances", out long[] routeDistance);

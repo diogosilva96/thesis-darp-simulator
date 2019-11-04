@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
-using Simulator.Objects.Data_Objects.DARP;
+using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Events
@@ -12,7 +12,7 @@ namespace Simulator.Events
     {
         public Customer Customer { get; internal set; }
 
-        public DarpSolutionObject SolutionObject;
+        public RoutingSolutionObject SolutionObject;
 
         public CustomerRequestEvent(int category, int time, Customer customer) : base(category, time)
         {
@@ -30,7 +30,7 @@ namespace Simulator.Events
             string message = "";
             if (Customer != null)
             {
-                message = timestamp + splitter+ this.ToString() + splitter +"Customer pickup:"+Customer.PickupDelivery[0].Id +splitter+"Customer delivery:"+Customer.PickupDelivery[1].Id;
+                message = timestamp + splitter+ this.ToString() + splitter +"Customer Id: "+Customer.Id+splitter+"Pickup: "+Customer.PickupDelivery[0].Id +splitter+"Delivery: "+Customer.PickupDelivery[1].Id+splitter+"Pickup time: "+Customer.DesiredTimeWindow[0]+splitter+"Delivery time: "+Customer.DesiredTimeWindow[1];
             }
 
             return message;

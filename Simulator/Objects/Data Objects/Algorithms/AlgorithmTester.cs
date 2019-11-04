@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
-using Simulator.Objects.Data_Objects.DARP;
+using Simulator.Objects.Data_Objects.Routing;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
@@ -13,16 +13,16 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public object AlgorithmValue;
         public int MaxUpperBoundInMinutes; //in minutes
         public Assignment Solution;
-        public DarpDataModel DataModel;
+        public RoutingDataModel DataModel;
         public bool SolutionIsFeasible;
         public int SearchTimeLimitInSeconds; //in seconds
-        public DarpSolver Solver;
+        public RoutingSolver Solver;
 
-        protected AlgorithmTester(DarpDataModel dataModel,bool allowDropNodes)
+        protected AlgorithmTester(RoutingDataModel dataModel,bool allowDropNodes)
         {
             DataModel = dataModel;
             SolutionIsFeasible = false;
-            Solver = new DarpSolver(dataModel,allowDropNodes);
+            Solver = new RoutingSolver(dataModel,allowDropNodes);
         }
 
         public override string ToString()
@@ -42,7 +42,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             if (SolutionIsFeasible) //solution != null (means earliest feasible solution was found)
             {
                 //Saves the important metrics for the earliest feasible solution
-                MaxUpperBoundInMinutes = Solver.MaxUpperBound;
+                MaxUpperBoundInMinutes = (int)TimeSpan.FromSeconds(Solver.MaxUpperBound).TotalMinutes;
                 ComputationTimeInSeconds = elapsedSeconds;
                 Solution = solution;
             }

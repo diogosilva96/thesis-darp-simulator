@@ -31,7 +31,7 @@ namespace Simulator.Events
             string message = "";
             if (Customer != null && Vehicle != null)
             {
-                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Trip.Id + splitter + "Trip StartTime:" + Trip.StartTime + splitter+ "Customer pickup:" + Customer.PickupDelivery[0].Id + splitter + "Customer delivery:" + Customer.PickupDelivery[1].Id; ;  
+                message = timestamp+ splitter+this.ToString() +splitter+"Vehicle:"+Vehicle.Id+splitter+ "Trip:" + Trip.Id + splitter + "Trip StartTime:" + Trip.StartTime + splitter+ "Customer Id: " + Customer.Id + splitter + "Pickup: " + Customer.PickupDelivery[0].Id + splitter + "Delivery: " + Customer.PickupDelivery[1].Id + splitter + "Pickup time: " + Customer.DesiredTimeWindow[0] + splitter + "Delivery time: " + Customer.DesiredTimeWindow[1]; ;  
             }
 
             return message;

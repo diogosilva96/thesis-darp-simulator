@@ -4,11 +4,11 @@ using Google.OrTools.ConstraintSolver;
 using Google.Protobuf.WellKnownTypes;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects.DARP
+namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class DarpSolver //pickup delivery with time windows solver
+    public class RoutingSolver //pickup delivery with time windows solver
     {
-        public DarpDataModel DataModel;
+        public RoutingDataModel DataModel;
         private RoutingIndexManager _routingIndexManager;
         private RoutingModel _routingModel;
         private int _transitCallbackIndex;
@@ -19,7 +19,7 @@ namespace Simulator.Objects.Data_Objects.DARP
         public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
 
 
-        public DarpSolver(DarpDataModel dataModel, bool dropNodesAllowed)
+        public RoutingSolver(RoutingDataModel dataModel, bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxUpperBound = 0; //default value
@@ -270,9 +270,9 @@ namespace Simulator.Objects.Data_Objects.DARP
             }
             return status;
         }
-        public Assignment TryGetSolutionWithSearchStrategy(DarpDataModel darpDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
+        public Assignment TryGetSolutionWithSearchStrategy(RoutingDataModel routingDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
         {
-            DataModel = darpDataModel;
+            DataModel = routingDataModel;
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
             for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound++)
@@ -301,20 +301,20 @@ namespace Simulator.Objects.Data_Objects.DARP
 
         }
 
-        public DarpSolutionObject GetSolutionObject(Assignment solution)
+        public RoutingSolutionObject GetSolutionObject(Assignment solution)
         {
-            DarpSolutionObject darpSolutionObject = null;
+            RoutingSolutionObject routingSolutionObject = null;
             if (solution != null) { 
 
                 var solutionDictionary = SolutionToVehicleStopTimeWindowsDictionary(solution);
                 if (solutionDictionary != null)
                 {
                     var solutionMetricsDictionary = GetVehicleRouteMetrics(solution);
-                    darpSolutionObject = new DarpSolutionObject(solutionDictionary,solutionMetricsDictionary);
+                    routingSolutionObject = new RoutingSolutionObject(solutionDictionary,solutionMetricsDictionary);
                     
                 }
             }
-            return darpSolutionObject;
+            return routingSolutionObject;
         }
 
         private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> SolutionToVehicleStopTimeWindowsDictionary(Assignment solution)
@@ -495,7 +495,14 @@ namespace Simulator.Objects.Data_Objects.DARP
                     printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeDeliveryVar), DataModel.VehicleSpeed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
-                    printableList.Add("Average distance traveled per request: " + routeDistance/ solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count + " meters.");
+                    if (solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count > 0)
+                    {
+                        printableList.Add("Average distance traveled per request: " +
+                                          routeDistance / solutionObject
+                                              .GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count +
+                                          " meters.");
+                    }
+
                     totalDistance += routeDistance;
                     totalTime += solution.Min(endTimeVar);
                     printableList.Add("------------------------------------------");
@@ -506,6 +513,7 @@ namespace Simulator.Objects.Data_Objects.DARP
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
                 printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.Customers.Count);
+                printableList.Add("Solution Objective value: " + solution.ObjectiveValue());
             }
             else
             {

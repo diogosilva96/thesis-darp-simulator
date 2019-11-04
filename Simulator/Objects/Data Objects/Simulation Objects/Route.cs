@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects
+namespace Simulator.Objects.Data_Objects.Simulation_Objects
 {
     public class Route //Contains a set of trips (with different start_times and different stop sequences (routes))
     {

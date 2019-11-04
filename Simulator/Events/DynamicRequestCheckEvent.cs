@@ -18,10 +18,18 @@ namespace Simulator.Events
 
         public override string GetTraceMessage()
         {
-
+            string message;
+            string timestamp = DateTime.Now.ToString();
             string splitter = ", ";
-            string message = "";
-            message = this.ToString() + splitter + Time;
+            if (GenerateNewDynamicRequest)
+            {
+                message = timestamp + splitter + this.ToString() + splitter + "Probability: " + _probability;
+            }
+            else
+            {
+                message = "";
+            }
+             
             return message;
         }
 

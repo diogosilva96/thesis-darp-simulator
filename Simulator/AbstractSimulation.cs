@@ -37,26 +37,8 @@ namespace Simulator
             TotalEventsHandled = 0;
         }
 
-        public abstract void Init();
-        public abstract void InitEvents();
 
-        public abstract void PrintSimulationSettings();
-
-        public void MainLoop()
-        {
-            while (true)
-            {
-                Init(); //initializes simulation variables
-                DisplayOptionsMenu();
-                InitEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
-                if (Events.Count > 0) //it means there is the need to simulate
-                {
-                    PrintSimulationSettings();
-                    Simulate();
-                    PrintSimulationStatistics();
-                }
-            }
-        }
+        public abstract void MainLoop();
         public void Simulate()
         {
             if (Events.Count > 0)
@@ -78,8 +60,6 @@ namespace Simulator
             }
             
         }
-
-        public abstract void DisplayOptionsMenu();
 
         public abstract void Append(Event evt);
         public override string ToString()
