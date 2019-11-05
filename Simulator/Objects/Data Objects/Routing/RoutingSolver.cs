@@ -90,9 +90,16 @@ namespace Simulator.Objects.Data_Objects.Routing
                     //because the penalty for doing so would exceed any further reduction in travel time.
                     //If we want to make as many deliveries as possible, penalty value should be larger than the sum of all travel times between locations
                     long penalty = 9999999;
-                    for (int i = 1; i < DataModel.TimeMatrix.GetLength(0); ++i)
+                    for (int j = 0; j < DataModel.Starts.GetLength(0); j++)
                     {
-                        _routingModel.AddDisjunction(new long[] {_routingIndexManager.NodeToIndex(i)}, penalty);
+                        var startIndex = DataModel.Starts[j];
+                        for (int i = 0; i < DataModel.TimeMatrix.GetLength(0); ++i)
+                        {
+                            if (startIndex != i)
+                            {
+                                _routingModel.AddDisjunction(new long[] {_routingIndexManager.NodeToIndex(i)}, penalty);//adds disjunction to all stop besides start stops
+                            }
+                        }
                     }
                 }
 
@@ -428,7 +435,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 long totalTime = 0;
                 long totalDistance = 0;
                 long totalLoad = 0;
-                
+
                 var solutionObject = GetSolutionObject(solution);
                 for (int i = 0; i < DataModel.IndexManager.Vehicles.Count; ++i)
                 {
@@ -436,6 +443,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                     long routeLoad = 0;
                     long routeDistance = 0;
                     long previousRouteLoad = 0;
+                    long routeWaitTime = 0;
+                    long routeTransitTime = 0;
                     printableList.Add("Vehicle "+DataModel.IndexManager.Vehicles[i].Id+" Route:");
                     var index = _routingModel.Start(i);
                     string concatenatedString = "";
@@ -454,9 +463,11 @@ namespace Simulator.Objects.Data_Objects.Routing
                         index = solution.Value(_routingModel.NextVar(index));
                         //printableList.Add(index+ " - "+solution.Max(capacityDim.CumulVar(index))); //current capacity
                         double timeToTravel = solution.Value(timeTransitVar);
+                        routeWaitTime += solution.Value(timeSlackVar);
+                        routeTransitTime += solution.Value(timeTransitVar);
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.VehicleSpeed);
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex)+" Time Dimension - Cumul: ("+solution.Min(timeCumulVar)+","+solution.Max(timeCumulVar)+") - Slack: ("+solution.Min(timeSlackVar)+","+solution.Max(timeSlackVar)+") - Transit: ("+solution.Value(timeTransitVar)+")");
-                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) +" Capacity Dimension - Cumul:"+solution.Value(capacityCumulVar)+" Transit:"+solution.Value(capacityTransitVar));
+                        //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) +" Capacity Dimension - Cumul:"+solution.Value(capacityCumulVar)+" Transit:"+solution.Value(capacityTransitVar));
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
                             concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
@@ -495,6 +506,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                     printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeDeliveryVar), DataModel.VehicleSpeed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
+                    printableList.Add("Route Transit Time: "+routeTransitTime);
+                    printableList.Add("Route Wait Time: "+routeWaitTime);
                     if (solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count > 0)
                     {
                         printableList.Add("Average distance traveled per request: " +

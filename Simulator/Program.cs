@@ -19,6 +19,7 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
+
             AbstractSimulation sim = new Simulation(45*60,30*60,0.02);
             sim.MainLoop();
             Console.Read();

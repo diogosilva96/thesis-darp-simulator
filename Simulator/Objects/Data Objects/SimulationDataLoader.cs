@@ -14,6 +14,8 @@ namespace Simulator.Objects.Data_Objects
         public List<Route> Routes { get; internal set; }
         public DemandsDataObject DemandsDataObject { get; internal set; }
 
+        private string _baseDirectoryPath;
+
         private readonly bool _urbanOnly;
 
         public SimulationDataLoader(bool urbanOnly)
@@ -37,14 +39,17 @@ namespace Simulator.Objects.Data_Objects
             var watch = Stopwatch.StartNew();
             Console.WriteLine(this+"Loading all the necessary data...");
             Console.WriteLine(this + "Urban routes only:" + _urbanOnly);
-            var stopsPath = Path.Combine(Environment.CurrentDirectory, @"files\stops.txt"); //files from google transit (GTFS file)
-            var routesPath = Path.Combine(Environment.CurrentDirectory, @"files\routes.txt"); //files from google transit (GTFS file)
-            var demandsPath = Path.Combine(Environment.CurrentDirectory, @"files\demands.csv");
+            _baseDirectoryPath= Directory
+                .GetParent(Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName)
+                .FullName;
+            var stopsPath = Path.Combine(_baseDirectoryPath, @"Data Files\stops.txt"); //files from google transit (GTFS file)
+            var routesPath = Path.Combine(_baseDirectoryPath, @"Data Files\routes.txt"); //files from google transit (GTFS file)
+            var demandsPath = Path.Combine(_baseDirectoryPath, @"Data Files\demands.csv");
             var stopTimesPath =
-                Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
-            string tripsPath = Path.Combine(Environment.CurrentDirectory, @"files\trips.txt");
+                Path.Combine(_baseDirectoryPath, @"Data Files\stop_times.txt"); // files from google transit (GTFS file)
+            string tripsPath = Path.Combine(_baseDirectoryPath, @"Data Files\trips.txt");
             var tripStopsPath =
-                Path.Combine(Environment.CurrentDirectory, @"files\trip_stops.txt"); //file generated from stop_times.txt and stop.txt
+                Path.Combine(_baseDirectoryPath, @"Data Files\trip_stops.txt"); //file generated from stop_times.txt and stop.txt
             var routesData = GenerateListData(routesPath);
             LoadRoutes(routesData);
             var tripsData = GenerateListData(tripsPath);
@@ -346,7 +351,7 @@ namespace Simulator.Objects.Data_Objects
         private List<int> GenerateTripIdList()
         {
             var stopTimesPath =
-                Path.Combine(Environment.CurrentDirectory, @"files\stop_times.txt"); // files from google transit (GTFS file)
+                Path.Combine(_baseDirectoryPath, @"Data Files\stop_times.txt"); // files from google transit (GTFS file)
             if (!File.Exists(stopTimesPath))
             {
                 Console.WriteLine(this + " Error! File stop_times.txt does not exist!");

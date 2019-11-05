@@ -174,10 +174,10 @@ namespace Simulator
 
         public RoutingDataModel GenerateRandomInitialDataModel()
         {
-            ConsoleLogger.Log("Please insert the number of vehicles to be considered:");
-            var vehicleNumber = GetIntInput(1, int.MaxValue);
             ConsoleLogger.Log("Please insert the number of customers to be randomly generated:");
             var numberCustomers = GetIntInput(1, int.MaxValue);
+            ConsoleLogger.Log("Please insert the number of vehicles to be considered:");
+            var vehicleNumber = GetIntInput(1, int.MaxValue);
             GenerateNewDataModelLabel:
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
@@ -247,7 +247,8 @@ namespace Simulator
             if (dataModel != null)
             {
                 RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
-
+                dataModel.PrintDataModelSettings();
+                dataModel.PrintPickupDeliveries();
                 var timeWindowSolution = routingSolver.TryGetFastSolution();
                 RoutingSolutionObject routingSolutionObject = null;
 ;
@@ -265,7 +266,39 @@ namespace Simulator
         public void AlgorithmComparisonOption()
         {
             bool allowDropNodes = AllowDropNodesMenu();
-            var dataModel = GenerateRandomInitialDataModel();
+            ConsoleLogger.Log("Use random generated Data?");
+            ConsoleLogger.Log("1 - Yes");
+            ConsoleLogger.Log("2 - No");
+            var option = GetIntInput(1, 2);
+            RoutingDataModel dataModel = null;
+            if (option == 1)
+            {
+                dataModel = GenerateRandomInitialDataModel();
+            }
+            else
+            {
+                var baseProjectPath = Directory.GetParent(Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName).FullName;
+                var dataSetPath = @Path.Combine(baseProjectPath, @"Datasets");
+                DirectoryInfo d = new DirectoryInfo(dataSetPath);//Assuming Test is your Folder
+                FileInfo[] Files = d.GetFiles("*.txt"); //Getting Text files
+                Console.WriteLine("Please select one of the existing  Data " +
+                                  "files" +
+                                  "" +
+                                  "" +
+                                  ":");
+                var index = 0;
+                foreach (var file in Files)
+                {
+                    index++;
+                    Console.WriteLine(index + " - " + file.Name);
+                }
+
+                var fileOption = GetIntInput(1, index);
+                var selectedFile = Files[fileOption - 1];
+                string filePath = Path.Combine(selectedFile.DirectoryName, selectedFile.Name);
+                DataSet dataSet = new DataSet(filePath);
+            }
+
             dataModel.PrintDataModelSettings();
             AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(dataModel);
             var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
