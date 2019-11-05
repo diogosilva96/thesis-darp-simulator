@@ -470,15 +470,15 @@ namespace Simulator.Objects.Data_Objects.Routing
                         //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) +" Capacity Dimension - Cumul:"+solution.Value(capacityCumulVar)+" Transit:"+solution.Value(capacityTransitVar));
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
-                                                  solution.Min(timeCumulVar) + "," + solution.Max(timeCumulVar) + "), L(" +
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
+                                                  solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +
                                                   routeLoad + ") --[" + Math.Round(distance) + "m = "+ solution.Value(timeTransitVar)+ " secs]--> ";
 
                         }
                         if (DataModel.IndexManager.GetStop(_routingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
-                                                  solution.Min(timeCumulVar) + "," + solution.Max(timeCumulVar) + "), L(" +
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
+                                                  solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +
                                                   routeLoad + ")";
                         }
 
@@ -486,43 +486,45 @@ namespace Simulator.Objects.Data_Objects.Routing
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
 
                     }
-
-                    var endTimeDeliveryVar = timeDim.CumulVar(index);      
                     var endTimeVar = timeDim.CumulVar(index);
                     nodeIndex = _routingIndexManager.IndexToNode(index);
                     routeLoad += DataModel.Demands[nodeIndex];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                     {
-                        concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + ":T(" +
-                                              solution.Min(endTimeVar) + "," + solution.Max(endTimeVar) + "), L(" +
+                        concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
+                                              solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" +
                                               routeLoad + ")";
                     }
 
+                    var startTimeVar = timeDim.CumulVar(_routingModel.Start(i));
                     printableList.Add(concatenatedString);
                     //long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), DataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
-                    printableList.Add("Route time: "+ TimeSpan.FromSeconds(solution.Min(endTimeVar)).TotalMinutes + " minutes");
+                    var routeTime = solution.Max(endTimeVar) - solution.Min(startTimeVar);
+                    printableList.Add("Route Total Time: "+ TimeSpan.FromSeconds(routeTime).TotalMinutes + " minutes");
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
-                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeDeliveryVar), DataModel.VehicleSpeed));//NEED TO CHANGE
+                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeVar), DataModel.VehicleSpeed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
                     printableList.Add("Route Transit Time: "+routeTransitTime);
-                    printableList.Add("Route Wait Time: "+routeWaitTime);
+                    printableList.Add("Route Vehicle Wait Time: "+routeWaitTime);
+                    printableList.Add("Average Route Transit time: "+routeTransitTime/ solutionObject.GetVehicleStops(solutionObject.IndexToVehicle(i)).Count); //total route transit time/numberofstops visited
                     if (solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count > 0)
                     {
-                        printableList.Add("Average distance traveled per request: " +
+                        printableList.Add("Average distance traveled per Customer request: " +
                                           routeDistance / solutionObject
                                               .GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count +
                                           " meters.");
                     }
 
                     totalDistance += routeDistance;
-                    totalTime += solution.Min(endTimeVar);
+                    totalTime += routeTime;
                     printableList.Add("------------------------------------------");
                 }
 
 
                 printableList.Add("Total time of all routes: "+ TimeSpan.FromSeconds(totalTime).TotalMinutes+" minutes");
+                printableList.Add("Solution object time: " + solutionObject.TotalTimeInSeconds);
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
                 printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.Customers.Count);
@@ -595,9 +597,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                     routeLoad += DataModel.Demands[_routingIndexManager.IndexToNode(index)];
                     totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     var endTimeVar = timeDim.CumulVar(index);
+                    var startTimeVar = timeDim.CumulVar(_routingModel.Start(i));
                     routeLoads[i] = totalLoad;
                     routeDistances[i] = routeDistance;
-                    routeTimes[i] = solution.Min(endTimeVar);
+                    routeTimes[i] = solution.Max(endTimeVar)-solution.Min(startTimeVar);
                 }
                 vehicleMetricsDictionary.Add("routeLoads", routeLoads);
                 vehicleMetricsDictionary.Add("routeDistances", routeDistances);

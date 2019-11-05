@@ -75,7 +75,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     var load = "";
                     if (timeWindows != null && timeWindows.Count == stops.Count)
                     {
-                        stopTimeWindow = "T(" + timeWindows[i][0] + ", " + timeWindows[i][1] + ")";
+                        stopTimeWindow = "T{" + timeWindows[i][0] + ";" + timeWindows[i][1] + "};";
                     }
 
                     if (routeCustomers != null && timeWindows != null)
@@ -88,19 +88,21 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                         var currentLoad = numCustomersEnterAtCurrentStop - numCustomersLeaveAtCurrentStop;
                         totalEnterVehicle += numCustomersEnterAtCurrentStop;
                         totalLeaveVehicle += numCustomersLeaveAtCurrentStop;
-                        //load = " , ENTER(" + (numCustomersEnterAtCurrentStop) + ") , " + "LEAVE(" + (numCustomersLeaveAtCurrentStop) + ")";
+                        load = "IN:" + (numCustomersEnterAtCurrentStop) + "; " + "OUT:" + (numCustomersLeaveAtCurrentStop) + "";
+
 
                     }
                     if (i == stops.Count - 1)
                     {
-                        Console.WriteLine(stops[i] + ":" + stopTimeWindow + load);
+                        Console.WriteLine(stops[i].Id + "(" + stopTimeWindow + load+")");
                         break;
                     }
-                    Console.Write(stops[i] + ": "+stopTimeWindow+ load +" -> ");
+                    Console.Write(stops[i].Id + "("+stopTimeWindow+ load +") -> ");
                    
                 }
-                Console.WriteLine("Total enters: "+totalEnterVehicle);
-                Console.WriteLine("Total Leave: "+totalLeaveVehicle);
+                Console.WriteLine("Total Customer Enters: "+totalEnterVehicle);
+                Console.WriteLine("Total Customer Leave: " + totalLeaveVehicle);
+                
             }
             else
             {

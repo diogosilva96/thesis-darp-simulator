@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
@@ -16,7 +17,7 @@ namespace Simulator.Objects
         public double[,] Coordinates;
         public int[] VehicleCapacities;
         public int[] Demands;
-        public long[,] TimeWindows;
+        public long[,] TimeWindows;//in minutes
 
         private int totalPickups => Demands != null ? Array.FindAll(Demands, d => d > 0).Length:0;
         private int totalDeliveries => Demands != null ? Array.FindAll(Demands, d => d < 0).Length : 0;
@@ -29,6 +30,37 @@ namespace Simulator.Objects
             GenerateRandomCustomers();
         }
 
+        public void PrintDataInfo()
+        {
+            Console.WriteLine("---------------------------");
+            Console.WriteLine("|   Dataset Information   |");
+            Console.WriteLine("---------------------------");
+            Console.WriteLine("Dataset file path: "+Path);
+            Console.WriteLine("Total Stops: "+Stops.Count);
+            Console.WriteLine("Total Customers: "+Customers.Count);
+        }
+
+        public void PrintDistances()
+        {
+            foreach (var stopO in Stops)
+            {
+                foreach (var stopD in Stops)
+                {
+                    var distance = DistanceCalculator.CalculateDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude);
+                    Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " = "+ distance);
+                    
+                }
+            }
+        }
+
+        public void PrintTimeWindows()
+        {
+
+            for (int i =0;i<TimeWindows.GetLength(0);i++)
+            {
+                Console.WriteLine(Stops[i] + " - T("+TimeWindows[i,0]+","+TimeWindows[i,1]+")");
+            }
+        }
         private void GenerateRandomCustomers()
         {
             Customers = new List<Customer>();
@@ -93,9 +125,6 @@ namespace Simulator.Objects
                 var customer = new Customer(pickupDelivery, timeWindows, 0);
                 Customers.Add(customer);
             }
-
-            Console.WriteLine("Number of customers: " + Customers.Count + " Total pickups:" + totalPickups +
-                              " Total Deliveries: " + totalDeliveries);
         }
         private void ImportData(string path)
         {

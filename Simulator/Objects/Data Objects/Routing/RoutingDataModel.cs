@@ -231,7 +231,9 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public void PrintDataModelSettings()
         {
-            Console.WriteLine("Data model settings: ");
+            Console.WriteLine("-------------------------------");
+            Console.WriteLine("|     Data Model Settings     |");
+            Console.WriteLine("-------------------------------");
             Console.WriteLine("Number of vehicles: "+IndexManager.Vehicles.Count);
             Console.WriteLine("Number of customers: "+IndexManager.Customers.Count);
             Console.WriteLine("Maximum Customer Ride Time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");

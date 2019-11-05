@@ -266,7 +266,7 @@ namespace Simulator
         public void AlgorithmComparisonOption()
         {
             bool allowDropNodes = AllowDropNodesMenu();
-            ConsoleLogger.Log("Use random generated Data?");
+            ConsoleLogger.Log("Use random generated Data to test the different algorithms?");
             ConsoleLogger.Log("1 - Yes");
             ConsoleLogger.Log("2 - No");
             var option = GetIntInput(1, 2);
@@ -281,11 +281,7 @@ namespace Simulator
                 var dataSetPath = @Path.Combine(baseProjectPath, @"Datasets");
                 DirectoryInfo d = new DirectoryInfo(dataSetPath);//Assuming Test is your Folder
                 FileInfo[] Files = d.GetFiles("*.txt"); //Getting Text files
-                Console.WriteLine("Please select one of the existing  Data " +
-                                  "files" +
-                                  "" +
-                                  "" +
-                                  ":");
+                ConsoleLogger.Log("Please select one of the existing  Data files:");
                 var index = 0;
                 foreach (var file in Files)
                 {
@@ -297,6 +293,24 @@ namespace Simulator
                 var selectedFile = Files[fileOption - 1];
                 string filePath = Path.Combine(selectedFile.DirectoryName, selectedFile.Name);
                 DataSet dataSet = new DataSet(filePath);
+                List<Vehicle> dataModelVehicles = new List<Vehicle>();
+                List<Stop> startDepots = new List<Stop>();
+                List<Stop> endDepots = new List<Stop>();
+                dataSet.PrintDataInfo();
+
+                ConsoleLogger.Log("Please insert the number of vehicles to be considered:");
+                var numVehicles = GetIntInput(1, int.MaxValue);
+                long[] startDepotArrivalTimes = new long[numVehicles];
+                for (int i = 0; i < numVehicles; i++)
+                {
+                    dataModelVehicles.Add(new Vehicle(_vehicleSpeed, dataSet.VehicleCapacities[1], true));
+                    startDepots.Add(dataSet.Stops[0]);
+                    // startDepots.Add(null); //dummy start depot
+                    endDepots.Add(dataSet.Stops[0]);
+                    startDepotArrivalTimes[i] = 0;
+                }
+
+                dataModel = new RoutingDataModel(startDepots,endDepots,dataModelVehicles,dataSet.Customers,startDepotArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             }
 
             dataModel.PrintDataModelSettings();
@@ -659,27 +673,45 @@ namespace Simulator
                     if (departEvent.Vehicle.TripIterator.Current != null)
                     {
                         var  currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
-                        var  nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
-                        var stopTuple = Tuple.Create(currentStop,nextStop);
-                        TransportationNetwork.ArcDictionary.TryGetValue(stopTuple, out var distance);
-
-                        if (distance == 0)
+                        if (departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop != null)
                         {
-                            distance = DistanceCalculator.CalculateHaversineDistance(currentStop.Latitude,currentStop.Longitude,nextStop.Latitude,nextStop.Longitude);
-                        }
-                        var travelTime = DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed, distance); //Gets the time it takes to travel from the currentStop to the nextStop
-                        var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
-                        departEvent.Vehicle.TripIterator.Current.StopsIterator.Next(); //Moves the iterator to the next stop
-                        var nextArriveEvent = EventGenerator.GenerateVehicleArriveEvent(departEvent.Vehicle, nextArrivalTime); //generates the arrive event
-                        AddEvent(nextArriveEvent);
-                        //DEBUG!
-                        if (departEvent.Vehicle.FlexibleRouting)
-                        {
-                            var scheduledArrivalTime = departEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[
-                                departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
+                            var nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy
+                                ? TransportationNetwork.Stops.Find(s =>
+                                    s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id)
+                                : departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
+                            var stopTuple = Tuple.Create(currentStop, nextStop);
+                            TransportationNetwork.ArcDictionary.TryGetValue(stopTuple, out var distance);
 
-                            ConsoleLogger.Log("Event arrival time:"+nextArrivalTime+", Scheduled arrival time:"+scheduledArrivalTime);
+                            if (distance == 0)
+                            {
+                                distance = DistanceCalculator.CalculateHaversineDistance(currentStop.Latitude,
+                                    currentStop.Longitude, nextStop.Latitude, nextStop.Longitude);
+                            }
+
+                            var travelTime =
+                                DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed,
+                                    distance); //Gets the time it takes to travel from the currentStop to the nextStop
+                            var nextArrivalTime =
+                                Convert.ToInt32(departTime +
+                                                travelTime); //computes the arrival time for the next arrive event
+                            departEvent.Vehicle.TripIterator.Current.StopsIterator
+                                .Next(); //Moves the iterator to the next stop
+                            var nextArriveEvent =
+                                EventGenerator.GenerateVehicleArriveEvent(departEvent.Vehicle,
+                                    nextArrivalTime); //generates the arrive event
+                            AddEvent(nextArriveEvent);
+                            //DEBUG!
+                            if (departEvent.Vehicle.FlexibleRouting)
+                            {
+                                var scheduledArrivalTime =
+                                    departEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[
+                                        departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
+
+                                ConsoleLogger.Log("Event arrival time:" + nextArrivalTime +
+                                                  ", Scheduled arrival time:" + scheduledArrivalTime);
+                            }
                         }
+
                         //END DEBUG
                     }
 
@@ -831,7 +863,7 @@ namespace Simulator
                 case CustomerRequestEvent customerRequestEvent:
                         TotalDynamicRequests++;
                         var newCustomer = customerRequestEvent.Customer;
-                    if (VehicleFleet.FindAll(v=>v.FlexibleRouting == true).Count>0 && newCustomer != null && TotalServedDynamicRequests <1)
+                    if (VehicleFleet.FindAll(v=>v.FlexibleRouting == true).Count>0 && newCustomer != null && VehicleFleet.FindAll(v=>v.TripIterator.Current != null && !v.TripIterator.Current.IsDone).Count>0)
                     {
                         var flexibleRoutingVehicles = VehicleFleet.FindAll(v => v.FlexibleRouting);
                         List<Stop> startDepots = new List<Stop>();

@@ -52,7 +52,6 @@ namespace Simulator.Objects.Data_Objects.Routing
             _routeTimesInSeconds = routeTime;
             solutionMetricsDictionary.TryGetValue("routeLoads", out long[] routeLoad);
             _routeLoads = routeLoad;
-
         }
 
         public Vehicle IndexToVehicle(int index)
@@ -141,10 +140,11 @@ namespace Simulator.Objects.Data_Objects.Routing
             long totalValue = 0;
             if (metricValues.Length > 0)
             {
-                foreach (var value in metricValues)
+                for (int i = 0; i < metricValues.Length; i++)
                 {
-                    totalValue += value;
+                    totalValue += metricValues[i];
                 }
+
             }
             return totalValue;
         }
