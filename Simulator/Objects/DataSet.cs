@@ -47,7 +47,9 @@ namespace Simulator.Objects
                 foreach (var stopD in Stops)
                 {
                     var distance = DistanceCalculator.CalculateDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude);
-                    Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " = "+ distance);
+                    var havDistance = DistanceCalculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
+                        stopD.Latitude, stopD.Longitude);
+                    Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " - pointsDist: "+ distance+"; havDist:"+havDistance);
                     
                 }
             }

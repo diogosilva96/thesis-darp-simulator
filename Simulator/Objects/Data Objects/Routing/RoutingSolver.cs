@@ -161,8 +161,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                     foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
                     {
                         var deliveryIndex = pickupDelivery[1];
+                        var directRideTimeDuration = DataModel.TimeMatrix[pickupDelivery[0], pickupDelivery[1]];
                         var realRideTimeDuration = timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
-                        solver.Add(realRideTimeDuration < DataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the maxCustomerRideTime Duration
+                        solver.Add(realRideTimeDuration < directRideTimeDuration+DataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the directRideTimeDuration + maxCustomerRideTimeDuration
                     }
                 }
 
@@ -174,7 +175,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     solver.Add(solver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
                     solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
                 }
-
+                //constraints to enforce that if there is a custumer inside a vehicle has to be served by that vehicle
                     foreach (var customer in DataModel.IndexManager.Customers)
                     {
                         if (customer.IsInVehicle)

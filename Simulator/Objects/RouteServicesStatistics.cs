@@ -184,7 +184,7 @@ namespace Simulator.Objects
 
             toPrintList.Add("Total Distance Traveled: " + TotalDistanceTraveled + " meters.");
             toPrintList.Add(" ");
-            toPrintList.Add("Statistics (per service):");
+            toPrintList.Add("Statistics (Average per service):");
             toPrintList.Add("Average route duration:" + TimeSpan.FromSeconds(AverageRouteDuration).TotalMinutes +
                             " minutes.");
             toPrintList.Add("Average number of requests:" + AverageNumberRequests);
@@ -230,8 +230,6 @@ namespace Simulator.Objects
                 printableList.Add("Distance traveled: " + trip.TotalDistanceTraveled);
                 printableList.Add("");
             }
-
-            printableList.Add("-------------------------------------------------------------------");
             return printableList;
         }
     }
