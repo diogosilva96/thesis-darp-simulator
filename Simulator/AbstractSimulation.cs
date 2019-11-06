@@ -20,21 +20,19 @@ namespace Simulator
 
         public List<Vehicle> VehicleFleet;
 
-        protected Logger.Logger ConsoleLogger;
-
         protected EventGenerator EventGenerator;
 
         protected int TotalEventsHandled;
 
+        public int ComputationTime;
+
         protected AbstractSimulation()
         {
-            IRecorder consoleRecorder = new ConsoleRecorder();
-            ConsoleLogger = new Logger.Logger(consoleRecorder);
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
-           
             EventGenerator = EventGenerator.Instance();
             TotalEventsHandled = 0;
+            ComputationTime = 0;
         }
 
 
@@ -42,9 +40,7 @@ namespace Simulator
         public void Simulate()
         {
             if (Events.Count > 0)
-            {                
-                ConsoleLogger.Log(this.ToString()+"Press any key to start the simulation...");
-                Console.ReadLine();
+            {                              
                 var watch = Stopwatch.StartNew();
                 for (int i = 0; i < Events.Count ;i++)
                 {
@@ -54,9 +50,8 @@ namespace Simulator
                             SortEvents();
                 }
                 watch.Stop();
-                ConsoleLogger.Log("-----------------------------------------------------");
-                ConsoleLogger.Log(this.ToString()+"Simulation finished after "+TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds+" seconds.");
-                
+                ComputationTime = (int)TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds;
+
             }
             
         }
@@ -99,6 +94,5 @@ namespace Simulator
             }
             return true;
         }
-        public abstract void PrintSimulationStatistics();
     }
 }

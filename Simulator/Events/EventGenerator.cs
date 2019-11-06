@@ -125,10 +125,8 @@ namespace Simulator.Events
             }
             return evt;
         }
-        public Event GenerateCustomerRequestEvent(int time,Stop[] pickupDelivery,long[] desiredTimeWindow)
-        {
-       
-                Customer customer = new Customer(pickupDelivery,desiredTimeWindow, time);
+        public Event GenerateCustomerRequestEvent(int time, Customer customer)
+        {     
                 Event evt = _eventFactory.CreateEvent(4, time, null, null, customer);
                 return evt;
         }
