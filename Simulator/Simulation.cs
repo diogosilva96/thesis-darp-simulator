@@ -188,8 +188,9 @@ namespace Simulator
                     pickupTimeWindow);
                 customersToBeServed.Add(customer);
             }
-            long[] startDepotsArrivalTime = new long[dataModelVehicles.Count];
-            var routingDataModel = new RoutingDataModel(startDepots,endDepots, dataModelVehicles, customersToBeServed,startDepotsArrivalTime,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+            List<long> startDepotsArrivalTime = new List<long>(dataModelVehicles.Count);
+            var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,customersToBeServed,startDepotsArrivalTime);
+            var routingDataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             var solver = new RoutingSolver(routingDataModel,false);
             var solution = solver.TryGetFastSolution();
             if (solution == null)
@@ -632,10 +633,10 @@ namespace Simulator
                         //--------------------------------------------------------------------------------------------------------------------------
                         //Calculation of startDepotArrivalTime, if there is any moving vehicle, otherwise startDepotArrivalTime will be the current event Time
                         var movingVehicles = VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);
-                        long[] startDepotsArrivalTimes = new long[dataModelVehicles.Count];
+                        List<long> startDepotArrivalTimesList = new List<long>(dataModelVehicles.Count);
                         for (int i = 0; i < dataModelVehicles.Count ; i++)
                         {
-                            startDepotsArrivalTimes[i] = evt.Time; //initializes startDepotArrivalTimes with the current event time
+                            startDepotArrivalTimesList[i] = evt.Time; //initializes startDepotArrivalTimes with the current event time
                         }
                         if (movingVehicles.Count > 0)//if there is a moving vehicle calculates the baseArrivalTime
                         {
@@ -650,8 +651,8 @@ namespace Simulator
                                     {
                                         if (movingVehicle.TripIterator.Current != null && movingVehicle.TripIterator.Current.StopsIterator.CurrentStop == vehicleStopEvent.Stop)
                                         {
-                                            var currentStartDepotArrivalTime = startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)];
-                                            startDepotsArrivalTimes[dataModelVehicles.IndexOf(movingVehicle)] = Math.Max(vehicleStopEvent.Time, (int)currentStartDepotArrivalTime); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time, and updates its value on the array
+                                            var currentStartDepotArrivalTime = startDepotArrivalTimesList[dataModelVehicles.IndexOf(movingVehicle)];
+                                            startDepotArrivalTimesList[dataModelVehicles.IndexOf(movingVehicle)] = Math.Max(vehicleStopEvent.Time, (int)currentStartDepotArrivalTime); //finds the biggest value between the current baseArrivalTime and the current vehicle's next stop arrival time, and updates its value on the array
                                         }
                                     }
                                 }
@@ -659,8 +660,8 @@ namespace Simulator
                         }
                         //end of calculation of startDepotsArrivalTime
                         //--------------------------------------------------------------------------------------------------------------------------
-
-                        var dataModel = new RoutingDataModel(startDepots, endDepots, dataModelVehicles, allExpectedCustomers,startDepotsArrivalTimes,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+                        var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,allExpectedCustomers,startDepotArrivalTimesList);
+                        var dataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
                         var solver = new RoutingSolver(dataModel,false);
                         var solution = solver.TryGetFastSolution();
                         if (solution != null)

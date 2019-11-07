@@ -156,7 +156,7 @@ namespace Simulator.Objects
                 List<Stop> endDepots = new List<Stop>();
                 dataSet.PrintDataInfo();
                 var numVehicles = GetNumberVehiclesMenuOption();
-                long[] startDepotArrivalTimes = new long[numVehicles];
+                List<long> startDepotArrivalTimes = new List<long>(numVehicles);
                 for (int i = 0; i < numVehicles; i++)
                 {
                     dataModelVehicles.Add(new Vehicle(_simulation.VehicleSpeed, dataSet.VehicleCapacities[1], true));
@@ -167,7 +167,9 @@ namespace Simulator.Objects
                 }
 
                 dataSet.PrintDistances();
-                dataModel = new RoutingDataModel(startDepots, endDepots, dataModelVehicles, dataSet.Customers, startDepotArrivalTimes, _simulation.MaxCustomerRideTime, _simulation.MaxAllowedUpperBoundTime);
+                dataSet.PrintTimeWindows();
+                var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,dataSet.Customers,startDepotArrivalTimes);
+                dataModel = new RoutingDataModel(indexManager, _simulation.MaxCustomerRideTime, _simulation.MaxAllowedUpperBoundTime);
             }
             return dataModel;
         }

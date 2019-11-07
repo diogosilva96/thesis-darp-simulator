@@ -32,6 +32,7 @@ namespace Simulator.Objects
                         
                         distance = (long)DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
+                      
                     }
                     distanceMatrix[i, j] = distance;
                 }
@@ -43,7 +44,7 @@ namespace Simulator.Objects
             return distanceMatrix;
         }
 
-        public long[,] GetTimeMatrix(List<Stop> stops,int speedInKmHour)
+        public long[,] GetTimeMatrix(List<Stop> stops,int speedInKmHour,bool useHaversineDistanceFormula)
         {
             long[,] timeMatrix = new long[stops.Count, stops.Count];
 
@@ -60,9 +61,17 @@ namespace Simulator.Objects
                         {
                             if (stops[i] != null && stops[j] != null) //if stop is null its a dummy depot
                             {
-                                distance = (long) DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude,
-                                    stops[i].Longitude,
-                                    stops[j].Latitude, stops[j].Longitude);
+                                if (useHaversineDistanceFormula) //uses haversine distance formula
+                                {
+                                    distance = (long) DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude,
+                                        stops[i].Longitude,
+                                        stops[j].Latitude, stops[j].Longitude);
+                                }
+                                else //uses euclidean distance formula
+                                {
+                                    distance = (long) DistanceCalculator.CalculateEuclideanDistance(stops[i].Latitude,
+                                        stops[i].Longitude, stops[j].Latitude, stops[j].Longitude);
+                                }
                             }
                             else
                             {

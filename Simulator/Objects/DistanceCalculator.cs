@@ -41,7 +41,7 @@ namespace Simulator.Objects
 
         }
 
-        public static double CalculateDistance(double x1, double y1, double x2, double y2)
+        public static double CalculateEuclideanDistance(double x1, double y1, double x2, double y2)
         {
             var x = (x1 - x2);
             var y = (y1- y2);

@@ -19,15 +19,15 @@ namespace Simulator.Objects
         public int[] Demands;
         public long[,] TimeWindows;//in minutes
 
-        private int totalPickups => Demands != null ? Array.FindAll(Demands, d => d > 0).Length:0;
-        private int totalDeliveries => Demands != null ? Array.FindAll(Demands, d => d < 0).Length : 0;
+        private int TotalPickups => Demands != null ? Array.FindAll(Demands, d => d > 0).Length:0;
+        private int TotalDeliveries => Demands != null ? Array.FindAll(Demands, d => d < 0).Length : 0;
 
 
         public DataSet(string path)
         {
             Path = path;
             ImportData(path);
-            GenerateRandomCustomers();
+            GenerateDatasetCustomers();
         }
 
         public void PrintDataInfo()
@@ -46,11 +46,14 @@ namespace Simulator.Objects
             {
                 foreach (var stopD in Stops)
                 {
-                    var distance = DistanceCalculator.CalculateDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude);
+                    var euclideanDistance = DistanceCalculator.CalculateEuclideanDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude)*1000;//distance in meters
                     var havDistance = DistanceCalculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
                         stopD.Latitude, stopD.Longitude);
-                    Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " - pointsDist: "+ distance+"; havDist:"+havDistance);
-                    
+                    var speed = 40;
+                    var eucTravelTime = DistanceCalculator.DistanceToTravelTime(speed, euclideanDistance);
+                    var havTravelTime = DistanceCalculator.DistanceToTravelTime(speed,havDistance);
+                    Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " - euclideanDistance: "+ euclideanDistance+"; haversineDistance:"+havDistance+"; speed = "+speed+ " ; eucTT: "+eucTravelTime+ " ; havTT: "+havTravelTime);
+                    Console.WriteLine();
                 }
             }
         }
@@ -63,12 +66,12 @@ namespace Simulator.Objects
                 Console.WriteLine(Stops[i] + " - T("+TimeWindows[i,0]+","+TimeWindows[i,1]+")");
             }
         }
-        private void GenerateRandomCustomers()
+        private void GenerateDatasetCustomers()
         {
             Customers = new List<Customer>();
             List<Stop> stopsAlreadyChosen = new List<Stop>();
             var rng = RandomNumberGenerator.Random;
-            while (Customers.Count != totalPickups)
+            while (Customers.Count != TotalPickups)
             {
                 generateRandomPickupLabel:
                 var randomPickupStop = rng.Next(Demands.Length);
@@ -132,7 +135,7 @@ namespace Simulator.Objects
         {
             string line;
             StreamReader file = new StreamReader(path);
-            var arraySize = 7;
+            var arraySize = 7; //number of file data to read
             List<string[]> dataList = new List<string[]>();
             bool firstLine = true;
             while ((line = file.ReadLine()) != null)
@@ -155,7 +158,6 @@ namespace Simulator.Objects
                             index++;
                         }
                     }
-
                     dataList.Add(stringArray);
                 }
             }
@@ -176,8 +178,8 @@ namespace Simulator.Objects
                 Stops.Add(stop);
                 VehicleCapacities[currentIndex] = int.Parse(data[3]);
                 Demands[currentIndex] = int.Parse(data[4]);
-                TimeWindows[currentIndex, 0] = long.Parse(data[5]);
-                TimeWindows[currentIndex, 1] = long.Parse(data[6]);
+                TimeWindows[currentIndex, 0] = long.Parse(data[5])*100;
+                TimeWindows[currentIndex, 1] = long.Parse(data[6])*100;
                 currentIndex++;
             }
         }

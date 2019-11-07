@@ -466,7 +466,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         double timeToTravel = solution.Value(timeTransitVar);
                         routeWaitTime += solution.Value(timeSlackVar);
                         routeTransitTime += solution.Value(timeTransitVar);
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.VehicleSpeed);
+                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex)+" Time Dimension - Cumul: ("+solution.Min(timeCumulVar)+","+solution.Max(timeCumulVar)+") - Slack: ("+solution.Min(timeSlackVar)+","+solution.Max(timeSlackVar)+") - Transit: ("+solution.Value(timeTransitVar)+")");
                         //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) +" Capacity Dimension - Cumul:"+solution.Value(capacityCumulVar)+" Transit:"+solution.Value(capacityTransitVar));
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
@@ -504,7 +504,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     var routeTime = solution.Max(endTimeVar) - solution.Min(startTimeVar);
                     printableList.Add("Route Total Time: "+ TimeSpan.FromSeconds(routeTime).TotalMinutes + " minutes");
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
-                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeVar), DataModel.VehicleSpeed));//NEED TO CHANGE
+                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeVar), DataModel.IndexManager.Vehicles[i].Speed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
                     printableList.Add("Route Transit Time: "+routeTransitTime);
@@ -591,7 +591,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var timeTransitVar = timeDim.TransitVar(index);
                         index = solution.Value(_routingModel.NextVar(index));
                         double timeToTravel = solution.Value(timeTransitVar);
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, DataModel.VehicleSpeed);
+                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, DataModel.IndexManager.Vehicles[i].Speed);
                         routeDistance += (long)distance;
                         totalLoad += previousRouteLoad != routeLoad && routeLoad > previousRouteLoad ? routeLoad - previousRouteLoad : 0; //if the current route load is greater than previous routeload and its value has changed, adds the difference to the totalLoad
                     }
