@@ -228,24 +228,29 @@ namespace Simulator.Objects.Data_Objects.Routing
             return searchParameters;
         }
 
-        public Assignment TryGetFastSolution()
+
+
+        public Assignment TryGetSolution(RoutingSearchParameters searchParameters)
         {
             Assignment solution = null;
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound=maxUpperBound+60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
+            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound = maxUpperBound + 60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
             {
                 MaxUpperBound = maxUpperBound;
                 Init();
                 //Get the solution of the problem
                 try
                 {
-                    var searchParameters = GetDefaultSearchParameters();
+                    if (searchParameters == null)
+                    {
+                        searchParameters = GetDefaultSearchParameters();
+                    }
                     solution = _routingModel.SolveWithParameters(searchParameters);
                 }
                 catch (Exception)
                 {
                     solution = null;
-                    
+
                 }
 
                 if (solution != null) //if true, solution was found, breaks the cycle
@@ -253,11 +258,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                     break;
                 }
             }
-            
-            Console.WriteLine("Solver status:"+GetSolverStatus());
+
+            Console.WriteLine("Solver status:" + GetSolverStatus());
             return solution; //retuns null if no solution is found, otherwise returns the solution
         }
-
         public string GetSolverStatus()
         {
             string status = "";
@@ -277,37 +281,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
             return status;
         }
-        public Assignment TryGetSolutionWithSearchStrategy(RoutingDataModel routingDataModel, int searchTimeLimitInSeconds,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
-        {
-            DataModel = routingDataModel;
-            Assignment solution = null;
-            //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound++)
-            {
-                MaxUpperBound = maxUpperBound;
-                Init();
-                var searchParameters = GetSearchParametersWithSearchStrategy(searchTimeLimitInSeconds, searchAlgorithm);
-                //Assignment initialSolution = _routing.ReadAssignmentFromRoutes(_pickupDeliveryDataModel.InitialRoutes, true);
-                //Get the solution of the problem
-                solution = _routingModel.SolveWithParameters(searchParameters); //solves the problem
-                if (solution != null) //if true, solution was found, breaks the cycle
-                {
-                   
-                    break;
-                }
-            }
-            return solution; //retuns null if no solution is found, otherwise returns the solution
-        }
-        private RoutingSearchParameters GetSearchParametersWithSearchStrategy(int searchTimeLimit,LocalSearchMetaheuristic.Types.Value searchAlgorithm)
-        {
-            var searchParam = GetDefaultSearchParameters();
-            searchParam.LocalSearchMetaheuristic = searchAlgorithm;
-            searchParam.TimeLimit = new Duration { Seconds = searchTimeLimit };
-            searchParam.LogSearch = false; //logs the search if true
-            return searchParam;
-
-        }
-
+        
         public RoutingSolutionObject GetSolutionObject(Assignment solution)
         {
             RoutingSolutionObject routingSolutionObject = null;

@@ -175,27 +175,27 @@ namespace Simulator.Objects
         public List<string> GetOverallStatsPrintableList()
         {
             var toPrintList = new List<string>();
-            toPrintList.Add("Total number of completed services:" + _completedTrips.Count);
-            if (_completedTrips.Count > 0)
-            {
-                toPrintList.Add("Trip ServiceTrips:");
-                var serviceTrips = new List<Trip>();
-                foreach (var trip in _completedTrips)
-                {
-                    if (!serviceTrips.Contains(trip))
-                    {
-                        serviceTrips.Add(trip);
-                        var completedTripServices =
-                            _completedTrips.FindAll(t => t.Headsign == trip.Headsign && t.IsDone);
-                        toPrintList.Add(" - " + trip + " - Route Length:" +
-                                        Math.Round(_completedTrips.Find(t => t == trip)
-                                            .TotalDistanceTraveled) + " meters, Number of Stops: " +
-                                        _completedTrips.Find(t => t == trip).StopsIterator.TotalStops +
-                                        ", Number of trips completed:" +
-                                        completedTripServices.Count);
-                    }
-                }
-            }
+            //toPrintList.Add("Total number of completed services:" + _completedTrips.Count);
+            //if (_completedTrips.Count > 0)
+            //{
+            //    toPrintList.Add("Trip ServiceTrips:");
+            //    var serviceTrips = new List<Trip>();
+            //    foreach (var trip in _completedTrips)
+            //    {
+            //        if (!serviceTrips.Contains(trip))
+            //        {
+            //            serviceTrips.Add(trip);
+            //            var completedTripServices =
+            //                _completedTrips.FindAll(t => t.Headsign == trip.Headsign && t.IsDone);
+            //            toPrintList.Add(" - " + trip + " - Route Length:" +
+            //                            Math.Round(_completedTrips.Find(t => t == trip)
+            //                                .TotalDistanceTraveled) + " meters, Number of Stops: " +
+            //                            _completedTrips.Find(t => t == trip).StopsIterator.TotalStops +
+            //                            ", Number of trips completed:" +
+            //                            completedTripServices.Count);
+            //        }
+            //    }
+            //}
 
             toPrintList.Add("Total Distance Traveled: " + TotalDistanceTraveled + " meters.");
             toPrintList.Add(" ");

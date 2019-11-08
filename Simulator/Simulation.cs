@@ -158,7 +158,7 @@ namespace Simulator
         {
            SimulationIO.ConfigSimulationMenu();
         }
-        public RoutingDataModel GenerateRandomInitialDataModel()
+        public RoutingDataModel GenerateRandomInitialDataModel(bool allowDropNodes)
         {
             var numberCustomers = SimulationIO.GetNumberCustomersMenuOption();
             var vehicleNumber = SimulationIO.GetNumberVehiclesMenuOption();
@@ -190,9 +190,9 @@ namespace Simulator
             }
             var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,customersToBeServed,startDepotsArrivalTime);
             var routingDataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
-            var solver = new RoutingSolver(routingDataModel,false);
-            var solution = solver.TryGetFastSolution();
-            if (solution == null)
+            var solver = new RoutingSolver(routingDataModel,allowDropNodes);
+            var solution = solver.TryGetSolution(null);
+            if (solution == null && !solver.DropNodesAllowed)
             {
                 goto GenerateNewDataModelLabel;
             }
@@ -201,13 +201,14 @@ namespace Simulator
 
         public void FlexibleBusRouteOption()
         {
-            var dataModel=GenerateRandomInitialDataModel();
+            var dataModel=GenerateRandomInitialDataModel(false);
             if (dataModel != null)
             {
                 RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
-                dataModel.PrintDataModelSettings();
+                var printableList = dataModel.GetDataModelSettingsPrintableList();
+                SimulationIO.Print(printableList);
                 dataModel.PrintPickupDeliveries();
-                var timeWindowSolution = routingSolver.TryGetFastSolution();
+                var timeWindowSolution = routingSolver.TryGetSolution(null);
                 RoutingSolutionObject routingSolutionObject = null;
 ;
                 if (timeWindowSolution != null)
@@ -228,22 +229,19 @@ namespace Simulator
             for (int i = 0; i < 2; i++)// tests 10 different data models
             {
                 var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
-                var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption();
+                var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption(allowDropNodes);
                 var searchTime = SimulationIO.GetSearchTimeLimitMenuOption();
-                dataModel.PrintDataModelSettings();
-                AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(dataModel);
-                var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(searchTime, allowDropNodes);
-                var printableList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
-                var loggerList = algorithmStatistics.GetFileLoggerList(algorithmStatList);
+                var printableList = dataModel.GetDataModelSettingsPrintableList();
+                SimulationIO.Print(printableList);
+                algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
+                AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
+                var testedAlgorithms = algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);
 
-                foreach (var printableItem in printableList)
+                foreach (var algorithm in testedAlgorithms)
                 {
-                    SimulationIO.Print(printableItem);
-                }
-
-                foreach (var listItem in loggerList)
-                {
-                    algorithmsLogger.Log(listItem);
+                    var resultsPrintableList = algorithm.GetResultPrintableList();
+                    SimulationIO.Print(resultsPrintableList);
+                    algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
                 }
             }
         }
@@ -672,7 +670,7 @@ namespace Simulator
                         var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,allExpectedCustomers,startDepotArrivalTimesList);
                         var dataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
                         var solver = new RoutingSolver(dataModel,false);
-                        var solution = solver.TryGetFastSolution();
+                        var solution = solver.TryGetSolution(null);
                         if (solution != null)
                         {
                             dataModel.PrintPickupDeliveries();

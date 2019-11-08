@@ -65,15 +65,25 @@ namespace Simulator.Objects.Data_Objects.Routing
             Console.WriteLine("---------------------------------------------------------------");
         }
 
-        public void PrintDataModelSettings()
+        public string GetCSVSettingsMessage()
         {
-            Console.WriteLine("-------------------------------");
-            Console.WriteLine("|     Data Model Settings     |");
-            Console.WriteLine("-------------------------------");
-            Console.WriteLine("Number of vehicles: "+IndexManager.Vehicles.Count);
-            Console.WriteLine("Number of customers: "+IndexManager.Customers.Count);
-            Console.WriteLine("Maximum Customer Ride Time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");
-            Console.WriteLine("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
+            string splitter = ",";
+            string message = IndexManager.Customers.Count + splitter + IndexManager.Vehicles.Count + splitter +
+                             TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes + splitter + TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes;
+            return message;
+
+        }
+        public List<string> GetDataModelSettingsPrintableList()
+        {
+            List<string> stringList = new List<string>();
+           stringList.Add("-------------------------------");
+           stringList.Add("|     Data Model Settings     |");
+           stringList.Add("-------------------------------");
+           stringList.Add("Number of vehicles: "+IndexManager.Vehicles.Count);
+           stringList.Add("Number of customers: "+IndexManager.Customers.Count);
+           stringList.Add("Maximum Customer Ride Time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");
+           stringList.Add("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
+           return stringList;
         }
 
         public void PrintPickupDeliveries()

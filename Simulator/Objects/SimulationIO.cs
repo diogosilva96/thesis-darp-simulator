@@ -120,7 +120,14 @@ namespace Simulator.Objects
             Console.Read();
         }
 
-        public RoutingDataModel GetAlgorithmComparisonMenuDataModelOption()
+        public void Print(List<string> printableList)
+        {
+            foreach (var item in printableList)
+            {
+                Print(item);
+            }
+        }
+        public RoutingDataModel GetAlgorithmComparisonMenuDataModelOption(bool allowDropNodes)
         {
             _consoleLogger.Log("Use random generated Data to test the different algorithms?");
             _consoleLogger.Log("1 - Yes");
@@ -129,7 +136,7 @@ namespace Simulator.Objects
             RoutingDataModel dataModel = null;
             if (option == 1)
             {
-               dataModel = _simulation.GenerateRandomInitialDataModel();
+               dataModel = _simulation.GenerateRandomInitialDataModel(allowDropNodes);
             }
             else 
             {
