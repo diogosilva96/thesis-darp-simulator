@@ -166,14 +166,14 @@ namespace Simulator
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
             List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
+            List<long> startDepotsArrivalTime = new List<long>(vehicleNumber);
             //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
             for (int i = 0; i < vehicleNumber; i++)
             {
                 dataModelVehicles.Add(new Vehicle(VehicleSpeed, 20, true));
                 startDepots.Add(Depot);
-               // startDepots.Add(null); //dummy start depot
                 endDepots.Add(Depot);
-               // endDepots.Add(null);//dummy end depot
+                startDepotsArrivalTime.Add(0);//startDepotArrival time  = 0 for all the vehicles
             }
 
             var customersToBeServed = new List<Customer>();
@@ -188,7 +188,6 @@ namespace Simulator
                     pickupTimeWindow);
                 customersToBeServed.Add(customer);
             }
-            List<long> startDepotsArrivalTime = new List<long>(dataModelVehicles.Count);
             var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,customersToBeServed,startDepotsArrivalTime);
             var routingDataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             var solver = new RoutingSolver(routingDataModel,false);
@@ -223,19 +222,29 @@ namespace Simulator
         }
 
         public void AlgorithmComparisonOption()
-        {            
-            var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption();
-            var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
-            dataModel.PrintDataModelSettings();
-            AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(dataModel);
-            var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(10,allowDropNodes);
-            var printList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
+        {
             IRecorder algorithmsRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"algorithms.txt"));
             var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
-            foreach (var printableItem in printList)
+            for (int i = 0; i < 2; i++)// tests 10 different data models
             {
-               SimulationIO.Print(printableItem);
-                algorithmsLogger.Log(printableItem);
+                var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
+                var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption();
+                var searchTime = SimulationIO.GetSearchTimeLimitMenuOption();
+                dataModel.PrintDataModelSettings();
+                AlgorithmStatistics algorithmStatistics = new AlgorithmStatistics(dataModel);
+                var algorithmStatList = algorithmStatistics.GetSearchAlgorithmsResultsList(searchTime, allowDropNodes);
+                var printableList = algorithmStatistics.GetPrintableStatisticsList(algorithmStatList);
+                var loggerList = algorithmStatistics.GetFileLoggerList(algorithmStatList);
+
+                foreach (var printableItem in printableList)
+                {
+                    SimulationIO.Print(printableItem);
+                }
+
+                foreach (var listItem in loggerList)
+                {
+                    algorithmsLogger.Log(listItem);
+                }
             }
         }
 
@@ -636,7 +645,7 @@ namespace Simulator
                         List<long> startDepotArrivalTimesList = new List<long>(dataModelVehicles.Count);
                         for (int i = 0; i < dataModelVehicles.Count ; i++)
                         {
-                            startDepotArrivalTimesList[i] = evt.Time; //initializes startDepotArrivalTimes with the current event time
+                            startDepotArrivalTimesList.Add(evt.Time);//initializes startDepotArrivalTimes with the current event time
                         }
                         if (movingVehicles.Count > 0)//if there is a moving vehicle calculates the baseArrivalTime
                         {

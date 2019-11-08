@@ -50,7 +50,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             //TEST ALL the criterions (performance, time to compute, solution cost, etc)
             foreach (var searchStrategy in _searchStrategyAlgorithms)
             {
-                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,3,searchStrategy,10);
+                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,searchStrategy,searchTimeLimitInSeconds);
                 algorithmTester.Test();
                 testedAlgorithmsList.Add(algorithmTester); //adds it to the list
                 
@@ -81,7 +81,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             toPrintList.Add("------------------------");
             foreach (var algorithm in testedAlgorithms)
             { 
-                toPrintList.Add("Algorithm:"+algorithm.Name+" ("+algorithm.Type+")");
+                toPrintList.Add("Algorithm: "+algorithm.Name+" ("+algorithm.Type+")");
                 toPrintList.Add("Solution is feasible: " + algorithm.SolutionIsFeasible);
                 toPrintList.Add("Computation time: "+algorithm.ComputationTimeInSeconds+" seconds");
                 toPrintList.Add("Maximum upper bound value (Delay): "+algorithm.MaxUpperBoundInMinutes+" minutes");
@@ -100,6 +100,28 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             }
 
             return toPrintList;
+        }
+
+        public List<string> GetFileLoggerList(List<AlgorithmTester> testedAlgorithms)
+        {
+            List<string> statsList = new List<string>();
+            var customers = DataModel.IndexManager.Customers;
+            var vehicles = DataModel.IndexManager.Vehicles;
+            string splitter = ",";
+            statsList.Add("TotalRequests,NumberVehicles,MaximumCustomerRideTimeInMinutes,MaximumAllowedUpperBoundTimeInMinutes,VehicleCapacity,Seed");
+            statsList.Add(customers.Count+splitter+vehicles.Count+splitter+ TimeSpan.FromSeconds(DataModel.MaxCustomerRideTime).TotalMinutes+splitter+ TimeSpan.FromSeconds(DataModel.MaxAllowedUpperBoundTime).TotalMinutes+splitter+vehicles[0].Capacity+splitter+RandomNumberGenerator.Seed);
+
+            statsList.Add("Algorithm,SearchTimeLimitSeconds,ComputationTimeSeconds,ObjectiveValue,MaximumUpperBoundMinutes,NumberServedRequests,TotalDistanceTraveled,TotalTime");
+            foreach (var alg in testedAlgorithms)
+            {
+                var totalCustomersServed = alg.Solver.GetSolutionObject(alg.Solution).CustomerNumber;
+                var totalDist = alg.Solver.GetSolutionObject(alg.Solution).TotalDistanceInMeters;
+                var totalTime = TimeSpan
+                    .FromSeconds(alg.Solver.GetSolutionObject(alg.Solution).TotalTimeInSeconds)
+                    .TotalMinutes;
+                statsList.Add(alg.Name+splitter+alg.SearchTimeLimitInSeconds+splitter+alg.ComputationTimeInSeconds+splitter+alg.Solution.ObjectiveValue()+splitter+alg.MaxUpperBoundInMinutes+splitter+totalCustomersServed+splitter+totalDist+splitter+totalTime);
+            }
+            return statsList;
         }
 
     }

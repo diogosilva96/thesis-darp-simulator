@@ -25,9 +25,15 @@ namespace Simulator.Objects
 
                 delivery = stopsList[rng.Next(0, stopsList.Count)];
             }
-            var pickupTime =
-                rng.Next(pickupTimeWindow[0], pickupTimeWindow[1]); //the minimum pickup time is 0 minutes above the requestTime and maximum pickup is the end time of the simulation 
+
+
+            var pickupTime = rng.Next(pickupTimeWindow[0], pickupTimeWindow[1]); //the minimum pickup time is 0 minutes above the requestTime and maximum pickup is the end time of the simulation 
             var deliveryTime = rng.Next(pickupTime + 15 * 60, pickupTime + 45 * 60); //delivery time will be at minimum 15 minutes above the pickuptime and at max 45 minutes from the pickup time
+            if (pickupTime > deliveryTime)
+            {
+                throw new ArgumentException("Pickup time greater than deliveryTime");
+            }
+
             Stop[] pickupDelivery = new[] { pickup, delivery };
             long[] desiredTimeWindow = new[] { (long)pickupTime, (long)deliveryTime };
             customer = new Customer(pickupDelivery,desiredTimeWindow,requestTime);

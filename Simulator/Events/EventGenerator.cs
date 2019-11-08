@@ -75,19 +75,10 @@ namespace Simulator.Events
         public List<Event> GenerateCustomersEnterVehicleEvents(Vehicle vehicle, Stop stop, int time, int expectedDemand)
         {
             List<Event> events = new List<Event>();
-            //Lambda = lambda; // remove??
-
             if (vehicle.TripIterator.Current != null)
             { 
                 var t = TimeSpan.FromSeconds(time);
-                int currentHour = t.Hours;
-                var currentRoute =vehicle.TripIterator.Current.Route;
-
                 var sample = expectedDemand;
-                //var sample = ((Poisson)_distribution).Sample();
-                //check if distribution will be used or the linear use of the inputs
-                
-                
                 int currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
 
                 if (sample > 0 && currentStopIndex < vehicle.TripIterator.Current.StopsIterator.TotalStops - 1 && vehicle.TripIterator.Current.StopsIterator.CurrentStop == stop) // generation of customers at each stop
@@ -104,14 +95,12 @@ namespace Simulator.Events
                         { 
                             enterTime+=2;
                         }
-
                         var customerEnterVehicleEvent =
                             GenerateCustomerEnterVehicleEvent(vehicle, enterTime, customer);
                         events.Add(customerEnterVehicleEvent);
                     }
                 }
             }
-
             return events;
         }
 

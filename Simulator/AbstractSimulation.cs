@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Events;
 using Simulator.Logger;
 using Simulator.Objects;
@@ -39,6 +40,14 @@ namespace Simulator
         public abstract void MainLoop();
         public void Simulate()
         {
+            //test chain of responsability design pattern
+            //IEventAppender app1 = new VehicleArriveEventAppender(this);
+            //IEventAppender app2 = new VehicleDepartEventAppender(this);
+            //IEventAppender app3 = new CustomerRequestEventAppender(this);
+            //IEventAppender app4 = new DynamicRequestCheckEventAppender(this);
+            //app1.SetNext(app2);
+            //app2.SetNext(app3);
+            //app3.SetNext(app4);
             if (Events.Count > 0)
             {                              
                 var watch = Stopwatch.StartNew();
@@ -46,7 +55,8 @@ namespace Simulator
                 {
                             var currentEvent = Events[i];
                             Handle(currentEvent);
-                            Append(currentEvent);                  
+                            Append(currentEvent); 
+                            //app1.Append(currentEvent);
                             SortEvents();
                 }
                 watch.Stop();

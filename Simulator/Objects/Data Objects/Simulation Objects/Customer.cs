@@ -21,6 +21,9 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public long WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
+        public long DelayTime =>
+            RealTimeWindow[1] - DesiredTimeWindow[1] > 0 ? RealTimeWindow[1] - DesiredTimeWindow[1] : 0;
+
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
             PickupDelivery = pickupDelivery;
@@ -103,7 +106,13 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     RealTimeWindow[1] = time; //assigns the real leave time of the time window
                     IsInVehicle = false;
                     AlreadyServed = true;
-                    Console.WriteLine(vehicle.SeatsState + this.ToString() + "(Ride time:" + this.RideTime + " seconds) LEFT at " + PickupDelivery[1] +
+                    var delayTimeStr = "";
+                    if (DesiredTimeWindow != null && RealTimeWindow != null)
+                    {
+                        delayTimeStr = " ; Delay time: " + DelayTime + " seconds";
+                    }
+
+                    Console.WriteLine(vehicle.SeatsState + this.ToString() + "(Ride time:" + this.RideTime + " seconds"+delayTimeStr+") LEFT at " + PickupDelivery[1] +
                                       " at " + t.ToString()+".");
                     if (vehicle.TripIterator.Current != null && (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0))//this means that the trip is complete
                     {

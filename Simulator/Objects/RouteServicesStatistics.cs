@@ -82,6 +82,21 @@ namespace Simulator.Objects
                 }
             }
         }
+
+        public double AverageCustomerDelayTime
+        {
+            get
+            {
+                try
+                {
+                    return _completedTrips.Average(s => s.ServicedCustomers.Average(c => c.DelayTime));
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
         public double AverageDistanceTraveled
         {
             get
@@ -196,6 +211,7 @@ namespace Simulator.Objects
             toPrintList.Add("Average Distance traveled: " + AverageDistanceTraveled + " meters.");
             toPrintList.Add("Average number of requests per stop:" + AverageNumberRequestsPerStop);
             toPrintList.Add("Average Customer Wait Time: " + AverageCustomerWaitTime + " seconds.");
+            toPrintList.Add("Average Customer Delay Time: "+AverageCustomerDelayTime+ " seconds.");
             toPrintList.Add("Longest route duration: " + TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes +
                             " minutes.");
             toPrintList.Add("Longest route distance: "+ LongestRouteDistance+" meters.");

@@ -4,7 +4,7 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class RoutingDataModel //pickup delivery with time windows data model
+    public class RoutingDataModel //Routing DataModel with all the data necessary to be used by the routing Solver
     {
         public long[] VehicleCapacities;
 
@@ -14,14 +14,13 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int[] Ends;
 
-        public DataModelIndexManager IndexManager; //Index manager with the data vehicle,customer and stops objects
+        public DataModelIndexManager IndexManager; //Index manager with the data vehicle,customer and stops objects, responsible for giving the required indexed data, and also enables to convert those indices in its respective object
 
         public long[,] TimeWindows;
 
         public long[] Demands;
 
         public int[][] PickupsDeliveries;
-
 
         public int MaxCustomerRideTime; //maximum time a customer can spend in a vehicle (in seconds)
 

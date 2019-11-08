@@ -14,8 +14,8 @@ namespace Simulator.Objects.Data_Objects.Routing
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
         public bool DropNodesAllowed;
-        private long _maximumWaitTime;
-        private long _maximumRouteTravelTime;
+        private long _maximumVehicleWaitTimeAtEachStop;
+        private long _maximumVehicleRouteTime;
         public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
 
 
@@ -23,8 +23,8 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxUpperBound = 0; //default value
-            _maximumWaitTime = 60 * 30; //30mins
-            _maximumRouteTravelTime = 60 * 60 * 24; //24hours
+            _maximumVehicleWaitTimeAtEachStop = 60 * 30; //30mins
+            _maximumVehicleRouteTime = 60 * 60 * 24; //24hours
             if (dataModel.TimeWindows.GetLength(0) == dataModel.TimeMatrix.GetLength(0))
             {
                 DataModel = dataModel;
@@ -110,8 +110,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                 //Add Time window constraints
                 _routingModel.AddDimension(
                     _transitCallbackIndex, // transit callback
-                    _maximumWaitTime, // allow waiting time 
-                    _maximumRouteTravelTime, // maximum travel time per vehicle
+                    _maximumVehicleWaitTimeAtEachStop, // allow waiting time 
+                    _maximumVehicleRouteTime, // maximum travel time per vehicle
                     false, // start cumul to zero
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");
@@ -139,8 +139,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     long index = _routingModel.Start(i);
                     var startDepotIndex = DataModel.Starts[i];
                     timeDimension.CumulVar(index).SetRange(DataModel.TimeWindows[startDepotIndex, 0], DataModel.TimeWindows[startDepotIndex, 1]); //this guarantees that a vehicle must visit the location during its time 
-
-                    //timeDimension.SlackVar(index).SetRange(0, _maximumWaitTime);
+                    //timeDimension.SlackVar(index).SetRange(0, _maximumVehicleWaitTimeAtEachStop);
                     _routingModel.AddToAssignment(timeDimension.SlackVar(index)); //add slack var for depot index for vehicle i to assignment
                     _routingModel.AddToAssignment(timeDimension.TransitVar(index));//add transit var for depot index for vehicle i to assignment
                 }
@@ -317,7 +316,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 var solutionDictionary = SolutionToVehicleStopTimeWindowsDictionary(solution);
                 if (solutionDictionary != null)
                 {
-                    var solutionMetricsDictionary = GetVehicleRouteMetrics(solution);
+                    var solutionMetricsDictionary = GetVehicleRouteData(solution);
                     routingSolutionObject = new RoutingSolutionObject(solutionDictionary,solutionMetricsDictionary);
                     
                 }
@@ -354,7 +353,6 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var timeVar = timeDim.CumulVar(index);
                         if (currentStop != null && previousStop != null && currentStop.Id == previousStop.Id)
                         {
-
                             routeStops.Remove(previousStop); //removes previous stop
                             routeStops.Add(currentStop); //adds current stop
                             var joinedTimeWindow = new[] {timeWindow[0], solution.Max(timeVar)}; //adds the new timewindow the junction of the previous min time from the dummy stop
@@ -563,7 +561,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public Dictionary<string,long[]> GetVehicleRouteMetrics(Assignment solution) //computes the metrics for each vehicle route
+        public Dictionary<string,long[]> GetVehicleRouteData(Assignment solution) //computes the metrics for each vehicle route
         {
             
             Dictionary<string, long[]> vehicleMetricsDictionary = new Dictionary<string, long[]>();

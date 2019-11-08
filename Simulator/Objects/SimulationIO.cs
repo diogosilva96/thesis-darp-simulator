@@ -163,7 +163,7 @@ namespace Simulator.Objects
                     startDepots.Add(dataSet.Stops[0]);
                     // startDepots.Add(null); //dummy start depot
                     endDepots.Add(dataSet.Stops[0]);
-                    startDepotArrivalTimes[i] = 0;
+                    startDepotArrivalTimes.Add(0);
                 }
 
                 dataSet.PrintDistances();
@@ -194,6 +194,11 @@ namespace Simulator.Objects
             return GetIntInput(1, int.MaxValue);
         }
 
+        public int GetSearchTimeLimitMenuOption()
+        {
+            _consoleLogger.Log("Please insert the search time limit (in seconds):");
+            return GetIntInput(1, 90);
+        }
         public void Print(string message)
         {
             _consoleLogger.Log(message);
