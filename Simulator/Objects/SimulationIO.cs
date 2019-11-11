@@ -133,10 +133,13 @@ namespace Simulator.Objects
             _consoleLogger.Log("1 - Yes");
             _consoleLogger.Log("2 - No");
             var option = GetIntInput(1, 2);
+
             RoutingDataModel dataModel = null;
             if (option == 1)
             {
-               dataModel = _simulation.GenerateRandomInitialDataModel(allowDropNodes);
+                var numberCustomers = GetNumberCustomersMenuOption();
+                var vehicleNumber = GetNumberVehiclesMenuOption();
+                dataModel = _simulation.GenerateRandomInitialDataModel(numberCustomers,vehicleNumber,allowDropNodes);
             }
             else 
             {

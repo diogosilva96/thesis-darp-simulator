@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
@@ -25,6 +26,23 @@ namespace Simulator.Objects.Data_Objects.Routing
         private readonly long[] _routeTimesInSeconds;
 
 
+        public int TotalVehiclesUsed
+        {
+            get
+            {
+                var vehiclesUsed = 0;
+                foreach (var vehicle in _vehicleSolutionDictionary.Keys)
+                {
+                    var vehicleStops = GetVehicleStops(vehicle);
+                    if (vehicleStops.Count > 2 && vehicleStops[0] != vehicleStops[1]) //this check means that the vehicle is  used because there are 2 more than 2 stops
+                    {
+                        vehiclesUsed++;
+                    }
+                }
+
+                return vehiclesUsed;
+            }
+        }
         public int CustomerNumber
         {
             get

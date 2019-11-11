@@ -7,10 +7,12 @@ namespace Simulator.Objects.Data_Objects
 {
     public static class TransportationNetwork//Class that contains all data for the transportation network such as arc distances, all the routes, all the stops, the demands for each stop
     {
-        private static SimulationDataLoader _simulationDataLoader = new SimulationDataLoader(true);
-        public static List<Route> Routes => _simulationDataLoader.Routes;
+        private static readonly TransportationNetworkDataLoader TransportationNetworkDataLoader = new TransportationNetworkDataLoader(true);
+        public static List<Route> Routes => TransportationNetworkDataLoader.Routes;
 
-        public static List<Stop> Stops => _simulationDataLoader.Stops;
+        public static List<Stop> Stops => TransportationNetworkDataLoader.Stops;
+
+        public static Stop Depot => Stops.Find(s => s.Id == 2183);
 
         public static Dictionary<Tuple<Stop, Stop>, double> ArcDictionary
         {
@@ -39,7 +41,7 @@ namespace Simulator.Objects.Data_Objects
         } //Dictionary with tuples of stops and its respective distances
 
         private static Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
-        public static DemandsDataObject DemandsDataObject => _simulationDataLoader.DemandsDataObject;
+        public static DemandsDataObject DemandsDataObject => TransportationNetworkDataLoader.DemandsDataObject;
 
     }
 }

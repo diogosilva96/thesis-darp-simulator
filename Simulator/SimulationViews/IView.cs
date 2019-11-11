@@ -5,9 +5,9 @@ using Simulator.Events;
 
 namespace Simulator.EventAppender__COR_Pattern_
 {
-    public interface IEventAppender
+    public interface IView
     {
-        void SetNext(IEventAppender nextEventAppender);
-        void Append(Event evt);
+        void SetNext(IView nextView);
+        void PrintView(int option);
     }
 }

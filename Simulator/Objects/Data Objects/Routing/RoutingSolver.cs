@@ -490,6 +490,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 printableList.Add("Total distance of all routes: "+ totalDistance+" meters");
                 printableList.Add("Total Load of all routes: " + totalLoad + " customers");
                 printableList.Add("Total customers served: "+ solutionObject.CustomerNumber+"/"+ DataModel.IndexManager.Customers.Count);
+                printableList.Add("Total vehicles used: "+solutionObject.TotalVehiclesUsed + "/"+DataModel.IndexManager.Vehicles.Count);
                 printableList.Add("Solution Objective value: " + solution.ObjectiveValue());
             }
             else

@@ -37,8 +37,6 @@ namespace Simulator
 
         public int MaxAllowedUpperBoundTime;//max delay of timeWindows upperBound (relative to desired timeWindows)
 
-        public Stop Depot; //the stop that every flexible service vehicle starts and ends at 
-
         public int TotalSimulationTime => SimulationTimeWindow[0] >= 0 && SimulationTimeWindow[1] >= 0 && SimulationTimeWindow[1] != 0 ? SimulationTimeWindow[1] - SimulationTimeWindow[0] : 0; //in seconds
 
         public double DynamicRequestProbabilityThreshold; //randomly generated value has to be
@@ -62,7 +60,7 @@ namespace Simulator
                 Directory.CreateDirectory(_loggerBasePath);
             }
             VehicleCapacity = 20;
-            VehicleSpeed = 30;
+            VehicleSpeed = 40;
             DynamicRequestProbabilityThreshold = dynamicRequestProbability;
             SimulationTimeWindow = new int[2];
             SimulationTimeWindow[0] = 0;
@@ -70,7 +68,6 @@ namespace Simulator
             SimulationIO = new SimulationIO(this);
             MaxCustomerRideTime = maxCustomerRideTimeSeconds;
             MaxAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
-            Depot = TransportationNetwork.Stops.Find(s => s.Id == 2183);
         }
 
         public void Init()
@@ -158,28 +155,27 @@ namespace Simulator
         {
            SimulationIO.ConfigSimulationMenu();
         }
-        public RoutingDataModel GenerateRandomInitialDataModel(bool allowDropNodes)
+        public RoutingDataModel GenerateRandomInitialDataModel(int numberCustomers,int numberVehicles,bool allowDropNodes)
         {
-            var numberCustomers = SimulationIO.GetNumberCustomersMenuOption();
-            var vehicleNumber = SimulationIO.GetNumberVehiclesMenuOption();
+        
             GenerateNewDataModelLabel:
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
             List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
-            List<long> startDepotsArrivalTime = new List<long>(vehicleNumber);
+            List<long> startDepotsArrivalTime = new List<long>(numberVehicles);
             //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
-            for (int i = 0; i < vehicleNumber; i++)
+            for (int i = 0; i < numberVehicles; i++)
             {
                 dataModelVehicles.Add(new Vehicle(VehicleSpeed, 20, true));
-                startDepots.Add(Depot);
-                endDepots.Add(Depot);
+                startDepots.Add(TransportationNetwork.Depot);
+                endDepots.Add(TransportationNetwork.Depot);
                 startDepotsArrivalTime.Add(0);//startDepotArrival time  = 0 for all the vehicles
             }
 
             var customersToBeServed = new List<Customer>();
             var customerGenerator = new CustomerGenerator();
             List<Stop> excludedStops = new List<Stop>();
-            excludedStops.Add(Depot);
+            excludedStops.Add(TransportationNetwork.Depot);
             for (int i = 0; i < numberCustomers; i++) //generate 5 customers with random timeWindows and random pickup and delivery stops
             {
                 var requestTime = 0;
@@ -192,7 +188,7 @@ namespace Simulator
             var routingDataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
             var solver = new RoutingSolver(routingDataModel,allowDropNodes);
             var solution = solver.TryGetSolution(null);
-            if (solution == null && !solver.DropNodesAllowed)
+            if (solution == null)
             {
                 goto GenerateNewDataModelLabel;
             }
@@ -201,11 +197,13 @@ namespace Simulator
 
         public void FlexibleBusRouteOption()
         {
-            var dataModel=GenerateRandomInitialDataModel(false);
+            var numberCustomers = SimulationIO.GetNumberCustomersMenuOption();
+            var numberVehicles = SimulationIO.GetNumberVehiclesMenuOption();
+            var dataModel=GenerateRandomInitialDataModel(numberCustomers,numberVehicles,false);
             if (dataModel != null)
             {
                 RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
-                var printableList = dataModel.GetDataModelSettingsPrintableList();
+                var printableList = dataModel.GetSettingsPrintableList();
                 SimulationIO.Print(printableList);
                 dataModel.PrintPickupDeliveries();
                 var timeWindowSolution = routingSolver.TryGetSolution(null);
@@ -226,22 +224,34 @@ namespace Simulator
         {
             IRecorder algorithmsRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"algorithms.txt"));
             var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
-            for (int i = 0; i < 2; i++)// tests 10 different data models
+            for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
             {
-                var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
-                var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption(allowDropNodes);
-                var searchTime = SimulationIO.GetSearchTimeLimitMenuOption();
-                var printableList = dataModel.GetDataModelSettingsPrintableList();
-                SimulationIO.Print(printableList);
-                algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
-                AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
-                var testedAlgorithms = algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);
-
-                foreach (var algorithm in testedAlgorithms)
+                for (int vehicleNumber = 5; vehicleNumber <= 20; vehicleNumber = vehicleNumber + 5)
                 {
-                    var resultsPrintableList = algorithm.GetResultPrintableList();
-                    SimulationIO.Print(resultsPrintableList);
-                    algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
+                    for (int searchTime = 15; searchTime <= 60; searchTime = searchTime + 15)
+                    {
+                        for (int i = 0; i < 10; i++) // tests 10 different data models for the same setting
+                        {
+                            var allowDropNodes = true;
+                            //var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
+                            //var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption(true);
+                            var dataModel = GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
+                            //var searchTime = SimulationIO.GetSearchTimeLimitMenuOption();
+                            var printableList = dataModel.GetSettingsPrintableList();
+                            SimulationIO.Print(printableList);
+                            algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
+                            AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
+                            var testedAlgorithms =
+                                algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);
+
+                            foreach (var algorithm in testedAlgorithms)
+                            {
+                                var resultsPrintableList = algorithm.GetResultPrintableList();
+                                SimulationIO.Print(resultsPrintableList);
+                                algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -254,7 +264,7 @@ namespace Simulator
             InitVehicleEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
         }
 
-        private void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
+        public void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
         {
             if (routingSolutionObject != null)
             {
@@ -281,7 +291,7 @@ namespace Simulator
             }
         }
 
-        private void AssignAllConventionalTripsToVehicles() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
+        public void AssignAllConventionalTripsToVehicles() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
         {
             foreach (var route in TransportationNetwork.Routes)
             {
@@ -463,7 +473,7 @@ namespace Simulator
                 if (dynamicRequestCheckEvent.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
                 {
                     List<Stop> excludedStops = new List<Stop>();
-                    excludedStops.Add(Depot);
+                    excludedStops.Add(TransportationNetwork.Depot);
                     var requestTime = evt.Time + 1;                 
                     var pickupTimeWindow = new int[] {requestTime + 5 * 60, requestTime + 60 * 60};
                     var customer = new CustomerGenerator().GenerateRandomCustomer(TransportationNetwork.Stops,excludedStops,requestTime,pickupTimeWindow);
@@ -627,7 +637,7 @@ namespace Simulator
                                         currentStop.Longitude);//need to use dummyStop otherwise the solver will fail, because the startDepot stop is also a pickup delivery stop
                                     dummyStop.IsDummy = true;
                                     startDepots.Add(dummyStop);
-                                    endDepots.Add(Depot);
+                                    endDepots.Add(TransportationNetwork.Depot);
                                     expectedCustomers.Add(newCustomer); //adds the new dynamic customer
                                     if (!allExpectedCustomers.Contains(newCustomer))
                                     {

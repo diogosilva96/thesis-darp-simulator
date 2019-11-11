@@ -7,7 +7,7 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects
 {
-    public class SimulationDataLoader //Class that contains the data needed for the simulation such as Stops, trips, routes and demands
+    public class TransportationNetworkDataLoader //Class that contains the data needed for the simulation such as Stops, trips, routes and demands
     {
         private List<Trip> Trips { get; set; }
         public List<Stop> Stops { get; internal set; }
@@ -18,7 +18,7 @@ namespace Simulator.Objects.Data_Objects
 
         private readonly bool _urbanOnly;
 
-        public SimulationDataLoader(bool urbanOnly)
+        public TransportationNetworkDataLoader(bool urbanOnly)
         {
             _urbanOnly = urbanOnly;
             Trips = new List<Trip>();

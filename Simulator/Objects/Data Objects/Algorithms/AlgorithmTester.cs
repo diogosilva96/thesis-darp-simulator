@@ -24,11 +24,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public long Objective => Solution.ObjectiveValue();
 
         public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? Solver.GetSolutionObject(this.Solution).CustomerNumber : 0;
-        public int TotalDistanceTraveledInMeters => Solver.GetSolutionObject(Solution) != null ? (int)Solver.GetSolutionObject(this.Solution).TotalDistanceInMeters:0;
 
-        public int TotalRouteTimesInMinutes => Solver.GetSolutionObject(Solution) != null
-            ? (int) TimeSpan.FromSeconds(Solver.GetSolutionObject(this.Solution).TotalTimeInSeconds).TotalMinutes
-            : 0;
+        public int TotalDistanceTraveledInMeters => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(this.Solution).TotalDistanceInMeters : 0;
+
+        public int TotalRouteTimesInMinutes => Solver.GetSolutionObject(Solution) != null ? (int) TimeSpan.FromSeconds(Solver.GetSolutionObject(this.Solution).TotalTimeInSeconds).TotalMinutes : 0;
+
+        public int TotalVehiclesUsed => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(Solution).TotalVehiclesUsed : 0;
         protected AlgorithmTester(RoutingDataModel dataModel,bool allowDropNodes)
         {
             DataModel = dataModel;
@@ -43,7 +44,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             {
                 string splitter = ",";
 
-                string message = Name + splitter +AllowDropNodes+splitter+ SolutionIsFeasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes;
+                string message = Name + splitter +AllowDropNodes+splitter+ SolutionIsFeasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed;
                 return message;
             }
 
@@ -94,6 +95,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 toPrintList.Add("Total distance traveled: " + TotalDistanceTraveledInMeters + " meters.");
                 toPrintList.Add("Total route times: " + TotalRouteTimesInMinutes + " minutes.");
                 toPrintList.Add("Total Load: " + Solver.GetSolutionObject(Solution).TotalLoad);
+                toPrintList.Add("Total vehicles used: " + TotalVehiclesUsed);
                 toPrintList.Add("Average Distance traveled per request:" + TotalDistanceTraveledInMeters /
                                 TotalServedCustomers + " meters.");
                 toPrintList.Add("Solution Objective value: " + Objective);

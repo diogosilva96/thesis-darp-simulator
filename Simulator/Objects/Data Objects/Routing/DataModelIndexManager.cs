@@ -260,12 +260,11 @@ namespace Simulator.Objects.Data_Objects.Routing
                     timeWindows[GetStopIndex(StartDepots[j]), 1] = 24*60*60; //24 hours in seconds
                 }
             }
-
             for (int i = 0; i < timeWindows.GetLength(0); i++)
             {
                 if (timeWindows[i, 0] > timeWindows[i, 1])
                 {
-                    Console.WriteLine(timeWindows[i,0]+ ">"+timeWindows[i,1] + " at stop:"+GetStop(i));
+                    timeWindows[i, 1] = timeWindows[i, 0];
                 }
             }
             // end of depot timewindow initialization

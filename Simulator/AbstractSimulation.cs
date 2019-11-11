@@ -41,10 +41,10 @@ namespace Simulator
         public void Simulate()
         {
             //test chain of responsability design pattern
-            //IEventAppender app1 = new VehicleArriveEventAppender(this);
-            //IEventAppender app2 = new VehicleDepartEventAppender(this);
-            //IEventAppender app3 = new CustomerRequestEventAppender(this);
-            //IEventAppender app4 = new DynamicRequestCheckEventAppender(this);
+            //IView app1 = new VehicleArriveSimulationView(this);
+            //IView app2 = new VehicleDepartSimulationView(this);
+            //IView app3 = new CustomerRequestSimulationView(this);
+            //IView app4 = new DynamicRequestCheckSimulationView(this);
             //app1.SetNext(app2);
             //app2.SetNext(app3);
             //app3.SetNext(app4);

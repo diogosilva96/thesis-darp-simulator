@@ -40,6 +40,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 TimeWindows = IndexManager.GetTimeWindows();
                 PickupsDeliveries = IndexManager.GetPickupDeliveries();
                 Demands = IndexManager.GetDemands();
+
         }
 
 
@@ -75,7 +76,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             return message;
 
         }
-        public List<string> GetDataModelSettingsPrintableList()
+        public List<string> GetSettingsPrintableList()
         {
             List<string> stringList = new List<string>();
            stringList.Add("-------------------------------");
