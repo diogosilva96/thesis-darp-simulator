@@ -174,22 +174,25 @@ namespace Simulator.Objects.Data_Objects.Routing
                     solver.Add(solver.MakeEquality(_routingModel.VehicleVar(pickupIndex), _routingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
                     solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
                 }
-                //constraints to enforce that if there is a custumer inside a vehicle has to be served by that vehicle
-                    foreach (var customer in DataModel.IndexManager.Customers)
+                //constraints to enforce that if there is a customer inside a vehicle, it has to be served by that vehicle
+                if (DataModel.VehicleDeliveries != null) //if vehicleDeliveries is null it means there are no customer inside the vehicle for the current routing problem
+                {
+                    for (int i = 0; i < DataModel.VehicleDeliveries.GetLength(0); i++)
                     {
-                        if (customer.IsInVehicle)
+                        for (int j = 0; j < DataModel.VehicleDeliveries.GetLength(1); j++)
                         {
-                            var vehicleIndex = DataModel.IndexManager.Vehicles.FindIndex(v => v.Customers.Contains(customer));
-                            long index = _routingModel.Start(vehicleIndex); //vehicle that starts at i
-                            var deliveryIndex = _routingIndexManager.NodeToIndex(
-                                DataModel.IndexManager.GetStopIndex(customer.PickupDelivery[1]));
-                            solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index),
-                                _routingModel
-                                    .VehicleVar(
-                                        deliveryIndex))); //vehicle i has to be the one that delivers customer with deliveryIndex;
-                            //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
+                            if (DataModel.VehicleDeliveries[i, j] > 0) //if vehicleDelivery[i,j] > 0 it means there is a customer in that vehicle i that needs to be delivery to that index j
+                            {
+                                var vehicleIndex = i;
+                                var index = _routingModel.Start(vehicleIndex);
+                                var deliveryIndex = j;
+                                solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index),_routingModel.VehicleVar(deliveryIndex)));//vehicle i has to be the one that delivers customer with deliveryIndex j;
+                                //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
+
+                            }
                         }
                     }
+                }
 
                 //Adds capacity constraints
                     _routingModel.AddDimensionWithVehicleCapacity(
@@ -233,6 +236,10 @@ namespace Simulator.Objects.Data_Objects.Routing
         public Assignment TryGetSolution(RoutingSearchParameters searchParameters)
         {
             Assignment solution = null;
+            if (searchParameters == null)
+            {
+                searchParameters = GetDefaultSearchParameters();
+            }
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
             for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound = maxUpperBound + 60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
             {
@@ -241,10 +248,6 @@ namespace Simulator.Objects.Data_Objects.Routing
                 //Get the solution of the problem
                 try
                 {
-                    if (searchParameters == null)
-                    {
-                        searchParameters = GetDefaultSearchParameters();
-                    }
                     solution = _routingModel.SolveWithParameters(searchParameters);
                 }
                 catch (Exception)
@@ -363,30 +366,16 @@ namespace Simulator.Objects.Data_Objects.Routing
                     {
                         var pickupStop = customer.PickupDelivery[0];
                         var deliveryStop = customer.PickupDelivery[1];
-                        if (!customer.IsInVehicle) //if the customer is not in the vehicle needs to check if the route contians the pickup and delivery stop and its precedence constraint
-                        {
-                            if (routeStops.Contains(pickupStop) && routeStops.Contains(deliveryStop)
-                            ) //If the route contains the pickup and delivery stop
-                            {
-                                if (routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop) &&
-                                    !routeCustomers.Contains(customer)
-                                ) // if the pickup stop comes before the delivery stop (precedence constraint), adds it to the route customers list.
+                                if ((!customer.IsInVehicle && routeStops.Contains(pickupStop) && routeStops.Contains(deliveryStop) && routeStops.IndexOf(pickupStop) < routeStops.IndexOf(deliveryStop)) || (customer.IsInVehicle && routeStops.Contains(deliveryStop) && routeStops.IndexOf(deliveryStop) >= 0 && routeStops.IndexOf(pickupStop) == -1
+                                    )) // For the case were a customer is not inside a vehicle, if the pickup stop and delivery stops are contained in the routeStops and the pickup stop comes before the delivery stop (precedence constraint)
+                                //Or for the case were the customer is already inside a vehicle, if that deliveryStop is contained in the route stops and its pickupStop is not in the routeStops
                                 {
-                                    routeCustomers.Add(customer);
+                                    if (!routeCustomers.Contains(customer)) 
+                                    {
+                                        routeCustomers.Add(customer); //if the above checks are confirmed and the customer is not in the list, adds it
+                                    }
                                 }
-                            }
-                        }
-                        else
-                        {
-                            if (routeStops.Contains(deliveryStop)) //for the cases where there is a customer already in the vehicle and therefore only needs to account for the deliveryStop
-                            {
-                                if (routeStops.IndexOf(deliveryStop) >= 0 && routeStops.IndexOf(pickupStop) == -1 &&
-                                    !routeCustomers.Contains(customer))
-                                {
-                                    routeCustomers.Add(customer);
-                                }
-                            }
-                        }
+
                     }
                     var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
                     vehicleStopCustomerTimeWindowsDictionary.Add(DataModel.IndexManager.GetVehicle(i),

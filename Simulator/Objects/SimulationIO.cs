@@ -228,23 +228,31 @@ namespace Simulator.Objects
                     _consoleLogger.Log(notHandledEvent.ToString());
                 }
             }
-            toPrintList.Add(  "Vehicle Fleet Size: " + _simulation.VehicleFleet.Count + " vehicle(s).");
+            toPrintList.Add(  "Total Number of vehicles available: " + _simulation.VehicleFleet.Count + " vehicle(s).");
+            toPrintList.Add("Total number of vehicles used: "+_simulation.VehicleFleet.FindAll(v=>v.TripIterator!=null));
             toPrintList.Add( "Average Dynamic requests per hour: " + _simulation.TotalDynamicRequests / TimeSpan.FromSeconds(_simulation.TotalSimulationTime).TotalHours);
             toPrintList.Add("Total simulation time: " + TimeSpan.FromSeconds(_simulation.TotalSimulationTime).TotalHours + " hours.");
-            toPrintList.Add("Simulation Computation Time: "+_simulation.ComputationTime+ " seconds.");
+            toPrintList.Add("Total Simulation Computation Time: "+_simulation.ComputationTime+ " seconds.");
             toPrintList.Add("Total Dynamic Requests Served: " + _simulation.TotalServedDynamicRequests +" out of "+_simulation.TotalDynamicRequests);
             toPrintList.Add("-------------------------------------");
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
             foreach (var vehicle in _simulation.VehicleFleet.FindAll(v => v.FlexibleRouting))
             {
-                vehicle.PrintRoute(vehicle.TripIterator.Current.Stops, vehicle.TripIterator.Current.ScheduledTimeWindows, vehicle.TripIterator.Current.ServicedCustomers); //scheduled route
-                vehicle.PrintRoute(vehicle.TripIterator.Current.VisitedStops, vehicle.TripIterator.Current.StopsTimeWindows, vehicle.TripIterator.Current.ServicedCustomers); //simulation route
+                if (vehicle.TripIterator != null && vehicle.TripIterator.Current != null)
+                {
+                    vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,
+                        vehicle.TripIterator.Current.ScheduledTimeWindows,
+                        vehicle.TripIterator.Current.ServicedCustomers); //scheduled route
+                    vehicle.PrintRoute(vehicle.TripIterator.Current.VisitedStops,
+                        vehicle.TripIterator.Current.StopsTimeWindows,
+                        vehicle.TripIterator.Current.ServicedCustomers); //simulation route
+                }
             }
             foreach (var route in TransportationNetwork.Routes)
             {
 
-                var allRouteVehicles = _simulation.VehicleFleet.FindAll(v => v.TripIterator != null && v.TripIterator.Current.Route == route);
+                var allRouteVehicles = _simulation.VehicleFleet.FindAll(v => v.TripIterator != null && v.TripIterator.Current != null && v.TripIterator.Current.Route == route);
 
                 if (allRouteVehicles.Count > 0)
                 {

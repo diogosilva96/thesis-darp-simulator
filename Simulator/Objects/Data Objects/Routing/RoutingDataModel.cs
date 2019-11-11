@@ -6,26 +6,27 @@ namespace Simulator.Objects.Data_Objects.Routing
 {
     public class RoutingDataModel //Routing DataModel with all the data necessary to be used by the routing Solver
     {
-        public long[] VehicleCapacities;
+        public long[] VehicleCapacities; //Array that contains vehicle capacities, Array size: [Vehicles.Count]
 
-        public long[,] TimeMatrix; //time matrix that contains the travel time to each stop
+        public long[,] TimeMatrix; //time matrix that contains the travel time to each stop, Matrix size: [Stops.Count,Stops.Count]
 
-        public int[] Starts;
+        public int[] Starts; //Array that contains the index of the start depots for each vehicle, Array size: [Vehicles.Count]
 
-        public int[] Ends;
+        public int[] Ends; //Array that contains the index of the end depots for each vehicle, Array size:[Vehicles.Count]
 
         public DataModelIndexManager IndexManager; //Index manager with the data vehicle,customer and stops objects, responsible for giving the required indexed data, and also enables to convert those indices in its respective object
 
-        public long[,] TimeWindows;
+        public long[,] TimeWindows; //TimeWindow pairs that must be satisfied for each stop index, Matrix size: [stops.Count,2]
 
-        public long[] Demands;
+        public long[] Demands; //Demand at each stop index, Array size:[Stops.Count]
 
-        public int[][] PickupsDeliveries;
+        public int[][] PickupsDeliveries; //pickupDelivery indices pairs for each customer (not in vehicle), matrix size: [CustomersNotInVehicle.Count,2]
 
         public int MaxCustomerRideTime; //maximum time a customer can spend in a vehicle (in seconds)
 
         public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
+        public long[,] VehicleDeliveries;// Matrix that contains the number of customer that are already inside a vehicle to be delivered to the stop specified by the column, Matrix size: [Vehicles.Count,Stops.Count]
         public RoutingDataModel(DataModelIndexManager indexManger,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
                 IndexManager = indexManger;
@@ -34,6 +35,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 Starts = IndexManager.GetVehicleStarts();
                 Ends = IndexManager.GetVehicleEnds();
                 VehicleCapacities = IndexManager.GetVehicleCapacities();
+                VehicleDeliveries = IndexManager.GetVehicleDeliveries();
                 TimeMatrix = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
                 TimeWindows = IndexManager.GetTimeWindows();
                 PickupsDeliveries = IndexManager.GetPickupDeliveries();

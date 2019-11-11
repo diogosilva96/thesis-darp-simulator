@@ -85,6 +85,30 @@ namespace Simulator.Objects.Data_Objects.Routing
             return index;
         }
 
+        public long[,] GetVehicleDeliveries()
+        {
+            //matrix that contains the customer delivery index, for the customers that need to be served by that vehicle, because they are already inside the vehicle!
+           long[,] vehicleDeliveries = new long[Vehicles.Count,Stops.Count];
+           var addedDeliveries = 0;
+           foreach (var customer in Customers)
+           {
+               if (customer.IsInVehicle)
+               {
+                   var deliveryIndex = GetStopIndex(customer.PickupDelivery[1]);
+                   var vehicleIndex = Vehicles.FindIndex(v => v.Customers.Contains(customer));
+                   vehicleDeliveries[vehicleIndex, deliveryIndex] += 1;
+                   addedDeliveries++;
+               }
+           }
+
+           if (addedDeliveries != 0)
+           {
+               return vehicleDeliveries;
+           }
+
+           return null;
+        }
+
         private List<Stop> GetStops() //Gets all stops that will be used by the datamodel
         {
             var stops = new List<Stop>(); //clears stop list
@@ -198,6 +222,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
             foreach (var customer in Customers)
             {
+                long lowerBoundValue = 0;
                 if (!customer.IsInVehicle) //if customer is not inside a vehicle adds the pickup and delivery time windows otherwise only adds the delivery time window
                 {
                     //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
@@ -208,9 +233,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
                     //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
 
-                    var lowerBoundValue =
-                        Math.Max((long)arrayMinTimeWindow,
-                            (long)customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
+                    lowerBoundValue = Math.Max((long)arrayMinTimeWindow,(long)customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
                     //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
                     timeWindows[pickupIndex, 0] =
                         lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
@@ -235,6 +258,14 @@ namespace Simulator.Objects.Data_Objects.Routing
 
                     timeWindows[GetStopIndex(StartDepots[j]), 0] = StartDepotArrivalTimes[j];
                     timeWindows[GetStopIndex(StartDepots[j]), 1] = 24*60*60; //24 hours in seconds
+                }
+            }
+
+            for (int i = 0; i < timeWindows.GetLength(0); i++)
+            {
+                if (timeWindows[i, 0] > timeWindows[i, 1])
+                {
+                    Console.WriteLine(timeWindows[i,0]+ ">"+timeWindows[i,1] + " at stop:"+GetStop(i));
                 }
             }
             // end of depot timewindow initialization
