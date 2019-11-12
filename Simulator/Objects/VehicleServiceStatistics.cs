@@ -6,12 +6,12 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects
 {
-    public class RouteServicesStatistics // contains the metrics for a set of completed services
+    public class VehicleServiceStatistics // contains the metrics for a set of completed services
     {
         private readonly List<Trip> _completedTrips;
 
 
-        public RouteServicesStatistics(List<Vehicle> routeVehicles)
+        public VehicleServiceStatistics(List<Vehicle> routeVehicles)
         {
             _completedTrips = new List<Trip>();
             foreach (var vehicle in routeVehicles)

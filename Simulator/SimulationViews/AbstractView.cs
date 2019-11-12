@@ -9,23 +9,21 @@ namespace Simulator.SimulationViews
     {
         protected IView NextView;
 
-        private Logger.Logger _consoleLogger;
+        protected Logger.Logger ConsoleLogger;
 
-        protected Simulation Simulation;
+        protected Objects.Simulation.Simulation Simulation;
 
-        protected AbstractView(AbstractSimulation simulation)
+
+        protected AbstractView(Objects.Simulation.Simulation simulation)
         {
-            Simulation = (Simulation)simulation;
             IRecorder consoleRecorder = new ConsoleRecorder();
-            _consoleLogger = new Logger.Logger(consoleRecorder);
+            ConsoleLogger = new Logger.Logger(consoleRecorder);
+            Simulation = simulation;
         }
 
-        public void SetNext(IView nextView)
-        {
-            NextView = nextView;
-        }
 
-        public abstract void PrintView(int option);
+
+        public abstract void PrintView();
 
         public int GetIntInput(int minVal, int maxVal)
         {
@@ -36,30 +34,17 @@ namespace Simulator.SimulationViews
                 key = int.Parse(Console.ReadLine());
                 if (key < minVal || key > maxVal)
                 {
-                    _consoleLogger.Log("Wrong input, please retype using a valid integer number value needs to be in the range [" + minVal + "," + maxVal + "]");
+                    ConsoleLogger.Log("Wrong input, please retype using a valid integer number value needs to be in the range [" + minVal + "," + maxVal + "]");
                     goto wrongKeyLabel;
                 }
             }
             catch (Exception)
             {
-                _consoleLogger.Log("Wrong input, please retype using a valid integer number!");
+                ConsoleLogger.Log("Wrong input, please retype using a valid integer number!");
                 goto wrongKeyLabel;
             }
 
             return key;
-        }
-
-        public void Print(string message)
-        {
-            _consoleLogger.Log(message);
-        }
-
-        public void Print(List<string> messages)
-        {
-            foreach (var message in messages)
-            {
-                Print(message);
-            }
         }
 
     }

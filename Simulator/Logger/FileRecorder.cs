@@ -20,6 +20,14 @@ namespace Simulator.Logger
             _streamWriter.Flush();
         }
 
+        public void Record(List<string> messages)
+        {
+            foreach (var message in messages)
+            {
+                Record(message);
+            }
+        }
+
         public FileRecorder(string path, string header)
         {
             _streamWriter = new StreamWriter(path, false);

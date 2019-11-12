@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Security.Cryptography.X509Certificates;
-using Google.OrTools.ConstraintSolver;
 using Simulator.Events;
 using Simulator.Logger;
-using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
-using Simulator.Objects.Data_Objects.Algorithms;
 using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator
+namespace Simulator.Objects.Simulation
 {
     public class Simulation : AbstractSimulation
     {
@@ -21,85 +17,30 @@ namespace Simulator
 
         private Logger.Logger _validationsLogger;
 
-        private int _validationsCounter;
+        private readonly Logger.Logger _consoleLogger;
 
-        public int VehicleSpeed;
+        public SimulationParams SimulationParams;
 
-        public int VehicleCapacity;
+        public SimulationStats SimulationStats;
 
-        public int TotalDynamicRequests;
-
-        public int TotalServedDynamicRequests;
-
-        public int[] SimulationTimeWindow;
-
-        public int MaxCustomerRideTime;//max customer ride time 
-
-        public int MaxAllowedUpperBoundTime;//max delay of timeWindows upperBound (relative to desired timeWindows)
-
-        public int TotalSimulationTime => SimulationTimeWindow[0] >= 0 && SimulationTimeWindow[1] >= 0 && SimulationTimeWindow[1] != 0 ? SimulationTimeWindow[1] - SimulationTimeWindow[0] : 0; //in seconds
-
-        public double DynamicRequestProbabilityThreshold; //randomly generated value has to be
-                                                                     //than this in order to generate a dynamic request
-        private readonly string _loggerBasePath;
-
-        private SimulationIO SimulationIO;
-        public string CurrentSimulationLoggerPath;
-
-
-        public Simulation(int maxCustomerRideTimeSeconds, int maxAllowedUpperBoundTimeSeconds, double dynamicRequestProbability)
+        public Simulation(SimulationParams simulationParams)
         {
-            var loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
-            if (!Directory.Exists(loggerPath))
-            {
-                Directory.CreateDirectory(loggerPath);
-            }
-            _loggerBasePath = Path.Combine(loggerPath, DateTime.Now.ToString("MMMM dd"));
-            if (!Directory.Exists(_loggerBasePath))
-            {
-                Directory.CreateDirectory(_loggerBasePath);
-            }
-            VehicleCapacity = 20;
-            VehicleSpeed = 40;
-            DynamicRequestProbabilityThreshold = dynamicRequestProbability;
-            SimulationTimeWindow = new int[2];
-            SimulationTimeWindow[0] = 0;
-            SimulationTimeWindow[1] = 4*60*60; // 8hours in seconds
-            SimulationIO = new SimulationIO(this);
-            MaxCustomerRideTime = maxCustomerRideTimeSeconds;
-            MaxAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
+            SimulationParams = simulationParams;
+            var recorder = new ConsoleRecorder();
+            _consoleLogger = new Logger.Logger(recorder);
         }
 
         public void Init()
         {
-            var currentTime = DateTime.Now.ToString("HH:mm:ss");
-            var auxTime = currentTime.Split(":");
-            currentTime = auxTime[0] + auxTime[1] +auxTime[2];
-            CurrentSimulationLoggerPath = Path.Combine(_loggerBasePath, currentTime);
-            if (!Directory.Exists(CurrentSimulationLoggerPath))
-            {
-                Directory.CreateDirectory(CurrentSimulationLoggerPath);
-            }
-            RandomNumberGenerator.Seed = new Random().Next(int.MaxValue); //initiates the random number generator seed
-            TotalEventsHandled = 0;
-            TotalDynamicRequests = 0;
-            TotalServedDynamicRequests = 0;
-            _validationsCounter = 1;
+            SimulationParams = new SimulationParams(SimulationParams.MaximumCustomerRideTime,SimulationParams.MaximumAllowedUpperBoundTime,SimulationParams.DynamicRequestThreshold);
             Events.Clear(); //clears all events 
             VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
         }
 
-        public void InitSimulationLoggers()
-        {
-            IRecorder fileRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"event_logs.txt"));
-            _eventLogger = new Logger.Logger(fileRecorder);
-            IRecorder validationsRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
-            _validationsLogger = new Logger.Logger(validationsRecorder);
-        }
 
         public void InitVehicleEvents()
         {
-            var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(SimulationTimeWindow[0], DynamicRequestProbabilityThreshold);//initializes dynamic requests
+            var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(SimulationParams.SimulationTimeWindow[0], SimulationParams.DynamicRequestThreshold);//initializes dynamic requests
             AddEvent(eventDynamicRequestCheck);
             foreach (var vehicle in VehicleFleet)
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
@@ -119,42 +60,30 @@ namespace Simulator
             while (true)
             {
                 Init(); //initializes simulation variables
-                var option = SimulationIO.GetMainMenuOption();
-                switch (option)
-                {
-                    case 1:
-                        StandardBusRouteOption();
-                        break;
-                    case 2:
-                        FlexibleBusRouteOption();
-                        break;
-                    case 3:
-                        AlgorithmComparisonOption();
-                        break;
-                    case 4:
-                        ConfigSimulationOption();
-                        break;
-                    case 5:
-                        Environment.Exit(0);
-                        break;
-                    default:
-                        StandardBusRouteOption();
-                        break;
-                }
+                SimulationViews.ViewFactory.Instance().Create(0,this).PrintView();
                 if (Events.Count > 0) //it means there is the need to simulate
                 {
-                    SimulationIO.PrintSimulationSettings();
+                    var watch = Stopwatch.StartNew();
                     Simulate();
-                    SimulationIO.PrintSimulationStats();
+                    watch.Stop();
+                    SimulationStats.ComputationTime = (int)TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds;
                 }
             }
         }
 
-
-        public void ConfigSimulationOption()
+        public override void OnSimulationStart()
         {
-           SimulationIO.ConfigSimulationMenu();
+            IRecorder fileRecorder = new FileRecorder(Path.Combine(SimulationParams.CurrentSimulationLoggerPath, @"event_logs.txt"));
+            _eventLogger = new Logger.Logger(fileRecorder);
+            IRecorder validationsRecorder = new FileRecorder(Path.Combine(SimulationParams.CurrentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
+            _validationsLogger = new Logger.Logger(validationsRecorder);
+            SimulationParams.PrintParams();
+            var paramsPath = Path.Combine(SimulationParams.CurrentSimulationLoggerPath, @"params.txt");
+            SimulationParams.SaveParams(paramsPath);
+            SimulationStats = new SimulationStats(this);//initializes SimulationStats
         }
+
+
         public RoutingDataModel GenerateRandomInitialDataModel(int numberCustomers,int numberVehicles,bool allowDropNodes)
         {
         
@@ -166,26 +95,24 @@ namespace Simulator
             //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
             for (int i = 0; i < numberVehicles; i++)
             {
-                dataModelVehicles.Add(new Vehicle(VehicleSpeed, 20, true));
+                dataModelVehicles.Add(new Vehicle(SimulationParams.VehicleSpeed, SimulationParams.VehicleCapacity, true));
                 startDepots.Add(TransportationNetwork.Depot);
                 endDepots.Add(TransportationNetwork.Depot);
                 startDepotsArrivalTime.Add(0);//startDepotArrival time  = 0 for all the vehicles
             }
 
             var customersToBeServed = new List<Customer>();
-            var customerGenerator = new CustomerGenerator();
             List<Stop> excludedStops = new List<Stop>();
             excludedStops.Add(TransportationNetwork.Depot);
             for (int i = 0; i < numberCustomers; i++) //generate 5 customers with random timeWindows and random pickup and delivery stops
             {
                 var requestTime = 0;
-                var pickupTimeWindow = new int[] {requestTime, SimulationTimeWindow[1]};//the customer pickup time will be between the current request time and the end of simulation time
-                var customer = customerGenerator.GenerateRandomCustomer(TransportationNetwork.Stops, excludedStops, requestTime,
-                    pickupTimeWindow);
+                var pickupTimeWindow = new int[] {requestTime, SimulationParams.SimulationTimeWindow[1]};//the customer pickup time will be between the current request time and the end of simulation time
+                var customer = new Customer(TransportationNetwork.Stops, excludedStops, requestTime, pickupTimeWindow);
                 customersToBeServed.Add(customer);
             }
             var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,customersToBeServed,startDepotsArrivalTime);
-            var routingDataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+            var routingDataModel = new RoutingDataModel(indexManager,SimulationParams.MaximumCustomerRideTime,SimulationParams.MaximumAllowedUpperBoundTime);
             var solver = new RoutingSolver(routingDataModel,allowDropNodes);
             var solution = solver.TryGetSolution(null);
             if (solution == null)
@@ -193,75 +120,6 @@ namespace Simulator
                 goto GenerateNewDataModelLabel;
             }
             return routingDataModel;
-        }
-
-        public void FlexibleBusRouteOption()
-        {
-            var numberCustomers = SimulationIO.GetNumberCustomersMenuOption();
-            var numberVehicles = SimulationIO.GetNumberVehiclesMenuOption();
-            var dataModel=GenerateRandomInitialDataModel(numberCustomers,numberVehicles,false);
-            if (dataModel != null)
-            {
-                RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
-                var printableList = dataModel.GetSettingsPrintableList();
-                SimulationIO.Print(printableList);
-                dataModel.PrintPickupDeliveries();
-                var timeWindowSolution = routingSolver.TryGetSolution(null);
-                RoutingSolutionObject routingSolutionObject = null;
-;
-                if (timeWindowSolution != null)
-                {
-                    routingSolver.PrintSolution(timeWindowSolution);
-                    routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
-                }
-                AssignVehicleFlexibleTrips(routingSolutionObject, SimulationTimeWindow[0]);
-            }
-            InitSimulationLoggers(); //simulation loggers init
-            InitVehicleEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
-        }
-
-        public void AlgorithmComparisonOption()
-        {
-            IRecorder algorithmsRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"algorithms.txt"));
-            var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
-            for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
-            {
-                for (int vehicleNumber = 5; vehicleNumber <= 20; vehicleNumber = vehicleNumber + 5)
-                {
-                    for (int searchTime = 15; searchTime <= 60; searchTime = searchTime + 15)
-                    {
-                        for (int i = 0; i < 10; i++) // tests 10 different data models for the same setting
-                        {
-                            var allowDropNodes = true;
-                            //var allowDropNodes = SimulationIO.GetAllowDropNodesMenuOption();
-                            //var dataModel = SimulationIO.GetAlgorithmComparisonMenuDataModelOption(true);
-                            var dataModel = GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
-                            //var searchTime = SimulationIO.GetSearchTimeLimitMenuOption();
-                            var printableList = dataModel.GetSettingsPrintableList();
-                            SimulationIO.Print(printableList);
-                            algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
-                            AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
-                            var testedAlgorithms =
-                                algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);
-
-                            foreach (var algorithm in testedAlgorithms)
-                            {
-                                var resultsPrintableList = algorithm.GetResultPrintableList();
-                                SimulationIO.Print(resultsPrintableList);
-                                algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public void StandardBusRouteOption()
-        {
-            SimulationIO.ConfigStartEndHourMenu();
-            AssignAllConventionalTripsToVehicles();
-            InitSimulationLoggers();
-            InitVehicleEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
         }
 
         public void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
@@ -295,7 +153,7 @@ namespace Simulator
         {
             foreach (var route in TransportationNetwork.Routes)
             {
-                var allRouteTrips = route.Trips.FindAll(t => t.StartTime >= SimulationTimeWindow[0] && t.StartTime < SimulationTimeWindow[1]);
+                var allRouteTrips = route.Trips.FindAll(t => t.StartTime >= SimulationParams.SimulationTimeWindow[0] && t.StartTime < SimulationParams.SimulationTimeWindow[1]);
                 if (allRouteTrips.Count > 0)
                 {
                     List<int> startTimes = new List<int>();
@@ -310,7 +168,7 @@ namespace Simulator
                             {
                                 trip.Reset();
                             }
-                            var v = new Vehicle(VehicleSpeed, VehicleCapacity,false);
+                            var v = new Vehicle(SimulationParams.VehicleSpeed, SimulationParams.VehicleCapacity,false);
                             v.AddTrip(trip); //Adds the service
                             VehicleFleet.Add(v);
                             tripCount++;
@@ -318,6 +176,13 @@ namespace Simulator
                     }
                 }
             }
+        }
+
+        public override void OnSimulationEnd()
+        {
+            var statsPath = Path.Combine(SimulationParams.CurrentSimulationLoggerPath, @"stats_logs.txt");
+            SimulationStats.PrintStats();
+            SimulationStats.SaveStats(statsPath);
         }
 
         public override void Append(Event evt)
@@ -372,10 +237,10 @@ namespace Simulator
                                 var sameStops = currentVehicleTrip.Stops.FindAll(s => s == arriveEvent.Stop && currentVehicleTrip.Stops.IndexOf(s) >= currentVehicleTrip.StopsIterator.CurrentIndex);
                                 foreach (var customer in customersToEnterAtCurrentStop) //iterates over every customer that has the actual stop as the pickup stop, in order to make them enter the vehicle
                                 {
-                                    SimulationIO.Print("Vehicle expected depart time" + currentVehicleTrip.ScheduledTimeWindows[currentVehicleTrip.StopsIterator.CurrentIndex][1] + " customer arrival time:" + customer.DesiredTimeWindow[0]);
+                                    _consoleLogger.Log("Vehicle expected depart time" + currentVehicleTrip.ScheduledTimeWindows[currentVehicleTrip.StopsIterator.CurrentIndex][1] + " customer arrival time:" + customer.DesiredTimeWindow[0]);
                                     if (sameStops.Count > 1)
                                     {
-                                        SimulationIO.Print("SameStops");
+                                        _consoleLogger.Log("SameStops");
                                     }
                                     if (currentVehicleTrip.ScheduledTimeWindows[currentVehicleTrip.StopsIterator.CurrentIndex][1] >= customer.DesiredTimeWindow[0]) //if current stop expected depart time is greater or equal than the customer arrival time adds the customer
                                     {
@@ -452,7 +317,7 @@ namespace Simulator
                                     departEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[
                                         departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
 
-                                SimulationIO.Print("Event arrival time:" + nextArrivalTime +
+                                _consoleLogger.Log("Event arrival time:" + nextArrivalTime +
                                                   ", Scheduled arrival time:" + scheduledArrivalTime);
                             }
                         }
@@ -467,7 +332,7 @@ namespace Simulator
             //--------------------------------------------------------------------------------------------------------
             //INSERTION OF PICKUP AND DELIVERY CUSTOMER REQUESTS-----------------------------------------------------------
           
-            if (evt.Category == 5 && evt is DynamicRequestCheckEvent dynamicRequestCheckEvent && evt.Time <= SimulationTimeWindow[1]) // if the event is a dynamic request check event and the current event time is lower than the end time of the simulation
+            if (evt.Category == 5 && evt is DynamicRequestCheckEvent dynamicRequestCheckEvent && evt.Time <= SimulationParams.SimulationTimeWindow[1]) // if the event is a dynamic request check event and the current event time is lower than the end time of the simulation
             {
 
                 if (dynamicRequestCheckEvent.GenerateNewDynamicRequest) // checks if the current event dynamic request event check is supposed to generate a new customer dynamic request event
@@ -476,13 +341,13 @@ namespace Simulator
                     excludedStops.Add(TransportationNetwork.Depot);
                     var requestTime = evt.Time + 1;                 
                     var pickupTimeWindow = new int[] {requestTime + 5 * 60, requestTime + 60 * 60};
-                    var customer = new CustomerGenerator().GenerateRandomCustomer(TransportationNetwork.Stops,excludedStops,requestTime,pickupTimeWindow);
+                    var customer = new Customer(TransportationNetwork.Stops,excludedStops,requestTime,pickupTimeWindow);//Generates a random customer
                     var nextCustomerRequestEvent =
                         EventGenerator.GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
                     AddEvent(nextCustomerRequestEvent);
                 }
 
-                var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(evt.Time + 10,DynamicRequestProbabilityThreshold); //generates a new dynamic request check 10 seconds later than the current evt
+                var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(evt.Time + 10,SimulationParams.DynamicRequestThreshold); //generates a new dynamic request check 10 seconds later than the current evt
                 AddEvent(eventDynamicRequestCheck);
                 
             }
@@ -493,7 +358,7 @@ namespace Simulator
             {            
                 var solutionObject = customerRequestEvent.SolutionObject;
                 var vehicleFlexibleRouting = VehicleFleet.FindAll(v => v.FlexibleRouting);
-                SimulationIO.Print("Flexible routing vehicles count: "+vehicleFlexibleRouting.Count);
+                _consoleLogger.Log("Flexible routing vehicles count: "+vehicleFlexibleRouting.Count);
                 foreach (var vehicle in vehicleFlexibleRouting)
                 {
                     var solutionRoute = solutionObject.GetVehicleStops(vehicle);
@@ -507,17 +372,17 @@ namespace Simulator
                             var customers = solutionObject.GetVehicleCustomers(vehicle); //contains all customers (already inside and not yet in vehicle)
                             List<Stop> visitedStops = new List<Stop>();
                             List<long[]> visitedTimeWindows = new List<long[]>();
-                            SimulationIO.Print("Vehicle " + vehicle.Id + ":");
-                            SimulationIO.Print("Current stop: " +currentStopList[currentStopIndex].ToString());
+                            _consoleLogger.Log("Vehicle " + vehicle.Id + ":");
+                            _consoleLogger.Log("Current stop: " +currentStopList[currentStopIndex].ToString());
                             //construction of already visited stops list
                             if (currentStopIndex > 0)
                             {
-                                SimulationIO.Print("Visited stops:");
+                                _consoleLogger.Log("Visited stops:");
                                 for (int index = 0; index < currentStopIndex; index++)
                                 {
                                     visitedStops.Add(vehicle.TripIterator.Current.VisitedStops[index]);
                                     visitedTimeWindows.Add(vehicle.TripIterator.Current.StopsTimeWindows[index]);
-                                    SimulationIO.Print(currentStopList[index].ToString() + " - " +
+                                    _consoleLogger.Log(currentStopList[index].ToString() + " - " +
                                                       vehicle.TripIterator.Current.VisitedStops[index].ToString());
                                     //ConsoleLogger.Log(currentStopList[index].ToString()+ " - TW:{" + currentTimeWindows[index][0] + "," + currentTimeWindows[index][1] + "}");
                                 }
@@ -536,27 +401,27 @@ namespace Simulator
                             vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,vehicle.TripIterator.Current.ScheduledTimeWindows,customers);
 
                             var vehicleEvents = Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time)  || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
-                        SimulationIO.Print("ALL NEXT VEHICLE " +vehicle.Id+" EVENTS (COUNT:"+vehicleEvents.Count+") (TIME >=" +evt.Time+ "):");
+                            _consoleLogger.Log("ALL NEXT VEHICLE " +vehicle.Id+" EVENTS (COUNT:"+vehicleEvents.Count+") (TIME >=" +evt.Time+ "):");
                             foreach (var vEvent in vehicleEvents)
                             {
                                 if (vEvent is VehicleStopEvent vehicleStopArriveEvent && vEvent.Category == 0) //vehicle arrive stop event
                                 {
-                                    SimulationIO.Print(vehicleStopArriveEvent.GetTraceMessage());
+                                    _consoleLogger.Log(vehicleStopArriveEvent.GetTraceMessage());
                                 }
 
                                 if (vEvent is VehicleStopEvent vehicleStopDepartEvent && vEvent.Category == 1) //vehicle depart stop event
                                 {
-                                    SimulationIO.Print(vehicleStopDepartEvent.GetTraceMessage());
+                                    _consoleLogger.Log(vehicleStopDepartEvent.GetTraceMessage());
                                     if (vehicleStopDepartEvent.Stop == vehicle.TripIterator.Current.StopsIterator.CurrentStop)
                                     {
-                                    SimulationIO.Print("New event depart: " + (vehicle.TripIterator.Current.ScheduledTimeWindows[vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1] + 2));
+                                        _consoleLogger.Log("New event depart: " + (vehicle.TripIterator.Current.ScheduledTimeWindows[vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1] + 2));
                                         vEvent.Time = (int) vehicle.TripIterator.Current.ScheduledTimeWindows[vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1]+1; //recalculates new event depart time
                                     }
                                 }
 
                                 if (vEvent is CustomerVehicleEvent customerVehicleEvent && (vEvent.Category == 2 || vEvent.Category == 3)) //if customer enter vehicle or leave vehicle event
                                 {
-                                    SimulationIO.Print(customerVehicleEvent.GetTraceMessage());
+                                    _consoleLogger.Log(customerVehicleEvent.GetTraceMessage());
                                     Events.Remove(vEvent);     
                                 }
                             }
@@ -575,7 +440,7 @@ namespace Simulator
         {
          
             evt.Treat();
-            TotalEventsHandled++;
+            SimulationStats.TotalEventsHandled++;
 
             var msg = evt.GetTraceMessage();
             if (msg != "")
@@ -586,11 +451,10 @@ namespace Simulator
             switch (evt)
             {
                 case CustomerVehicleEvent customerVehicleEvent:
-                    _validationsLogger.Log(customerVehicleEvent.GetValidationsMessage(_validationsCounter));
-                    _validationsCounter++;
+                    _validationsLogger.Log(customerVehicleEvent.GetValidationsMessage(SimulationStats.ValidationsCounter++));
                     break;
                 case CustomerRequestEvent customerRequestEvent:
-                        TotalDynamicRequests++;
+                        SimulationStats.TotalDynamicRequests++;
                         var newCustomer = customerRequestEvent.Customer;
                     if (VehicleFleet.FindAll(v=>v.FlexibleRouting == true).Count>0 && newCustomer != null && VehicleFleet.FindAll(v=>v.TripIterator.Current != null && !v.TripIterator.Current.IsDone).Count>0)
                     {
@@ -628,7 +492,7 @@ namespace Simulator
                                         if (customer.IsInVehicle)
                                         {
                                             var v = VehicleFleet.Find(veh => veh.Customers.Contains(customer));
-                                        SimulationIO.Print(" Customer " +customer.Id+" is already inside vehicle"+v.Id+": Already visited: " + customer.PickupDelivery[0] +
+                                            _consoleLogger.Log(" Customer " +customer.Id+" is already inside vehicle"+v.Id+": Already visited: " + customer.PickupDelivery[0] +
                                                               ", Need to visit:" + customer.PickupDelivery[1]);
                                         }
                                     }
@@ -657,7 +521,7 @@ namespace Simulator
                         }
                         if (movingVehicles.Count > 0)//if there is a moving vehicle calculates the baseArrivalTime
                         {
-                            SimulationIO.Print("Moving vehicles total:" + movingVehicles.Count);
+                            _consoleLogger.Log("Moving vehicles total:" + movingVehicles.Count);
                             foreach (var movingVehicle in movingVehicles)
                             {
                                 var vehicleArrivalEvents = Events.FindAll(e =>
@@ -678,7 +542,7 @@ namespace Simulator
                         //end of calculation of startDepotsArrivalTime
                         //--------------------------------------------------------------------------------------------------------------------------
                         var indexManager = new DataModelIndexManager(startDepots,endDepots,dataModelVehicles,allExpectedCustomers,startDepotArrivalTimesList);
-                        var dataModel = new RoutingDataModel(indexManager,MaxCustomerRideTime,MaxAllowedUpperBoundTime);
+                        var dataModel = new RoutingDataModel(indexManager,SimulationParams.MaximumCustomerRideTime,SimulationParams.MaximumAllowedUpperBoundTime);
                         var solver = new RoutingSolver(dataModel,false);
                         var solution = solver.TryGetSolution(null);
                         if (solution != null)
@@ -687,15 +551,15 @@ namespace Simulator
                             dataModel.PrintTimeWindows();
                             //dataModel.PrintTimeMatrix();
                             solver.PrintSolution(solution);
-                            TotalServedDynamicRequests++;
-                            SimulationIO.Print(newCustomer.ToString() + " was inserted into a vehicle service at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString() );
+                            SimulationStats.TotalServedDynamicRequests++;
+                            _consoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString() );
 
                             var solutionObject = solver.GetSolutionObject(solution);
                             customerRequestEvent.SolutionObject = solutionObject;
                         }
                         else
                         {
-                            SimulationIO.Print(newCustomer.ToString() + " was not possible to be served at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
+                            _consoleLogger.Log(newCustomer.ToString() + " was not possible to be served at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
                         }
                     }
                     break;

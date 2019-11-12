@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Simulator.Logger;
-using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects
+namespace Simulator.Objects.Simulation
 {
     public class SimulationParams
     {
@@ -15,13 +13,10 @@ namespace Simulator.Objects
             set => RandomNumberGenerator.Seed = value;
         }
 
-        public string CurrentSimulationLoggerPath;
 
         public int MaximumAllowedUpperBoundTime;
 
         public int MaximumCustomerRideTime;
-
-        public List<Vehicle> VehicleFleet;
 
         public double DynamicRequestThreshold;
 
@@ -33,13 +28,26 @@ namespace Simulator.Objects
 
         public int VehicleCapacity;
 
+        public string CurrentSimulationLoggerPath;
+
         public string LoggerBasePath;
 
-        public int TotalDynamicRequests;
-
-        public int TotalServedDynamicRequests;
 
         public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedUpperBoundTimeSeconds,double dynamicRequestThreshold)
+        {
+            VehicleCapacity = 20;
+            VehicleSpeed = 40;
+            DynamicRequestThreshold = dynamicRequestThreshold;
+            SimulationTimeWindow = new int[2];
+            SimulationTimeWindow[0] = 0;
+            SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
+            MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
+            MaximumAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
+            Seed = new Random().Next(int.MaxValue);
+            InitSimulationPath();
+        }
+
+        private void InitSimulationPath()
         {
             var loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
             if (!Directory.Exists(loggerPath))
@@ -51,16 +59,17 @@ namespace Simulator.Objects
             {
                 Directory.CreateDirectory(LoggerBasePath);
             }
-            VehicleCapacity = 20;
-            VehicleSpeed = 40;
-            DynamicRequestThreshold = dynamicRequestThreshold;
-            SimulationTimeWindow = new int[2];
-            SimulationTimeWindow[0] = 0;
-            SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
-            MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
-            MaximumAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
+
+            var currentTime = DateTime.Now.ToString("HH:mm:ss");
+            var auxTime = currentTime.Split(":");
+            currentTime = auxTime[0] + auxTime[1] + auxTime[2];
+            CurrentSimulationLoggerPath = Path.Combine(LoggerBasePath, currentTime);
+            if (!Directory.Exists(CurrentSimulationLoggerPath))
+            {
+                Directory.CreateDirectory(CurrentSimulationLoggerPath);
+            }
         }
-        public void PrintSimulationParams()
+        public void PrintParams()
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             Logger.Logger _consoleLogger = new Logger.Logger(consoleRecorder);
@@ -79,24 +88,26 @@ namespace Simulator.Objects
                                TimeSpan.FromSeconds(SimulationTimeWindow[1]).ToString());
             _consoleLogger.Log("Simulation Duration: " +
                                TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours");
-            _consoleLogger.Log("Number of vehicles:" + VehicleFleet.Count);
             _consoleLogger.Log("Vehicle average speed: " + VehicleSpeed + " km/h.");
             _consoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
+            _consoleLogger.Log("Press any key to Start the Simulation...");
+            Console.Read();
+        }
 
+        public void SaveParams(string path)
+        {
+            //Path.Combine(CurrentSimulationLoggerPath, @"settings.txt"
             //logs into a file the settings
-            IRecorder settingsFileRecorder = new FileRecorder(Path.Combine(CurrentSimulationLoggerPath, @"settings.txt"));
+            IRecorder settingsFileRecorder = new FileRecorder(path);
             var settingsLogger = new Logger.Logger(settingsFileRecorder);
             settingsLogger.Log(nameof(RandomNumberGenerator.Seed) + ": " + RandomNumberGenerator.Seed);
-            settingsLogger.Log(nameof(MaximumAllowedUpperBoundTime) + ": " +MaximumAllowedUpperBoundTime);
+            settingsLogger.Log(nameof(MaximumAllowedUpperBoundTime) + ": " + MaximumAllowedUpperBoundTime);
             settingsLogger.Log(nameof(MaximumCustomerRideTime) + ": " + MaximumCustomerRideTime);
             settingsLogger.Log(nameof(DynamicRequestThreshold) + ": " + DynamicRequestThreshold);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[0]: " + SimulationTimeWindow[0]);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[1]: " + SimulationTimeWindow[1]);
-            settingsLogger.Log(nameof(VehicleFleet) + nameof(VehicleFleet.Count) + ": " + VehicleFleet.Count);
-            settingsLogger.Log(nameof(VehicleSpeed) + ": " +VehicleSpeed);
+            settingsLogger.Log(nameof(VehicleSpeed) + ": " + VehicleSpeed);
             settingsLogger.Log(nameof(VehicleCapacity) + ": " + VehicleCapacity);
-            _consoleLogger.Log("Press any key to Start the Simulation...");
-            Console.Read();
         }
     }
 }

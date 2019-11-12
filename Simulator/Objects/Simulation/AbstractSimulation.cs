@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Events;
-using Simulator.Logger;
-using Simulator.Objects;
-using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator
+namespace Simulator.Objects.Simulation
 {
     public abstract class AbstractSimulation
     {
@@ -25,46 +15,38 @@ namespace Simulator
 
         protected int TotalEventsHandled;
 
-        public int ComputationTime;
+
 
         protected AbstractSimulation()
         {
             Events = new List<Event>();
             VehicleFleet = new List<Vehicle>();
             EventGenerator = EventGenerator.Instance();
-            TotalEventsHandled = 0;
-            ComputationTime = 0;
         }
 
 
         public abstract void MainLoop();
+
+        public abstract void OnSimulationStart();
         public void Simulate()
         {
-            //test chain of responsability design pattern
-            //IView app1 = new VehicleArriveSimulationView(this);
-            //IView app2 = new VehicleDepartSimulationView(this);
-            //IView app3 = new CustomerRequestSimulationView(this);
-            //IView app4 = new DynamicRequestCheckSimulationView(this);
-            //app1.SetNext(app2);
-            //app2.SetNext(app3);
-            //app3.SetNext(app4);
+
             if (Events.Count > 0)
-            {                              
-                var watch = Stopwatch.StartNew();
+            {
+                OnSimulationStart();
                 for (int i = 0; i < Events.Count ;i++)
                 {
                             var currentEvent = Events[i];
                             Handle(currentEvent);
-                            Append(currentEvent); 
-                            //app1.Append(currentEvent);
+                            Append(currentEvent);
                             SortEvents();
                 }
-                watch.Stop();
-                ComputationTime = (int)TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds;
-
+                OnSimulationEnd();
             }
             
         }
+
+        public abstract void OnSimulationEnd();
 
         public abstract void Append(Event evt);
         public override string ToString()

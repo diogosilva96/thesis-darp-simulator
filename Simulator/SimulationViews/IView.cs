@@ -7,7 +7,6 @@ namespace Simulator.EventAppender__COR_Pattern_
 {
     public interface IView
     {
-        void SetNext(IView nextView);
-        void PrintView(int option);
+        void PrintView();
     }
 }

@@ -18,5 +18,10 @@ namespace Simulator.Logger
         {
             _recorder.Record(message);
         }
+
+        public void Log(List<string> messages)
+        {
+            _recorder.Record(messages);
+        }
     }
 }

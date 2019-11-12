@@ -10,5 +10,13 @@ namespace Simulator.Logger
         {
             Console.WriteLine(message);
         }
+
+        public void Record(List<string> messages)
+        {
+            foreach (var message in messages)
+            {
+                Record(message);
+            }
+        }
     }
 }

@@ -13,15 +13,14 @@ namespace Simulator.SimulationViews
 {
     class AlgorithmsComparisonView:AbstractView
     {
-        public AlgorithmsComparisonView(AbstractSimulation simulation) : base(simulation)
-        {
-        }
 
-        public override void PrintView(int option)
+
+        public override void PrintView()
         {
-            if (option == 3)
-            {
-                IRecorder algorithmsRecorder = new FileRecorder(Path.Combine(Simulation.CurrentSimulationLoggerPath, @"algorithms.txt"));
+
+                string path = "";
+                //var path = CurrentSimulationLoggerPath, @"algorithms.txt;
+                IRecorder algorithmsRecorder = new FileRecorder(path);
                 var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
                 for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
                 {
@@ -95,7 +94,7 @@ namespace Simulator.SimulationViews
                                 var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber,
                                         vehicleNumber, allowDropNodes);
                                 var printableList = dataModel.GetSettingsPrintableList();
-                                Print(printableList);
+                                ConsoleLogger.Log(printableList);
                                 algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
                                 AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
                                 var testedAlgorithms =
@@ -104,15 +103,17 @@ namespace Simulator.SimulationViews
                                 foreach (var algorithm in testedAlgorithms)
                                 {
                                     var resultsPrintableList = algorithm.GetResultPrintableList();
-                                    Print(resultsPrintableList);
+                                    ConsoleLogger.Log(resultsPrintableList);
                                     algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
                                 }
                             }
                         }
                     }
                 }
-            }
-            NextView.PrintView(option);
+        }
+
+        public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)
+        {
         }
     }
 }

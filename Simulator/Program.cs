@@ -14,6 +14,7 @@ using MathNet.Numerics.Random;
 using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Events;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Simulation;
 
 
 namespace Simulator
@@ -22,7 +23,9 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
-            AbstractSimulation sim = new Simulation(30*60,30*60,0.02);
+            var stops = TransportationNetwork.Stops;
+            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 0.02);
+            AbstractSimulation sim = new Simulation(simulationParams);
             sim.MainLoop();
             Console.Read();
 
