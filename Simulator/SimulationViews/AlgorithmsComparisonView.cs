@@ -8,6 +8,7 @@ using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Algorithms;
 using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
+using Simulator.Objects.Simulation;
 
 namespace Simulator.SimulationViews
 {
@@ -18,17 +19,16 @@ namespace Simulator.SimulationViews
         public override void PrintView()
         {
 
-                string path = "";
+                string path = Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithms.txt");
                 //var path = CurrentSimulationLoggerPath, @"algorithms.txt;
                 IRecorder algorithmsRecorder = new FileRecorder(path);
                 var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
+                var vehicleNumber = 20;
                 for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
                 {
-                    for (int vehicleNumber = 5; vehicleNumber <= 20; vehicleNumber = vehicleNumber + 5)
+                    for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20)
                     {
-                        for (int searchTime = 15; searchTime <= 60; searchTime = searchTime + 15)
-                        {
-                            for (int i = 0; i < 10; i++) // tests 10 different data models for the same setting
+                            for (int i = 0; i < 5; i++) // tests 10 different data models for the same setting
                             {
                                 var allowDropNodes = true;
                                 //Print("Allow drop nodes penalties?");
@@ -91,8 +91,7 @@ namespace Simulator.SimulationViews
                                     //var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
                                     //Print("Please insert the search time limit:");
                                     //var searchTime = GetIntInput(1, int.MaxValue);
-                                var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber,
-                                        vehicleNumber, allowDropNodes);
+                                var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber,customersNumber , allowDropNodes, Simulation.Params);
                                 var printableList = dataModel.GetSettingsPrintableList();
                                 ConsoleLogger.Log(printableList);
                                 algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
@@ -108,7 +107,6 @@ namespace Simulator.SimulationViews
                                 }
                             }
                         }
-                    }
                 }
         }
 

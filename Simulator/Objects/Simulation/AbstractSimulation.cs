@@ -31,18 +31,18 @@ namespace Simulator.Objects.Simulation
         public void Simulate()
         {
 
-            if (Events.Count > 0)
-            {
-                OnSimulationStart();
-                for (int i = 0; i < Events.Count ;i++)
+                if (VehicleFleet.FindAll(v=>v.ServiceTrips.Count>0).Count>0)
                 {
-                            var currentEvent = Events[i];
-                            Handle(currentEvent);
-                            Append(currentEvent);
-                            SortEvents();
+                    OnSimulationStart();
+                    for (int i = 0; i < Events.Count ;i++)
+                    {
+                        var currentEvent = Events[i];
+                        Handle(currentEvent);
+                        Append(currentEvent);
+                        SortEvents();
+                    }
+                    OnSimulationEnd();
                 }
-                OnSimulationEnd();
-            }
             
         }
 

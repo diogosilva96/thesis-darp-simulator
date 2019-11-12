@@ -18,7 +18,11 @@ namespace Simulator.SimulationViews
                 var numberCustomers = GetIntInput(1, int.MaxValue);
                 ConsoleLogger.Log("Please insert the number of available vehicles: ");
                 var numberVehicles = GetIntInput(1, numberCustomers);
-                var dataModel = Simulation.GenerateRandomInitialDataModel(numberCustomers, numberVehicles, false);
+                ConsoleLogger.Log("Allow drop nodes?");
+                ConsoleLogger.Log("1 - Yes");
+                ConsoleLogger.Log("2 - No");
+                var allowDropNodes = GetIntInput(1, 2) == 1;
+                var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
                 if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
@@ -33,10 +37,8 @@ namespace Simulator.SimulationViews
                         routingSolver.PrintSolution(timeWindowSolution);
                         routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
                     }
-                    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.SimulationParams.SimulationTimeWindow[0]);
+                    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
                 }
-                Simulation.InitVehicleEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
-
         }
 
         public FlexibleRouteSimulationView(Simulation simulation) : base(simulation)

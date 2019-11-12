@@ -43,11 +43,21 @@ namespace Simulator.Objects.Simulation
             SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
             MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
             MaximumAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
-            Seed = new Random().Next(int.MaxValue);
-            InitSimulationPath();
+            InitParams();
         }
 
-        private void InitSimulationPath()
+        private void GenerateRandomSeed()
+        {
+            Seed = new Random().Next(int.MaxValue);
+        }
+        public void InitParams() //inits a new seed and updates the LoggerPaths
+        {
+            GenerateRandomSeed();
+            UpdateLoggerPaths();
+          
+        }
+
+        private void UpdateLoggerPaths()
         {
             var loggerPath = @Path.Combine(Environment.CurrentDirectory, @"Logger");
             if (!Directory.Exists(loggerPath))
@@ -59,7 +69,6 @@ namespace Simulator.Objects.Simulation
             {
                 Directory.CreateDirectory(LoggerBasePath);
             }
-
             var currentTime = DateTime.Now.ToString("HH:mm:ss");
             var auxTime = currentTime.Split(":");
             currentTime = auxTime[0] + auxTime[1] + auxTime[2];

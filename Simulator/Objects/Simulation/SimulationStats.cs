@@ -8,22 +8,20 @@ namespace Simulator.Objects.Simulation
     public class SimulationStats
     {
 
-        private Logger.Logger _consoleLogger;
+        private readonly Logger.Logger _consoleLogger;
 
-        private Objects.Simulation.Simulation _simulation;
+        private readonly Simulation _simulation;
 
         public int TotalDynamicRequests;
 
         public int TotalServedDynamicRequests;
-
-        public int ComputationTime;
 
         public int TotalEventsHandled;
 
         public int ValidationsCounter;
 
 
-        public SimulationStats(Objects.Simulation.Simulation simulation)
+        public SimulationStats(Simulation simulation)
         {
             IRecorder consoleRecorder = new ConsoleRecorder();
             _consoleLogger = new Logger.Logger(consoleRecorder);
@@ -69,10 +67,9 @@ namespace Simulator.Objects.Simulation
             toPrintList.Add("Total number of vehicles used: " +
                             _simulation.VehicleFleet.FindAll(v => v.TripIterator != null));
             toPrintList.Add("Average Dynamic requests per hour: " + TotalDynamicRequests /
-                            TimeSpan.FromSeconds(_simulation.SimulationParams.TotalSimulationTime).TotalHours);
+                            TimeSpan.FromSeconds(_simulation.Params.TotalSimulationTime).TotalHours);
             toPrintList.Add("Total simulation time: " +
-                            TimeSpan.FromSeconds(_simulation.SimulationParams.TotalSimulationTime).TotalHours + " hours.");
-            toPrintList.Add("Total Simulation Computation Time: " + ComputationTime + " seconds.");
+                            TimeSpan.FromSeconds(_simulation.Params.TotalSimulationTime).TotalHours + " hours.");
             toPrintList.Add("Total Dynamic Requests Served: " + TotalServedDynamicRequests + " out of " +
                             TotalDynamicRequests);
             toPrintList.Add("-------------------------------------");

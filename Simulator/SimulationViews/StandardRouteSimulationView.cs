@@ -19,7 +19,6 @@ namespace Simulator.SimulationViews
                 ConsoleLogger.Log("Insert the end hour of the simulation.");
                 endTimeHour = GetIntInput(startTimeHour, 24);
                 Simulation.AssignAllConventionalTripsToVehicles();
-                Simulation.InitVehicleEvents(); //initializes vehicle events and dynamic requests events (if there is any event to be initialized)
         }
 
         public StandardRouteSimulationView(Simulation simulation) : base(simulation)
