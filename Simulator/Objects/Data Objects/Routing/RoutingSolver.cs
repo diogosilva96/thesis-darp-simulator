@@ -14,8 +14,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         private int _transitCallbackIndex;
         private int _demandCallbackIndex;
         public bool DropNodesAllowed;
-        private long _maximumVehicleWaitTimeAtEachStop;
-        private long _maximumVehicleRouteTime;
+
         public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
 
 
@@ -23,8 +22,6 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             DropNodesAllowed = dropNodesAllowed;
             MaxUpperBound = 0; //default value
-            _maximumVehicleWaitTimeAtEachStop = 60 * 30; //30mins
-            _maximumVehicleRouteTime = 60 * 60 * 24; //24hours
             if (dataModel.TimeWindows.GetLength(0) == dataModel.TimeMatrix.GetLength(0))
             {
                 DataModel = dataModel;
@@ -110,8 +107,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                 //Add Time window constraints
                 _routingModel.AddDimension(
                     _transitCallbackIndex, // transit callback
-                    _maximumVehicleWaitTimeAtEachStop, // allow waiting time 
-                    _maximumVehicleRouteTime, // maximum travel time per vehicle
+                    24*60*60, // allow waiting time 
+                    24*60*60, // maximum travel time per vehicle
                     false, // start cumul to zero
                     "Time");
                 RoutingDimension timeDimension = _routingModel.GetMutableDimension("Time");
@@ -159,7 +156,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     var pickupDeliveryPairs = Array.FindAll(DataModel.PickupsDeliveries, pickupDelivery => pickupDelivery[0] == i); //finds all the pickupdelivery pairs with pickup index i 
                     foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
                     {
-                        var deliveryIndex = pickupDelivery[1];
+                        var deliveryIndex = _routingIndexManager.NodeToIndex(pickupDelivery[1]);
                         var directRideTimeDuration = DataModel.TimeMatrix[pickupDelivery[0], pickupDelivery[1]];
                         var realRideTimeDuration = timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
                         solver.Add(realRideTimeDuration < directRideTimeDuration+DataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the directRideTimeDuration + maxCustomerRideTimeDuration
@@ -185,7 +182,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             {
                                 var vehicleIndex = i;
                                 var index = _routingModel.Start(vehicleIndex);
-                                var deliveryIndex = j;
+                                var deliveryIndex = _routingIndexManager.NodeToIndex(j);
                                 solver.Add(solver.MakeEquality(_routingModel.VehicleVar(index),_routingModel.VehicleVar(deliveryIndex)));//vehicle i has to be the one that delivers customer with deliveryIndex j;
                                 //this constraint enforces that the vehicle i has to be the vehicle which services (goes to) the deliveryIndex as well
 

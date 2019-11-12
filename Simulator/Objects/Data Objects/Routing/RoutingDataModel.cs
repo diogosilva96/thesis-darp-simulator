@@ -27,6 +27,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
         public long[,] VehicleDeliveries;// Matrix that contains the number of customer that are already inside a vehicle to be delivered to the stop specified by the column, Matrix size: [Vehicles.Count,Stops.Count]
+
         public RoutingDataModel(DataModelIndexManager indexManger,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
                 IndexManager = indexManger;
