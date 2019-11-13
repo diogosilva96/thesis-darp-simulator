@@ -18,7 +18,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             Name = algorithmValue.ToString();
         }
 
-        public override Assignment TryGetSolution()
+        public override Assignment GetSolution()
         {
             Assignment solution = null;
             if (AlgorithmValue is LocalSearchMetaheuristic.Types.Value localSearchAlgorithm)

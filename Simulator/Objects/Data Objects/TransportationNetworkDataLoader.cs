@@ -68,7 +68,7 @@ namespace Simulator.Objects.Data_Objects
                     dataExporter.ExportTripStops(tripsStopTupleDictionary,tripStopsPath);
                 }
                 FileDataReader fdr = new FileDataReader();
-                var tripsStopData = fdr.ImportData(tripStopsPath, ',');
+                var tripsStopData = fdr.ImportData(tripStopsPath, ',',true);
                 LoadStopsIntoTrips(tripsStopData);  
                 LoadTripStartTimes(tripsStopData);
                 AssignUrbanStops();
@@ -313,7 +313,7 @@ namespace Simulator.Objects.Data_Objects
             else
             {
                 FileDataReader fdr = new FileDataReader();
-                listData = fdr.ImportData(path, ',');
+                listData = fdr.ImportData(path, ',',true);
             }
 
             return listData;
@@ -360,7 +360,7 @@ namespace Simulator.Objects.Data_Objects
             else
             {
                 FileDataReader fdr = new FileDataReader();
-                var stopTimesData = fdr.ImportData(stopTimesPath, ',');
+                var stopTimesData = fdr.ImportData(stopTimesPath, ',',true);
                 var tripsIdList = new List<int>();
                 foreach (var singleData in stopTimesData)
                     if (!tripsIdList.Contains(int.Parse(singleData[0])))

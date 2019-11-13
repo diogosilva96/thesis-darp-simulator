@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
 {
     public class RoutingDataModel //Routing DataModel with all the data necessary to be used by the routing Solver
     {
+        private static int nextId;
+        public int Id { get; internal set; }
+
         public long[] VehicleCapacities; //Array that contains vehicle capacities, Array size: [Vehicles.Count]
 
         public long[,] TimeMatrix; //time matrix that contains the travel time to each stop, Matrix size: [Stops.Count,Stops.Count]
@@ -30,6 +34,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public RoutingDataModel(DataModelIndexManager indexManger,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
+                Id = Interlocked.Increment(ref nextId);
                 IndexManager = indexManger;
                 MaxAllowedUpperBoundTime = maxAllowedUpperBound;
                 MaxCustomerRideTime = maxCustomerRideTime;
@@ -73,8 +78,8 @@ namespace Simulator.Objects.Data_Objects.Routing
         public string GetCSVSettingsMessage()
         {
             string splitter = ",";
-            string message = IndexManager.Customers.Count + splitter + IndexManager.Vehicles.Count + splitter +
-                             TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes + splitter + TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes;
+            string message = Id+splitter+IndexManager.Customers.Count + splitter + IndexManager.Vehicles.Count + splitter +
+                             TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes + splitter + TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes+splitter+RandomNumberGenerator.Seed;
             return message;
 
         }

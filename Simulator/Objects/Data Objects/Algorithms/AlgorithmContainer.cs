@@ -10,6 +10,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         private List<FirstSolutionStrategy.Types.Value> _firstSolutionAlgorithms;
         private List<LocalSearchMetaheuristic.Types.Value> _searchStrategyAlgorithms;
         public RoutingDataModel DataModel;
+        public int TestId;
 
         public override string ToString()
         {

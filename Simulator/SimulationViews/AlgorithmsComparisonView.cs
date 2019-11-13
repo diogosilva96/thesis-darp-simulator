@@ -24,6 +24,7 @@ namespace Simulator.SimulationViews
                 IRecorder algorithmsRecorder = new FileRecorder(path);
                 var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
                 var vehicleNumber = 20;
+                int testId = 0;
                 for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
                 {
                     for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20)
@@ -94,7 +95,7 @@ namespace Simulator.SimulationViews
                                 var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber,customersNumber , allowDropNodes, Simulation.Params);
                                 var printableList = dataModel.GetSettingsPrintableList();
                                 ConsoleLogger.Log(printableList);
-                                algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());
+                                algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());             
                                 AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
                                 var testedAlgorithms =
                                     algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);

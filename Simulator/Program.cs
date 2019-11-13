@@ -23,6 +23,12 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
+           
+
+            
+
+            var dataStructurer = new AlgorithmDataStructurer();
+                        dataStructurer.StructureFile(Path.Combine(@Path.Combine(Environment.CurrentDirectory, @"Logger", @"Algorithms.csv")));
             var stops = TransportationNetwork.Stops;
             SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 0.02);
             AbstractSimulation sim = new Simulation(simulationParams);

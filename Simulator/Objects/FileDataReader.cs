@@ -7,16 +7,15 @@ namespace Simulator.Objects
     public class FileDataReader
     {
 
-        public List<string[]> ImportData(string filePath,char dataSplitter)//Imports data from file and ignores the first line
+        public List<string[]> ImportData(string filePath,char dataSplitter,bool ignoreFirstLine)//Imports data from file and ignores the first line
         {
             List<string[]> importedData = new List<string[]>();
             string line;
             int counter = 0;
             StreamReader file = new StreamReader(filePath);
-            bool firstLine = true;
             while ((line = file.ReadLine()) != null)
             {
-                if (!firstLine) 
+                if (!ignoreFirstLine) 
                 {
                     var dataArray = line.Split(dataSplitter);
                     importedData.Add(dataArray);
@@ -24,7 +23,7 @@ namespace Simulator.Objects
                 }
                 else
                 {
-                    firstLine = false;
+                    ignoreFirstLine = false;
                 }
             }
             file.Close();

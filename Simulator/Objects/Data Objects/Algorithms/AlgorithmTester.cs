@@ -43,8 +43,9 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             if (_hasBeenTested)
             {
                 string splitter = ",";
-
-                string message = Name + splitter +AllowDropNodes+splitter+ SolutionIsFeasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed;
+                int allowDropNodes = AllowDropNodes ? 1 : 0;
+                int feasible = SolutionIsFeasible ? 1 : 0;
+                string message = Name + splitter +allowDropNodes+splitter+ feasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed+splitter+DataModel.Id;
                 return message;
             }
 
@@ -57,10 +58,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public void Test() //tests the algorithm using different maxUpperBound values until it finds the earliest feasible maxupperbound value, then saves its metrics
         {
-            Console.WriteLine(this.ToString() + " testing algorithm: " + Name);
+            Console.WriteLine(this.ToString() + " testing algorithm: " + Name+ " (Search time: "+SearchTimeLimitInSeconds+" seconds)");
 
             var watch = Stopwatch.StartNew();
-            var solution = TryGetSolution();
+            var solution = GetSolution();
             _hasBeenTested = true;
             watch.Stop();
             var elapsedSeconds = watch.ElapsedMilliseconds * 0.001;
@@ -106,6 +107,6 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             return null;
         }
 
-        public abstract Assignment TryGetSolution();
+        public abstract Assignment GetSolution();
     }
 }
