@@ -11,7 +11,6 @@ namespace Simulator.SimulationViews
 
         public override void PrintView()
         {
-
                 ConsoleLogger.Log("Do you want to insert a custom random number generator Seed:");
                 ConsoleLogger.Log("1 - Yes");
                 ConsoleLogger.Log("2 - No");
@@ -27,9 +26,9 @@ namespace Simulator.SimulationViews
                 Simulation.Params.MaximumCustomerRideTime = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
                 int startTimeHour = 0;
                 int endTimeHour = 0;
-                ConsoleLogger.Log("Insert the start hour of the simulation.");
+                ConsoleLogger.Log("Insert the start hour of the simulation:");
                 startTimeHour = GetIntInput(0, 24);
-                ConsoleLogger.Log("Insert the end hour of the simulation.");
+                ConsoleLogger.Log("Insert the end hour of the simulation:");
                 endTimeHour = GetIntInput(startTimeHour, 24);
                 Simulation.Params.SimulationTimeWindow[0] = (int)TimeSpan.FromHours(startTimeHour).TotalSeconds;//hours in seconds
                 Simulation.Params.SimulationTimeWindow[1] = (int)TimeSpan.FromHours(endTimeHour).TotalSeconds;//hours in seconds

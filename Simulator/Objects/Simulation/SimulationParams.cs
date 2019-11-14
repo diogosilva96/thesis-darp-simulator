@@ -28,6 +28,8 @@ namespace Simulator.Objects.Simulation
 
         public int VehicleCapacity;
 
+        public int VehicleNumber;
+
         public string CurrentSimulationLoggerPath;
 
         public string LoggerBasePath;
@@ -99,6 +101,7 @@ namespace Simulator.Objects.Simulation
                                TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours");
             _consoleLogger.Log("Vehicle average speed: " + VehicleSpeed + " km/h.");
             _consoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
+            _consoleLogger.Log("Vehicle number: "+VehicleNumber);
             _consoleLogger.Log("Press any key to Start the Simulation...");
             Console.Read();
         }
@@ -115,6 +118,7 @@ namespace Simulator.Objects.Simulation
             settingsLogger.Log(nameof(DynamicRequestThreshold) + ": " + DynamicRequestThreshold);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[0]: " + SimulationTimeWindow[0]);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[1]: " + SimulationTimeWindow[1]);
+            settingsLogger.Log(nameof(VehicleNumber)+ " : "+VehicleNumber);
             settingsLogger.Log(nameof(VehicleSpeed) + ": " + VehicleSpeed);
             settingsLogger.Log(nameof(VehicleCapacity) + ": " + VehicleCapacity);
         }

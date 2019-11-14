@@ -22,7 +22,8 @@ namespace Simulator.SimulationViews
                 ConsoleLogger.Log("1 - Yes");
                 ConsoleLogger.Log("2 - No");
                 var allowDropNodes = GetIntInput(1, 2) == 1;
-                var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
+                //var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
+                var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation.Params);
                 if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);

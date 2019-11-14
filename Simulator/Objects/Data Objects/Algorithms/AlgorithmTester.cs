@@ -30,11 +30,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public int TotalRouteTimesInMinutes => Solver.GetSolutionObject(Solution) != null ? (int) TimeSpan.FromSeconds(Solver.GetSolutionObject(this.Solution).TotalTimeInSeconds).TotalMinutes : 0;
 
         public int TotalVehiclesUsed => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(Solution).TotalVehiclesUsed : 0;
-        protected AlgorithmTester(RoutingDataModel dataModel,bool allowDropNodes)
+        protected AlgorithmTester()
         {
-            DataModel = dataModel;
+
             SolutionIsFeasible = false;
-            Solver = new RoutingSolver(dataModel,allowDropNodes);
             _hasBeenTested = false;
         }
 
@@ -56,11 +55,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             return "["+GetType().Name+"]";
         }
 
-        public void Test() //tests the algorithm using different maxUpperBound values until it finds the earliest feasible maxupperbound value, then saves its metrics
+        public void Test(RoutingDataModel dataModel,bool dropNodes) //tests the algorithm using different maxUpperBound values until it finds the earliest feasible maxupperbound value, then saves its metrics
         {
             Console.WriteLine(this.ToString() + " testing algorithm: " + Name+ " (Search time: "+SearchTimeLimitInSeconds+" seconds)");
-
-            var watch = Stopwatch.StartNew();
+            DataModel = dataModel;
+            Solver = new RoutingSolver(dataModel,dropNodes);
+                var watch = Stopwatch.StartNew();
             var solution = GetSolution();
             _hasBeenTested = true;
             watch.Stop();

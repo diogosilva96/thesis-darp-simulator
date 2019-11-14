@@ -1,90 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Google.OrTools.ConstraintSolver;
-using Simulator.Objects.Data_Objects.Routing;
+
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
     public class AlgorithmContainer
     {
-        private List<FirstSolutionStrategy.Types.Value> _firstSolutionAlgorithms;
-        private List<LocalSearchMetaheuristic.Types.Value> _searchStrategyAlgorithms;
-        public RoutingDataModel DataModel;
-        public int TestId;
+        public List<FirstSolutionStrategy.Types.Value> FirstSolutionAlgorithms;
+        public List<LocalSearchMetaheuristic.Types.Value> SearchAlgorithms;
 
         public override string ToString()
         {
             return "["+this.GetType().Name+"]";
         }
 
-        public AlgorithmContainer(RoutingDataModel dataModel)
+        public AlgorithmContainer()
         {
-           GetFirstSolutionStrategyList();
-           GetSearchStrategyList();
-           DataModel = dataModel;
-        }
-
-        private void GetFirstSolutionStrategyList()
-        {
-           _firstSolutionAlgorithms = new List<FirstSolutionStrategy.Types.Value>();
-
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathCheapestArc);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Automatic);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathCheapestArc);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathMostConstrainedArc);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.AllUnperformed);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.BestInsertion);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Christofides);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.EvaluatorStrategy);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.FirstUnboundMinValue);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.GlobalCheapestArc);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.LocalCheapestArc);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.LocalCheapestInsertion);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Savings);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.SequentialCheapestInsertion);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Sweep);
-           _firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Unset);
-
+           FirstSolutionAlgorithms = GetFirstSolutionStrategyList();
+            SearchAlgorithms = GetSearchStrategyList();
 
         }
 
-        private void GetSearchStrategyList()
+        private List<FirstSolutionStrategy.Types.Value> GetFirstSolutionStrategyList()
         {
-            _searchStrategyAlgorithms = new List<LocalSearchMetaheuristic.Types.Value>();
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GenericTabuSearch);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GreedyDescent);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.TabuSearch);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.Automatic);
-            _searchStrategyAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.Unset);
-        }
+            List<FirstSolutionStrategy.Types.Value> firstSolutionAlgorithms =
+                new List<FirstSolutionStrategy.Types.Value>();
+           firstSolutionAlgorithms = new List<FirstSolutionStrategy.Types.Value>();
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathCheapestArc);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Automatic);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathCheapestArc);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.PathMostConstrainedArc);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.AllUnperformed);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.BestInsertion);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Christofides);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.EvaluatorStrategy);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.FirstUnboundMinValue);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.GlobalCheapestArc);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.LocalCheapestArc);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.LocalCheapestInsertion);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Savings);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.SequentialCheapestInsertion);
+           firstSolutionAlgorithms.Add(FirstSolutionStrategy.Types.Value.Sweep);
+           return firstSolutionAlgorithms;
 
 
-        public List<AlgorithmTester> GetTestedFirstSolutionAlgorithms(bool allowDropNodes)
-        {
-            List<AlgorithmTester> testedAlgorithms = new List<AlgorithmTester>();
-            foreach (var firstSolutionStrategy in _firstSolutionAlgorithms)
-            {
-                AlgorithmTester algorithmTester = new FirstSolutionAlgorithmTester(DataModel,allowDropNodes,firstSolutionStrategy);
-                algorithmTester.Test();
-                testedAlgorithms.Add(algorithmTester);
-            }
-            return testedAlgorithms;
         }
-        public List<AlgorithmTester> GetTestedSearchAlgorithms(int searchTimeLimitInSeconds,bool allowDropNodes)
+
+        private List<LocalSearchMetaheuristic.Types.Value> GetSearchStrategyList()
         {
-            List<AlgorithmTester> testedAlgorithmsList = new List<AlgorithmTester>();
-            //TEST ALL the criterions (performance, time to compute, solution cost, etc)
-            foreach (var searchStrategy in _searchStrategyAlgorithms)
-            {
-                AlgorithmTester algorithmTester= new SearchAlgorithmTester(DataModel,allowDropNodes,searchStrategy,searchTimeLimitInSeconds);
-                algorithmTester.Test();
-                testedAlgorithmsList.Add(algorithmTester); //adds it to the list
-                
-            }
-            return testedAlgorithmsList;
+            List<LocalSearchMetaheuristic.Types.Value> searchAlgorithms = new List<LocalSearchMetaheuristic.Types.Value>();
+            searchAlgorithms = new List<LocalSearchMetaheuristic.Types.Value>();
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GenericTabuSearch);
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GreedyDescent);
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch);
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing);
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.TabuSearch);
+            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.Automatic);
+            return searchAlgorithms;
         }
 
     }

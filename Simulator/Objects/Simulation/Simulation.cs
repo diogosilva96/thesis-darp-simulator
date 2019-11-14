@@ -74,6 +74,7 @@ namespace Simulator.Objects.Simulation
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(Params.CurrentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,CategorySuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             _validationsLogger = new Logger.Logger(validationsRecorder);
             InitVehicleEvents();//initializes vehicle events and dynamic requests events (if there is any event to be initialized)
+            Params.VehicleNumber = VehicleFleet.Count;
             Params.PrintParams();
             var paramsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"params.txt");
             Params.SaveParams(paramsPath);

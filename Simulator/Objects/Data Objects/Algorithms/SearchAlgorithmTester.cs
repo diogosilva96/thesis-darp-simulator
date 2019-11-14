@@ -10,7 +10,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 {
     class SearchAlgorithmTester:AlgorithmTester
     {
-        public SearchAlgorithmTester(RoutingDataModel dataModel,bool allowDropNodes,LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds) : base(dataModel,allowDropNodes)
+        public SearchAlgorithmTester(LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds)
         {
             AlgorithmValue = algorithmValue;
             SearchTimeLimitInSeconds = searchTimeLimitInSecondsInSeconds;

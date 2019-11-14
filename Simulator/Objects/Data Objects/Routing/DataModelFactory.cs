@@ -156,5 +156,46 @@ namespace Simulator.Objects.Data_Objects.Routing
             var dataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumCustomerRideTime, simulation.Params.MaximumAllowedUpperBoundTime);
             return dataModel;
         }
+
+        public RoutingDataModel CreateFixedDataModel(SimulationParams simulationParams)
+        {
+        GenerateNewDataModelLabel:
+            List<Vehicle> dataModelVehicles = new List<Vehicle>();
+            List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
+            List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
+            int numberVehicles = 2;
+            List<long> startDepotsArrivalTime = new List<long>(numberVehicles);
+            //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
+            for (int i = 0; i < numberVehicles; i++)
+            {
+                dataModelVehicles.Add(new Vehicle(simulationParams.VehicleSpeed, simulationParams.VehicleCapacity, true));
+                startDepots.Add(TransportationNetwork.Depot);
+                endDepots.Add(TransportationNetwork.Depot);
+                startDepotsArrivalTime.Add(0);//startDepotArrival time  = 0 for all the vehicles
+            }
+
+            var customersToBeServed = new List<Customer>();
+            List<Stop> excludedStops = new List<Stop>();
+            excludedStops.Add(TransportationNetwork.Depot);
+
+                var requestTime = 0;
+                customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[1], TransportationNetwork.Stops[2] },new long[]{400,2700},0));
+                customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[2], TransportationNetwork.Stops[3] }, new long[] { 2300, 4500 }, 0));
+                //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[5], TransportationNetwork.Stops[4] }, new long[] { 800,3500 }, 0));
+
+            var indexManager = new DataModelIndexManager(startDepots, endDepots, dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
+            var routingDataModel = new RoutingDataModel(indexManager, simulationParams.MaximumCustomerRideTime, simulationParams.MaximumAllowedUpperBoundTime);
+            routingDataModel.PrintTimeMatrix();
+            routingDataModel.PrintPickupDeliveries();
+            routingDataModel.PrintTimeWindows();
+            var solver = new RoutingSolver(routingDataModel, false);
+            var solution = solver.TryGetSolution(null);
+            if (solution == null)
+            {
+                goto GenerateNewDataModelLabel;
+            }
+
+            return routingDataModel;
+        }
     }
 }

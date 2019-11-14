@@ -9,7 +9,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 {
     class FirstSolutionAlgorithmTester:AlgorithmTester
     {
-        public FirstSolutionAlgorithmTester(RoutingDataModel dataModel, bool allowDropNodes, FirstSolutionStrategy.Types.Value algorithmValue) : base(dataModel, allowDropNodes)
+        public FirstSolutionAlgorithmTester(FirstSolutionStrategy.Types.Value algorithmValue) 
         {
             AlgorithmValue = algorithmValue;
             Type = "First Solution Algorithm";

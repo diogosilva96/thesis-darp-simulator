@@ -4,7 +4,8 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class DataModelIndexManager //index manager with the vehicles, stops, depots, and customer data, which enables to convert any of these objects to its index on the different lists to be used by the dataModel and routingSolver
+    public class
+        DataModelIndexManager //index manager with the vehicles, stops, depots, and customer data, which enables to convert any of these objects to its index on the different lists to be used by the dataModel and routingSolver
     {
         public List<Stop> Stops;
         public readonly List<Vehicle> Vehicles;
@@ -12,45 +13,43 @@ namespace Simulator.Objects.Data_Objects.Routing
         public readonly List<Stop> StartDepots;
         public readonly List<Stop> EndDepots;
         public readonly List<long> StartDepotArrivalTimes;
+        private Dictionary<Customer, int[]> _customersPickupDeliveriesDictionary;
 
 
-        public DataModelIndexManager(List<Stop> startDepots,List<Stop> endDepots, List<Vehicle> vehicles, List<Customer> customers, List<long> startDepotsArrivalTimes)
+        public DataModelIndexManager(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles,
+            List<Customer> customers, List<long> startDepotsArrivalTimes)
         {
             if (startDepotsArrivalTimes.Count != startDepots.Count || vehicles.Count != startDepots.Count ||
                 startDepots.Count != endDepots.Count)
             {
                 throw new ArgumentException("Index manager input arguments do not have the same size");
             }
+
             StartDepots = startDepots;
             EndDepots = endDepots;
             Vehicles = vehicles;
             Customers = customers;
             StartDepotArrivalTimes = startDepotsArrivalTimes;
+            _customersPickupDeliveriesDictionary = new Dictionary<Customer, int[]>();
             Stops = GetStops();
         }
 
 
         public int GetCustomerIndex(Customer customer)
         {
-            return Customers.FindIndex(c=>c == customer);
+            return Customers.FindIndex(c => c == customer);
         }
+
         public Customer GetCustomer(int index)
         {
             return Customers[index];
         }
+
         public int GetVehicleIndex(Vehicle vehicle)
         {
-            return Vehicles.FindIndex(v => v == vehicle);      
+            return Vehicles.FindIndex(v => v == vehicle);
         }
 
-        public int[] GetPickupDeliveryStopIndices(Customer customer) //returns the pickupdelivery stop indices for the customer received as argument
-        {
-            if (Customers.Contains(customer))
-            {
-                return new int[] { GetStopIndex(customer.PickupDelivery[0]), GetStopIndex(customer.PickupDelivery[1]) };
-            }
-            return null;
-        }
         public Vehicle GetVehicle(int index)
         {
             if (index >= Vehicles.Count)
@@ -64,8 +63,8 @@ namespace Simulator.Objects.Data_Objects.Routing
         }
 
         public Stop GetStop(int index)
-        {                  
-            if (index >= Stops.Count || index <0)
+        {
+            if (index >= Stops.Count || index < 0)
             {
 
                 return null;
@@ -74,44 +73,45 @@ namespace Simulator.Objects.Data_Objects.Routing
 
             return Stops[index];
         }
+
         public int GetStopIndex(Stop stop)
         {
-            var numStops = Stops.FindAll(s => s == stop).Count;
-            if (numStops > 1)
-            {
-
-            }
             var index = Stops.FindIndex(s => s == stop);
             return index;
         }
 
-        public long[,] GetVehicleDeliveries()
+
+        public int[][] GetVehicleCustomers()
         {
-            //matrix that contains the customer delivery index, for the customers that need to be served by that vehicle, because they are already inside the vehicle!
-           long[,] vehicleDeliveries = new long[Vehicles.Count,Stops.Count];
-           var addedDeliveries = 0;
-           foreach (var customer in Customers)
-           {
-               if (customer.IsInVehicle)
-               {
-                   var deliveryIndex = GetStopIndex(customer.PickupDelivery[1]);
-                   var vehicleIndex = Vehicles.FindIndex(v => v.Customers.Contains(customer));
-                   vehicleDeliveries[vehicleIndex, deliveryIndex] += 1;
-                   addedDeliveries++;
-               }
-           }
+            int[][] vehicleDeliveries = new int[Vehicles.Count][];
+            int index = 0;
+            var insertedDeliveries = 0;
+            foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            {
+                var customer = customerDict.Key;
+                var pickupDelivery = customerDict.Value;
+                if (pickupDelivery[0] == -1) //if the current customer is inside a vehicle
+                {
+                    var vehicle = Vehicles.Find(v => v.Customers.Contains(customer));
+                    var vehicleIndex = GetVehicleIndex(vehicle);
+                    if (vehicleDeliveries.Length > vehicleIndex)
+                    {
+                        index = vehicleDeliveries[vehicleIndex].GetLength(1);
+                    }
+                    vehicleDeliveries[vehicleIndex][index] = GetCustomerIndex(customer); //inserts the customerIndex in the matrix cell(vehicleIndex,index)
+                    insertedDeliveries++;
+                }
+                index++;
+            }
 
-           if (addedDeliveries != 0)
-           {
-               return vehicleDeliveries;
-           }
+            return vehicleDeliveries;
 
-           return null;
         }
 
         private List<Stop> GetStops() //Gets all stops that will be used by the datamodel
         {
             var stops = new List<Stop>(); //clears stop list
+            var addedCustomers = new List<Customer>();
             // initializes the list with the start depots
             if (StartDepots != null)
             {
@@ -136,26 +136,22 @@ namespace Simulator.Objects.Data_Objects.Routing
                 }
             }
 
-            foreach (var customer in Customers) //loop to add the pickup and delivery stops for each customer, to the stop list
+            foreach (var customer in Customers) //loop to add the pickup and delivery stops for each customer, to the stop list, adds a stop for each customer (even if it is repeated)
             {
-                if (!customer.IsInVehicle)//if the customer isnt in a vehicle adds both pickup and delivery stops
+                var addedPickupIndex = -1; //pickupIndex will be -1 if a customer is inside a vehicle, otherwise it is the pickupIndex
+                var addedDeliveryIndex = -1;
+                if (!customer.IsInVehicle) //if the customer isnt in a vehicle adds both pickup and delivery stops
                 {
-                    foreach (var pickupDelivery in customer.PickupDelivery)
-                    {
-                        if (!stops.Contains(pickupDelivery))
-                        {
-                            stops.Add(pickupDelivery); //if the pickup stop isn't in the list, add it to the stop list
-                        }
-                    }
+                    stops.Add(customer.PickupDelivery[0]); //if the pickup stop isn't in the list, add it to the stop list
+                    addedPickupIndex = stops.Count - 1;
                 }
-                else //if the customer is in a vehicle only adds the delivery stop
-                {
-                    if (!stops.Contains(customer.PickupDelivery[1]))
-                    {
-                        stops.Add(customer.PickupDelivery[1]);
-                    }
-                }
+                stops.Add(customer.PickupDelivery[1]);
+                addedDeliveryIndex = stops.Count - 1;
+ 
+                _customersPickupDeliveriesDictionary.Add(customer, new int[] { addedPickupIndex, addedDeliveryIndex }); //adds to the dictionary
+              
             }
+
             return stops;
         }
 
@@ -174,8 +170,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                     }
                 }
             }
-
-            return vehicleDepots; //returns vehicle depots, every index of the array represents a vehicle and its content represents the depot stop index
+            return
+                vehicleDepots; //returns vehicle depots, every index of the array represents a vehicle and its content represents the depot stop index
         }
 
         public int[] GetVehicleStarts()
@@ -199,9 +195,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 {
                     vehicleCapacities[i] = vehicles[i].Capacity;
                 }
-
             }
-
             return vehicleCapacities;
         }
 
@@ -218,38 +212,53 @@ namespace Simulator.Objects.Data_Objects.Routing
             for (int i = 0; i < timeWindows.GetLength(0); i++)
             {
                 timeWindows[i, 0] = 0; //lower bound of the timewindow is initialized with 0
-                timeWindows[i, 1] = 24*60*60; //Upper bound of the timewindow with 24 hours (in seconds)
+                timeWindows[i, 1] = 24 * 60 * 60; //Upper bound of the timewindow with 24 hours (in seconds)
             }
-            foreach (var customer in Customers)
-            {
-                long lowerBoundValue = 0;
-                if (!customer.IsInVehicle) //if customer is not inside a vehicle adds the pickup and delivery time windows otherwise only adds the delivery time window
-                {
-                    //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
-                    var customerMinTimeWindow = customer.DesiredTimeWindow[0]; //customer min time window in seconds
-                    var pickupIndex = GetStopIndex(customer.PickupDelivery[0]); //gets stop pickup index
-                    var arrayMinTimeWindow =
-                        timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
-                    //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
-                    //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
 
-                    lowerBoundValue = Math.Max((long)arrayMinTimeWindow,(long)customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
-                    //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
-                    timeWindows[pickupIndex, 0] =
-                        lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+            
+                long lowerBoundValue = 0;
+                foreach (var customerDict in _customersPickupDeliveriesDictionary)
+                {
+                    var pickupDelivery = customerDict.Value;
+                    var customer = customerDict.Key;
+                    if (pickupDelivery[0] != -1) //if pickupIndex is -1 it means the customer is inside a vehicle
+                    {
+                        //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
+                        var customerMinTimeWindow =
+                            customer.DesiredTimeWindow[0]; //customer min time window in seconds
+                        var pickupIndex = pickupDelivery[0]; //gets stop pickup index
+                        var arrayMinTimeWindow =
+                            timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
+                        //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
+                        //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
+
+                        lowerBoundValue =
+                            Math.Max((long) arrayMinTimeWindow,
+                                (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
+                        //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
+                        timeWindows[pickupIndex, 0] =
+                            lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+                    }
+
+
+                    //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
+                    var customerMaxTimeWindow =
+                        customer.DesiredTimeWindow[1]; //customer max time window in seconds
+                    var deliveryIndex = pickupDelivery[1]; //get stop delivery index
+                    var arrayMaxTimeWindow =
+                        timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
+                    //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
+                    //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
+                    var upperBoundValue =
+                        Math.Min((long) arrayMaxTimeWindow,
+                            (long) customerMaxTimeWindow); //the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
+                    //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
+                    timeWindows[deliveryIndex, 1] =
+                        upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
                 }
 
-                //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
-                var customerMaxTimeWindow = customer.DesiredTimeWindow[1]; //customer max time window in seconds
-                var deliveryIndex = GetStopIndex(customer.PickupDelivery[1]);//get stop delivery index
-                var arrayMaxTimeWindow = timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
-                //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
-                //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
-                var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow);//the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
-                //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
-                timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
-            }
-            //depot timewindows initialization
+
+                //depot timewindows initialization
             if (StartDepots != null && timeWindows != null)
             {
 
@@ -257,9 +266,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                 {
 
                     timeWindows[GetStopIndex(StartDepots[j]), 0] = StartDepotArrivalTimes[j];
-                    timeWindows[GetStopIndex(StartDepots[j]), 1] = 24*60*60; //24 hours in seconds
+                    timeWindows[GetStopIndex(StartDepots[j]), 1] = 24 * 60 * 60; //24 hours in seconds
                 }
             }
+
             for (int i = 0; i < timeWindows.GetLength(0); i++)
             {
                 if (timeWindows[i, 0] > timeWindows[i, 1])
@@ -267,6 +277,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     timeWindows[i, 1] = timeWindows[i, 0];
                 }
             }
+
             // end of depot timewindow initialization
             return timeWindows;
         }
@@ -274,58 +285,49 @@ namespace Simulator.Objects.Data_Objects.Routing
         public int[][] GetPickupDeliveries() //returns the pickupdelivery stop matrix using indices (based on the stop list) instead of stop objects
         {
             var customers = Customers;
-            var numberOfCustomersOutsideOfVehicle = Customers.FindAll(c => !c.IsInVehicle).Count;
-            int[][] pickupsDeliveries = new int[numberOfCustomersOutsideOfVehicle][];
+            var customerNumber = Customers.Count;
+            int[][] pickupsDeliveries = new int[customerNumber][];
             //Transforms the data from stop the list into index matrix list in order to use it in google Or tools
             var index = 0;
-            foreach (var customer in customers)
+            foreach (var customerDict in _customersPickupDeliveriesDictionary)
             {
-                if (!customer.IsInVehicle) //if customer is not in a vehicle gets the pickup and delivery
-                {
-                    pickupsDeliveries[index] = GetPickupDeliveryStopIndices(customer);
-                    index++;
-                }
+                var pickupDelivery = customerDict.Value;
+                pickupsDeliveries[index] = pickupDelivery;
+                index++;
             }
-
             return pickupsDeliveries;
         }
 
         public long[] GetDemands()
         {
             long[] demands = null;
-            var customers =Customers;
+            var customers = Customers;
             var stops = Stops;
             if (stops.Count > 0)
             {
                 demands = new long[stops.Count];
-                //loop that initializes demands
-                for (int i = 0; i < stops.Count; i++)
-                {
-                    demands[i] = 0; //init demand at 0 at each index
-                }
 
-                if (customers.Count > 0)
+                if (_customersPickupDeliveriesDictionary.Count > 0)
                 {
-                    foreach (var customer in customers)
+                    foreach (var customerDictionary in _customersPickupDeliveriesDictionary)
                     {
-                        if (!customer.IsInVehicle) //if customer is not in vehicle adds pickup and delivery, otherwise only adds the delivery indices
+                        var pickupDelivery = customerDictionary.Value;
+                        if (pickupDelivery[0] != -1)//if customer pickupIndex isnt -1 (-1 happends when a customer is inside avehicle)
                         {
-                            var pickupIndex =
-                                GetStopIndex(
-                                    customer.PickupDelivery[0]); //gets the index of the pickup stop
-                            demands[pickupIndex] += 1; //adds 1 to the demand of the pickup index
+                            var pickupIndex = pickupDelivery[0];//gets the index of the pickup stop
+                            demands[pickupIndex] += 1;//adds 1 to the demand of the pickup index 
                         }
 
-                        var deliveryIndex = GetStopIndex(customer.PickupDelivery[1]); //gets the index of the delivery stop
-                        demands[deliveryIndex] -= 1; //subtracts 1  to the demand of the delivery index
+                        var deliveryIndex = pickupDelivery[1];//gets the index of the delivery stop
+                        demands[deliveryIndex] -= 1;//subtracts 1 to the demand of the delivery index
                     }
                 }
+
                 foreach (var vehicle in Vehicles)
                 {
-                    demands[GetStopIndex(StartDepots[GetVehicleIndex(vehicle)])] = vehicle.Customers.FindAll(c => c.IsInVehicle).Count;//the demand at the start depot for the current vehicle will be the number of customers inside that vehicle
+                    demands[GetStopIndex(StartDepots[GetVehicleIndex(vehicle)])] = vehicle.Customers.FindAll(c => c.IsInVehicle).Count; //the demand at the start depot for the current vehicle will be the number of customers inside that vehicle
                 }
             }
-
             return demands;
         }
     }

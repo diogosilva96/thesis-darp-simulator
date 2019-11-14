@@ -19,19 +19,17 @@ namespace Simulator.SimulationViews
         public override void PrintView()
         {
 
-                string path = Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithms.txt");
-                //var path = CurrentSimulationLoggerPath, @"algorithms.txt;
-                IRecorder algorithmsRecorder = new FileRecorder(path);
-                var algorithmsLogger = new Logger.Logger(algorithmsRecorder);
+
+                var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv")), "AlgorithmName, AllowDropNodes, SolutionIsFeasible, SearchTimeLimit, ComputationTime, ObjectiveValue, MaxUpperBoundInMinutes, TotalServedCustomers, TotalDistanceTraveledInMeters, TotalRouteTimesInMinutes, VehiclesNumberUsed, DataModelId"));
+                var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDatset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
                 var vehicleNumber = 20;
-                int testId = 0;
                 for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
                 {
                     for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20)
                     {
                             for (int i = 0; i < 5; i++) // tests 10 different data models for the same setting
                             {
-                                var allowDropNodes = true;
+                                var allowDropNodes = false;
                                 //Print("Allow drop nodes penalties?");
                                 //Print("1 - Yes");
                                 //Print("2 - No");
@@ -95,19 +93,17 @@ namespace Simulator.SimulationViews
                                 var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber,customersNumber , allowDropNodes, Simulation.Params);
                                 var printableList = dataModel.GetSettingsPrintableList();
                                 ConsoleLogger.Log(printableList);
-                                algorithmsLogger.Log(dataModel.GetCSVSettingsMessage());             
-                                AlgorithmContainer algorithmContainer = new AlgorithmContainer(dataModel);
-                                var testedAlgorithms =
-                                    algorithmContainer.GetTestedSearchAlgorithms(searchTime, allowDropNodes);
-
-                                foreach (var algorithm in testedAlgorithms)
+                                dataSetLogger.Log(dataModel.GetCSVSettingsMessage());             
+                                AlgorithmContainer algorithmContainer = new AlgorithmContainer();
+                                foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
                                 {
-                                    var resultsPrintableList = algorithm.GetResultPrintableList();
-                                    ConsoleLogger.Log(resultsPrintableList);
-                                    algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
+                                    var algorithmsTester = new SearchAlgorithmTester(searchAlgorithm,searchTime);
+                                    algorithmsTester.Test(dataModel,allowDropNodes);
+                                    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
+                                    algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
                                 }
                             }
-                        }
+                    }
                 }
         }
 
