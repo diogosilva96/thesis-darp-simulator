@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Threading;
+using MathNet.Numerics.LinearAlgebra.Solvers;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
@@ -12,7 +14,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public long[] VehicleCapacities; //Array that contains vehicle capacities, Array size: [Vehicles.Count]
 
-        public long[,] TimeMatrix; //time matrix that contains the travel time to each stop, Matrix size: [Stops.Count,Stops.Count]
+        public long[,] TravelTimes; //time matrix that contains the travel time to each stop, Matrix size: [Stops.Count,Stops.Count]
 
         public int[] Starts; //Array that contains the index of the start depots for each vehicle, Array size: [Vehicles.Count]
 
@@ -30,8 +32,34 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
-        public int[][] VehicleCustomers;// Matrix that contains the vehicle's customers, the row specifies the vehicleIndex and the value inside the column specifies the customerIndex , Matrix size: [Vehicles.Count,Stops.Count]
+        public int[][] VehicleCustomers; // Matrix that contains the vehicle's customers, the row specifies the vehicleIndex and the value inside the column specifies the customerIndex , Matrix size: [Vehicles.Count,Stops.Count]
 
+        public bool ForceCumulToZero
+        {
+            get
+            {
+                if (Starts != null && TimeWindows != null)
+                {
+                    var countStartTimeZero = 0;
+                    foreach (var starts in Starts)
+                    {
+                       
+                        if (TimeWindows[starts, 0] == 0)
+                        {
+                            countStartTimeZero++;
+                        }
+                    }
+
+                    if (countStartTimeZero == Starts.Length)
+                    {
+                        return true;
+                    }
+                    
+                }
+
+                return false;
+            }
+        }
 
         public RoutingDataModel(DataModelIndexManager indexManger,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
@@ -43,11 +71,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                 Ends = IndexManager.GetVehicleEnds();
                 VehicleCapacities = IndexManager.GetVehicleCapacities();
                 PickupsDeliveries = IndexManager.GetPickupDeliveries();
-                TimeMatrix = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
+                TravelTimes = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
                 TimeWindows = IndexManager.GetTimeWindows();
                 Demands = IndexManager.GetDemands();
                 VehicleCustomers = IndexManager.GetVehicleCustomers();
-
         }
 
         
@@ -60,10 +87,10 @@ namespace Simulator.Objects.Data_Objects.Routing
         public void PrintTimeMatrix()
         {
 
-            Console.WriteLine(ToString() + "TimeMatrix:");
+            Console.WriteLine(ToString() + "TravelTimes:");
             var counter = 0;
-            foreach (var val in TimeMatrix)
-                if (counter == TimeMatrix.GetLength(1) - 1)
+            foreach (var val in TravelTimes)
+                if (counter == TravelTimes.GetLength(1) - 1)
                 {
                     counter = 0;
                     Console.WriteLine(val + " ");

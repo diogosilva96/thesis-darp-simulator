@@ -424,7 +424,7 @@ namespace Simulator.Objects.Simulation
                             dataModel.PrintPickupDeliveries();
                             dataModel.PrintTimeWindows();
                             //dataModel.PrintTimeMatrix();
-                            solver.PrintSolution(solution);
+                            solver.PrintSolutionWithCumulVars(solution);
                             Stats.TotalServedDynamicRequests++;
                             _consoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at "+TimeSpan.FromSeconds(customerRequestEvent.Time).ToString() );
 

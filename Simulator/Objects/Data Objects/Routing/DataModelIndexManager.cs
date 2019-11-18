@@ -96,7 +96,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     var vehicleIndex = GetVehicleIndex(vehicle);
                     if (vehicleDeliveries.Length > vehicleIndex)
                     {
-                        index = vehicleDeliveries[vehicleIndex].GetLength(1);
+                        index = vehicleDeliveries[vehicleIndex].GetLength(0);
                     }
                     vehicleDeliveries[vehicleIndex][index] = GetCustomerIndex(customer); //inserts the customerIndex in the matrix cell(vehicleIndex,index)
                     insertedDeliveries++;
@@ -216,52 +216,48 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
 
             
-                long lowerBoundValue = 0;
-                foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            long lowerBoundValue = 0;
+            foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            {
+                var pickupDelivery = customerDict.Value;
+                var customer = customerDict.Key;
+                if (pickupDelivery[0] != -1) //if pickupIndex is -1 it means the customer is inside a vehicle
                 {
-                    var pickupDelivery = customerDict.Value;
-                    var customer = customerDict.Key;
-                    if (pickupDelivery[0] != -1) //if pickupIndex is -1 it means the customer is inside a vehicle
-                    {
-                        //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
-                        var customerMinTimeWindow =
-                            customer.DesiredTimeWindow[0]; //customer min time window in seconds
-                        var pickupIndex = pickupDelivery[0]; //gets stop pickup index
-                        var arrayMinTimeWindow =
-                            timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
-                        //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
-                        //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
+                    //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
+                    var customerMinTimeWindow =
+                        customer.DesiredTimeWindow[0]; //customer min time window in seconds
+                    var pickupIndex = pickupDelivery[0]; //gets stop pickup index
+                    var arrayMinTimeWindow =
+                        timeWindows[pickupIndex, 0]; //gets current min timewindow for the pickupstop in minutes
+                    //If there are multiple min time window values for a given stop, the minimum time window will be the maximum timewindow between all those values
+                    //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
 
-                        lowerBoundValue =
-                            Math.Max((long) arrayMinTimeWindow,
-                                (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
-                        //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
-                        timeWindows[pickupIndex, 0] =
-                            lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
-                    }
-
-
-                    //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
-                    var customerMaxTimeWindow =
-                        customer.DesiredTimeWindow[1]; //customer max time window in seconds
-                    var deliveryIndex = pickupDelivery[1]; //get stop delivery index
-                    var arrayMaxTimeWindow =
-                        timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
-                    //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
-                    //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
-                    var upperBoundValue =
-                        Math.Min((long) arrayMaxTimeWindow,
-                            (long) customerMaxTimeWindow); //the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
-                    //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
-                    timeWindows[deliveryIndex, 1] =
-                        upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+                    lowerBoundValue =
+                        Math.Max((long) arrayMinTimeWindow,
+                            (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
+                    //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
+                    timeWindows[pickupIndex, 0] =
+                        lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
                 }
 
 
-                //depot timewindows initialization
+                //UPPER BOUND (MAXIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
+                var customerMaxTimeWindow =
+                    customer.DesiredTimeWindow[1]; //customer max time window in seconds
+                var deliveryIndex = pickupDelivery[1]; //get stop delivery index
+                var arrayMaxTimeWindow =
+                    timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
+                //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
+                //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
+                var upperBoundValue = Math.Min((long) arrayMaxTimeWindow, (long) customerMaxTimeWindow); //the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
+                //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
+                timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
+            }
+
+
+            //depot timewindows initialization
             if (StartDepots != null && timeWindows != null)
             {
-
                 for (int j = 0; j < StartDepots.Count; j++)
                 {
 
@@ -275,7 +271,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 if (timeWindows[i, 0] > timeWindows[i, 1])
                 {
                     timeWindows[i, 1] = timeWindows[i, 0];
+                    throw new Exception("TW problem");
                 }
+
             }
 
             // end of depot timewindow initialization

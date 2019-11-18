@@ -17,7 +17,7 @@ namespace Simulator.Objects
         {
 
             long[,] distanceMatrix = new long[stops.Count, stops.Count];
-            //Console.WriteLine(this.ToString()+"Generating Distance TimeMatrix...");
+            //Console.WriteLine(this.ToString()+"Generating Distance TravelTimes...");
             for (int i = 0; i < stops.Count; i++)
             {
                 for (int j = 0; j < stops.Count; j++)

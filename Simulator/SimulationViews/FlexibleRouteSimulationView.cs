@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Google.OrTools.ConstraintSolver;
+using Google.Protobuf.WellKnownTypes;
 using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects.Routing;
@@ -30,12 +32,18 @@ namespace Simulator.SimulationViews
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
                     dataModel.PrintPickupDeliveries();
-                    var timeWindowSolution = routingSolver.TryGetSolution(null);
+                RoutingSearchParameters searchParameters =
+                    operations_research_constraint_solver.DefaultRoutingSearchParameters();
+                searchParameters.FirstSolutionStrategy =
+                    FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
+                searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing;
+                searchParameters.TimeLimit = new Duration { Seconds = 10 };
+                var timeWindowSolution = routingSolver.TryGetSolution(searchParameters);
                     RoutingSolutionObject routingSolutionObject = null;
                     ;
                     if (timeWindowSolution != null)
                     {
-                        routingSolver.PrintSolution(timeWindowSolution);
+                        routingSolver.PrintSolutionWithCumulVars(timeWindowSolution);
                         routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
                     }
                     Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
