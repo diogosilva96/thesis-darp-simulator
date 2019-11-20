@@ -20,16 +20,17 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public int SearchTimeLimitInSeconds; //in seconds
         public RoutingSolver Solver;
         private bool _hasBeenTested;
+        private RoutingSolutionObject SolutionObject => Solver.GetSolutionObject(Solution);
 
         public long Objective => Solution.ObjectiveValue();
 
-        public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? Solver.GetSolutionObject(this.Solution).CustomerNumber : 0;
+        public int TotalServedCustomers => SolutionObject != null ? (int)SolutionObject.TotalLoad : 0;
 
-        public int TotalDistanceTraveledInMeters => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(this.Solution).TotalDistanceInMeters : 0;
+        public int TotalDistanceTraveledInMeters => SolutionObject != null ? (int) SolutionObject.TotalDistanceInMeters : 0;
 
-        public int TotalRouteTimesInMinutes => Solver.GetSolutionObject(Solution) != null ? (int) TimeSpan.FromSeconds(Solver.GetSolutionObject(this.Solution).TotalTimeInSeconds).TotalMinutes : 0;
+        public int TotalRouteTimesInMinutes => SolutionObject != null ? (int) TimeSpan.FromSeconds(SolutionObject.TotalTimeInSeconds).TotalMinutes : 0;
 
-        public int TotalVehiclesUsed => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(Solution).TotalVehiclesUsed : 0;
+        public int TotalVehiclesUsed => SolutionObject != null ? (int) SolutionObject.TotalVehiclesUsed : 0;
         protected AlgorithmTester()
         {
 
@@ -68,7 +69,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             SolutionIsFeasible = solution != null;
             if (SolutionIsFeasible) //solution != null (means earliest feasible solution was found)
             {
-                //Saves the important metrics for the earliest feasible solution
+                //Saves the important metrics for the earliest feasible solution           
                 MaxUpperBoundInMinutes = (int)TimeSpan.FromSeconds(Solver.MaxUpperBound).TotalMinutes;
                 ComputationTimeInSeconds = elapsedSeconds;
                 Solution = solution;
@@ -82,7 +83,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             {
                 List<string> toPrintList = new List<string>();
 
-
+                
                 toPrintList.Add("Algorithm: " + Name + " (" + Type + ")");
                 toPrintList.Add("Solution is feasible: " + SolutionIsFeasible);
                 toPrintList.Add("Computation time: " + ComputationTimeInSeconds + " seconds");
@@ -95,11 +96,16 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 toPrintList.Add("Number of served requests: " + TotalServedCustomers);
                 toPrintList.Add("Total distance traveled: " + TotalDistanceTraveledInMeters + " meters.");
                 toPrintList.Add("Total route times: " + TotalRouteTimesInMinutes + " minutes.");
-                toPrintList.Add("Total Load: " + Solver.GetSolutionObject(Solution).TotalLoad);
+                toPrintList.Add("Total Load: " + SolutionObject.TotalLoad);
+                if (SolutionObject.TotalLoad != SolutionObject.CustomerNumber)
+                {
+                    throw new Exception("EXCEPTION : TOTAL LOAD != CUSTOMERNUMBER");
+                }
                 toPrintList.Add("Total vehicles used: " + TotalVehiclesUsed);
                 toPrintList.Add("Average Distance traveled per request:" + TotalDistanceTraveledInMeters /
                                 TotalServedCustomers + " meters.");
                 toPrintList.Add("Solution Objective value: " + Objective);
+                toPrintList.Add("Seed: "+RandomNumberGenerator.Seed);
                 toPrintList.Add("-----------------------------");
                 return toPrintList;
             }

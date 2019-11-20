@@ -29,68 +29,69 @@ namespace Simulator.SimulationViews
                     {
                             for (int i = 0; i < 5; i++) // tests 10 different data models for the same setting
                             {
-                                var allowDropNodes = false;
-                                //Print("Allow drop nodes penalties?");
-                                //Print("1 - Yes");
-                                //Print("2 - No");
-                                //bool allowDropNodes = GetIntInput(1, 2) == 1;
-                                //Print("Use random generated Data to test the different algorithms?");
-                                //Print("1 - Yes");
-                                //Print("2 - No");
-                                //var randomDataModelOption = GetIntInput(1, 2);
+                                //Simulation.Params.Seed = new Random().Next(int.MaxValue);
+                                Simulation.Params.Seed = 852505172;
+                            ConsoleLogger.Log("Allow drop nodes penalties?");
+                            ConsoleLogger.Log("1 - Yes");
+                            ConsoleLogger.Log("2 - No");
+                            bool allowDropNodes = GetIntInput(1, 2) == 1;
+                        //Print("Use random generated Data to test the different algorithms?");
+                        //Print("1 - Yes");
+                        //Print("2 - No");
+                        //var randomDataModelOption = GetIntInput(1, 2);
 
-                                //RoutingDataModel dataModel = null;
-                                //Print("Please insert the number of available Vehicles:");
-                                //var vehicleNumber = GetIntInput(1, int.MaxValue);
-                                //if (randomDataModelOption == 1)
-                                //{
-                                //    Print("Please insert the number of customers to be generated:");
-                                //    var numberCustomers = GetIntInput(1,int.MaxValue);
-                        
-                                //    dataModel = Simulation.GenerateRandomInitialDataModel(numberCustomers, vehicleNumber, allowDropNodes);
-                                //}
-                                //else
-                                //{
-                                //    var baseProjectPath = Directory
-                                //        .GetParent(Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName)
-                                //        .FullName;
-                                //    var dataSetPath = @Path.Combine(baseProjectPath, @"Datasets");
-                                //    DirectoryInfo d = new DirectoryInfo(dataSetPath); //Assuming Test is your Folder
-                                //    FileInfo[] Files = d.GetFiles("*.txt"); //Getting Text files
-                                //    Print("Please select one of the existing  Data files:");
-                                //    var index = 0;
-                                //    foreach (var file in Files)
-                                //    {
-                                //        index++;
-                                //        Console.WriteLine(index + " - " + file.Name);
-                                //    }
+                        //RoutingDataModel dataModel = null;
+                        //Print("Please insert the number of available Vehicles:");
+                        //var vehicleNumber = GetIntInput(1, int.MaxValue);
+                        //if (randomDataModelOption == 1)
+                        //{
+                        //    Print("Please insert the number of customers to be generated:");
+                        //    var numberCustomers = GetIntInput(1,int.MaxValue);
 
-                                //    var fileOption = GetIntInput(1, index);
-                                //    var selectedFile = Files[fileOption - 1];
-                                //    string filePath = Path.Combine(selectedFile.DirectoryName, selectedFile.Name);
-                                //    DataSet dataSet = new DataSet(filePath);
-                                //    List<Vehicle> dataModelVehicles = new List<Vehicle>();
-                                //    List<Stop> startDepots = new List<Stop>();
-                                //    List<Stop> endDepots = new List<Stop>();
-                                //    dataSet.PrintDataInfo();
-                                //    List<long> startDepotArrivalTimes = new List<long>(vehicleNumber);
-                                //    for (int i = 0; i < vehicleNumber; i++)
-                                //    {
-                                //        dataModelVehicles.Add(new Vehicle(Simulation.VehicleSpeed, dataSet.VehicleCapacities[1], true));
-                                //        startDepots.Add(dataSet.Stops[0]);
-                                //        // startDepots.Add(null); //dummy start depot
-                                //        endDepots.Add(dataSet.Stops[0]);
-                                //        startDepotArrivalTimes.Add(0);
-                                //    }
+                        //    dataModel = Simulation.GenerateRandomInitialDataModel(numberCustomers, vehicleNumber, allowDropNodes);
+                        //}
+                        //else
+                        //{
+                        //    var baseProjectPath = Directory
+                        //        .GetParent(Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName)
+                        //        .FullName;
+                        //    var dataSetPath = @Path.Combine(baseProjectPath, @"Datasets");
+                        //    DirectoryInfo d = new DirectoryInfo(dataSetPath); //Assuming Test is your Folder
+                        //    FileInfo[] Files = d.GetFiles("*.txt"); //Getting Text files
+                        //    Print("Please select one of the existing  Data files:");
+                        //    var index = 0;
+                        //    foreach (var file in Files)
+                        //    {
+                        //        index++;
+                        //        Console.WriteLine(index + " - " + file.Name);
+                        //    }
 
-                                    //dataSet.PrintDistances();
-                                    //dataSet.PrintTimeWindows();
-                                    //var indexManager = new DataModelIndexManager(startDepots, endDepots, dataModelVehicles, dataSet.Customers, startDepotArrivalTimes);
-                                    //dataModel = new RoutingDataModel(indexManager, Simulation.MaxCustomerRideTime, Simulation.MaxAllowedUpperBoundTime);
-                                    //var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
-                                    //Print("Please insert the search time limit:");
-                                    //var searchTime = GetIntInput(1, int.MaxValue);
-                                var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber,customersNumber , allowDropNodes, Simulation.Params);
+                        //    var fileOption = GetIntInput(1, index);
+                        //    var selectedFile = Files[fileOption - 1];
+                        //    string filePath = Path.Combine(selectedFile.DirectoryName, selectedFile.Name);
+                        //    DataSet dataSet = new DataSet(filePath);
+                        //    List<Vehicle> dataModelVehicles = new List<Vehicle>();
+                        //    List<Stop> startDepots = new List<Stop>();
+                        //    List<Stop> endDepots = new List<Stop>();
+                        //    dataSet.PrintDataInfo();
+                        //    List<long> startDepotArrivalTimes = new List<long>(vehicleNumber);
+                        //    for (int i = 0; i < vehicleNumber; i++)
+                        //    {
+                        //        dataModelVehicles.Add(new Vehicle(Simulation.VehicleSpeed, dataSet.VehicleCapacities[1], true));
+                        //        startDepots.Add(dataSet.Stops[0]);
+                        //        // startDepots.Add(null); //dummy start depot
+                        //        endDepots.Add(dataSet.Stops[0]);
+                        //        startDepotArrivalTimes.Add(0);
+                        //    }
+
+                        //dataSet.PrintDistances();
+                        //dataSet.PrintTimeWindows();
+                        //var indexManager = new DataModelIndexManager(startDepots, endDepots, dataModelVehicles, dataSet.Customers, startDepotArrivalTimes);
+                        //dataModel = new RoutingDataModel(indexManager, Simulation.MaxCustomerRideTime, Simulation.MaxAllowedUpperBoundTime);
+                        //var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
+                        //Print("Please insert the search time limit:");
+                        //var searchTime = GetIntInput(1, int.MaxValue);
+                        var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber,customersNumber , allowDropNodes, Simulation.Params);
                                 var printableList = dataModel.GetSettingsPrintableList();
                                 ConsoleLogger.Log(printableList);
                                 dataSetLogger.Log(dataModel.GetCSVSettingsMessage());             

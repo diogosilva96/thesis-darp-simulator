@@ -85,7 +85,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     //As a result, after dropping one location to make the problem feasible, the solver won't drop any additional locations,
                     //because the penalty for doing so would exceed any further reduction in travel time.
                     //If we want to make as many deliveries as possible, penalty value should be larger than the sum of all travel times between locations
-                    long penalty = 9999999;
+                    long dropNodePenalty = 100000;
                     for (int j = 0; j < DataModel.Starts.GetLength(0); j++)
                     {
                         var startIndex = DataModel.Starts[j];
@@ -93,11 +93,22 @@ namespace Simulator.Objects.Data_Objects.Routing
                         {
                             if (startIndex != i)
                             {
-                                RoutingModel.AddDisjunction(new long[] {RoutingIndexManager.NodeToIndex(i)}, penalty);//adds disjunction to all stop besides start stops
+                                var index = RoutingIndexManager.NodeToIndex(i);                                
+                                RoutingModel.AddDisjunction(new long[] {index}, dropNodePenalty);//adds disjunction to all stop besides start stops                               
                             }
                         }
                     }
                 }
+
+                if (DataModel.VehicleCapacities.Length > 0)
+                {
+                    long vehicleUsagePenalty = 10;
+                    for (int i = 0; i < DataModel.VehicleCapacities.Length; i++)
+                    {
+                        RoutingModel.SetFixedCostOfVehicle(vehicleUsagePenalty,i);
+                    }
+                }
+
 
                 RoutingModel.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
 
@@ -350,12 +361,14 @@ namespace Simulator.Objects.Data_Objects.Routing
                 {
                     int nodeIndex = 0;
                     long routeDistance = 0;
-                    long currentLoad = 0;
                     long routeSlackTime = 0;
                     long routeTransitTime = 0;
+                    long currentLoad = 0;
                     printableList.Add("Vehicle "+DataModel.IndexManager.Vehicles[i].Id+" Route:");
                     var index = RoutingModel.Start(i);
                     string concatenatedString = "";
+                    var initialVehicleLoad = solution.Value(capacityDim.CumulVar(index));//vehicle load at the depot
+                    totalLoad += initialVehicleLoad;
                     while (RoutingModel.IsEnd(index) == false)
                     {
                         var timeCumulVar = timeDim.CumulVar(index);
