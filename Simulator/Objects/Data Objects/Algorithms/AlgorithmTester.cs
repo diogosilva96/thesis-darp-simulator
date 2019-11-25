@@ -24,7 +24,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public long Objective => Solution.ObjectiveValue();
 
-        public int TotalServedCustomers => SolutionObject != null ? (int)SolutionObject.TotalLoad : 0;
+        public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? Solver.GetSolutionObject(this.Solution).CustomerNumber : 0;
 
         public int TotalDistanceTraveledInMeters => SolutionObject != null ? (int) SolutionObject.TotalDistanceInMeters : 0;
 
