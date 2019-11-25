@@ -52,18 +52,24 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             get
             {
-                var customerNumber = 0;
-                if (_vehicleSolutionDictionary != null)
+                if (_customerNumber == -1)
                 {
-                    
-                    foreach (var vehicleTuples in _vehicleSolutionDictionary)
+                    _customerNumber = 0;
+                    if (_vehicleSolutionDictionary != null)
                     {
-                        customerNumber += vehicleTuples.Value.Item2.Count;
+
+                        foreach (var vehicleTuples in _vehicleSolutionDictionary)
+                        {
+                            _customerNumber += vehicleTuples.Value.Item2.Count;
+                        }
                     }
                 }
-                return customerNumber;
+                return _customerNumber;
             }
         }
+         
+
+        private int _customerNumber = -1;
 
 
         public RoutingSolutionObject(RoutingSolver routingSolver, Assignment solution)
@@ -154,6 +160,25 @@ namespace Simulator.Objects.Data_Objects.Routing
                     vehicleStopCustomerTimeWindowsDictionary.Add(_routingSolver.DataModel.IndexManager.GetVehicle(i),
                         tuple); //adds the vehicle index + tuple with the customer and routestop list
                 }
+                //debug
+                var allrouteCustomers = new List<Customer>();
+                foreach (var dict in vehicleStopCustomerTimeWindowsDictionary)
+                {
+                    foreach (var customer in dict.Value.Item2)
+                    {
+                        allrouteCustomers.Add(customer);
+                    }
+                }
+
+                foreach (var cust in allCustomers)
+                {
+                    Console.WriteLine("Not served Customers: ");
+                    if (!allrouteCustomers.Contains(cust))
+                    {
+                        cust.PrintPickupDelivery();
+                    }
+                }
+                //end of debug
             }
 
             return vehicleStopCustomerTimeWindowsDictionary;
@@ -174,9 +199,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 long[] routeLoads = new long[vehicleNumber];
                 for (int i = 0; i < vehicleNumber; ++i)
                 {
-                    long totalLoad = 0;
                     long routeDistance = 0;
                     var index = _routingSolver.RoutingModel.Start(i);
+                    long routeLoad = solution.Value(capacityDim.CumulVar(index)); //initial route load
                     while (_routingSolver.RoutingModel.IsEnd(index) == false)
                     {
                         var timeTransitVar = timeDim.TransitVar(index);
@@ -185,12 +210,12 @@ namespace Simulator.Objects.Data_Objects.Routing
                         double timeToTravel = solution.Value(timeTransitVar);
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
                         routeDistance += (long)distance;
-                        totalLoad += solution.Value(capacityTransitVar) > 0 ? solution.Value(capacityTransitVar) : 0;
+                        routeLoad += solution.Value(capacityTransitVar) > 0 ? solution.Value(capacityTransitVar) : 0;
                     }
 
                     var endTimeVar = timeDim.CumulVar(index);
                     var startTimeVar = timeDim.CumulVar(_routingSolver.RoutingModel.Start(i));
-                    routeLoads[i] = totalLoad;
+                    routeLoads[i] = routeLoad;
                     routeDistances[i] = routeDistance;
                     routeTimes[i] = solution.Max(endTimeVar) - solution.Min(startTimeVar);
                 }
