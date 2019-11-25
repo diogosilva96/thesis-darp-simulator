@@ -84,7 +84,6 @@ namespace Simulator.Objects.Data_Objects.Routing
         public int[][] GetVehicleCustomers()
         {
             int[][] vehicleDeliveries = new int[Vehicles.Count][];
-            int index = 0;
             var insertedDeliveries = 0;
             foreach (var customerDict in _customersPickupDeliveriesDictionary)
             {
@@ -92,16 +91,23 @@ namespace Simulator.Objects.Data_Objects.Routing
                 var pickupDelivery = customerDict.Value;
                 if (pickupDelivery[0] == -1) //if the current customer is inside a vehicle
                 {
+                    int insertIndex = 0;
                     var vehicle = Vehicles.Find(v => v.Customers.Contains(customer));
                     var vehicleIndex = GetVehicleIndex(vehicle);
                     if (vehicleDeliveries.Length > vehicleIndex)
                     {
-                        index = vehicleDeliveries[vehicleIndex].GetLength(0);
+                        
+                        if (vehicleDeliveries[vehicleIndex] != null)
+                        {
+                            insertIndex = vehicleDeliveries[vehicleIndex].GetLength(0) - 1;
+                        }
+
+
                     }
-                    vehicleDeliveries[vehicleIndex][index] = GetCustomerIndex(customer); //inserts the customerIndex in the matrix cell(vehicleIndex,index)
+                    Array.Resize(ref vehicleDeliveries[vehicleIndex],insertIndex+1);
+                    vehicleDeliveries[vehicleIndex][insertIndex] = GetCustomerIndex(customer); //inserts the customerIndex in the matrix cell(vehicleIndex,index)
                     insertedDeliveries++;
                 }
-                index++;
             }
 
             return vehicleDeliveries;

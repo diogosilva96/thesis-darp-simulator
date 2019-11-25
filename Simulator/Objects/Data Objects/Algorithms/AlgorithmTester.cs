@@ -23,7 +23,22 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public long Objective => Solution.ObjectiveValue();
 
-        public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? Solver.GetSolutionObject(this.Solution).CustomerNumber : 0;
+        public int TotalServedCustomers
+        {
+            get
+            {
+                int totalLoad = 0;
+                var solutionObject = Solver.GetSolutionObject(Solution);
+                for (int i = 0; i < solutionObject.VehicleNumber; i++)
+                {
+                    var vehicle = solutionObject.IndexToVehicle(i);
+                    var vehicleLoad =solutionObject.GetVehicleRouteLoad(vehicle);
+                    totalLoad += (int)vehicleLoad;
+                }
+
+                return totalLoad;
+            }
+        }
 
         public int TotalDistanceTraveledInMeters => Solver.GetSolutionObject(Solution) != null ? (int) Solver.GetSolutionObject(this.Solution).TotalDistanceInMeters : 0;
 

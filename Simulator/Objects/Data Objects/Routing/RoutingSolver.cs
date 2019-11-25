@@ -85,7 +85,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     //As a result, after dropping one location to make the problem feasible, the solver won't drop any additional locations,
                     //because the penalty for doing so would exceed any further reduction in travel time.
                     //If we want to make as many deliveries as possible, penalty value should be larger than the sum of all travel times between locations
-                    long penalty = 9999999;
+                    long penalty = 99999999;
                     for (int j = 0; j < DataModel.Starts.GetLength(0); j++)
                     {
                         var startIndex = DataModel.Starts[j];
@@ -366,6 +366,19 @@ namespace Simulator.Objects.Data_Objects.Routing
                         nodeIndex = RoutingIndexManager.IndexToNode(index);
                         Console.WriteLine("Stop:"+DataModel.IndexManager.GetStop(nodeIndex) +" Demand: "+ DataModel.Demands[DataModel.IndexManager.GetStopIndex(DataModel.IndexManager.GetStop(nodeIndex))]);
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") - Slack: (" + solution.Min(timeDim.SlackVar(index)) + "," + solution.Max(timeDim.SlackVar(index)) + ") - Transit: (" + solution.Value(timeDim.TransitVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)) + " Transit:" + solution.Value(capacityDim.TransitVar(index)));
+                        var tw1 = solution.Min(timeDim.CumulVar(index));
+                        var tw2 = solution.Max(timeDim.CumulVar(index));
+                        var slack1 = solution.Min(timeDim.SlackVar(index));
+                        var slack2 = solution.Max(timeDim.SlackVar(index));
+                        var transit = solution.Value(timeDim.TransitVar(index));
+              
+                        var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
+                        if (arcTransit != transit)
+                        {
+                            tw2 = tw1 + transit - arcTransit;
+                        }
+                        
+                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
                         double timeToTravel = solution.Value(timeTransitVar)-solution.Value(timeSlackVar);
                         routeSlackTime += solution.Value(timeSlackVar);
                         routeTransitTime += solution.Value(timeTransitVar);
@@ -374,8 +387,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
-                                                  solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
 
                         }
                         if (DataModel.IndexManager.GetStop(RoutingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing

@@ -28,17 +28,19 @@ namespace Simulator.Objects.Simulation
         public abstract void MainLoop();
 
         public abstract void OnSimulationStart();
+
+        public IEventHandler FirstEventHandler;
         public void Simulate()
         {
 
                 if (VehicleFleet.FindAll(v=>v.ServiceTrips.Count>0).Count>0)
                 {
                     OnSimulationStart();
+                    var handler = FirstEventHandler;
                     for (int i = 0; i < Events.Count ;i++)
                     {
                         var currentEvent = Events[i];
-                        Handle(currentEvent);
-                        Append(currentEvent);
+                        handler.Handle(currentEvent);
                         SortEvents();
                     }
                     OnSimulationEnd();
@@ -48,13 +50,10 @@ namespace Simulator.Objects.Simulation
 
         public abstract void OnSimulationEnd();
 
-        public abstract void Append(Event evt);
         public override string ToString()
         {
             return "["+GetType().Name+"] ";
         }
-
-        public abstract void Handle(Event evt);
 
         public void SortEvents()
         {

@@ -48,13 +48,9 @@ namespace Simulator.Objects.Simulation
             InitParams();
         }
 
-        private void GenerateRandomSeed()
-        {
-            Seed = new Random().Next(int.MaxValue);
-        }
         public void InitParams() //inits a new seed and updates the LoggerPaths
         {
-            GenerateRandomSeed();
+            RandomNumberGenerator.GenerateNewRandomSeed();
             UpdateLoggerPaths();
           
         }

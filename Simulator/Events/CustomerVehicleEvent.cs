@@ -12,7 +12,7 @@ namespace Simulator.Events
         public Customer Customer { get; internal set; }
         public Vehicle Vehicle { get; internal set; }
         public Trip Trip { get; internal set; }
-        private bool CategorySuccess { get; set; } //if true vehicle was not full and customer entered or left vehicle
+        public bool OperationSuccess { get; set; } //if true vehicle was not full and customer entered or left vehicle
 
         public CustomerVehicleEvent(int category, int time, Customer customer, Vehicle vehicle) : base(category, time)
         {
@@ -21,7 +21,7 @@ namespace Simulator.Events
             Customer = customer;
             Vehicle = vehicle;
             Trip= vehicle.TripIterator.Current;
-            CategorySuccess = false;
+            OperationSuccess = false;
         }
 
         public override string GetTraceMessage()
@@ -39,11 +39,11 @@ namespace Simulator.Events
 
         public string GetValidationsMessage(int validationId)
         {
-            //(CustomerId, Category,CategorySuccess (was the customer able to leave or enter vehicle (1 true, 0 false)), VehicleId, RouteId, TripId, ServiceStartTime, StopId,Time)
+            //(CustomerId, Category,OperationSuccess (was the customer able to leave or enter vehicle (1 true, 0 false)), VehicleId, RouteId, TripId, ServiceStartTime, StopId,Time)
             string message = "";
             int stopId;
             stopId = Category == 2 ? Customer.PickupDelivery[0].Id : Customer.PickupDelivery[1].Id;
-            var catSuccess = CategorySuccess == true ? 1 : 0;
+            var catSuccess = OperationSuccess == true ? 1 : 0;
 
             message = validationId + "," + Customer.Id + "," + Category + ","+catSuccess+"," + Vehicle.Id + ","+Trip.Route.Id+"," + Trip.Id +","+ TimeSpan.FromSeconds(Trip.StartTime).ToString()+"," + stopId + "," +
                       TimeSpan.FromSeconds(Time).ToString();
@@ -60,7 +60,7 @@ namespace Simulator.Events
                 if (Category == 2)
                 {
                     //Customer entered vehicle i at stop x with destination y
-                    CategorySuccess = Customer.Enter(Vehicle,Time);
+                    OperationSuccess = Customer.Enter(Vehicle,Time);
                     AlreadyHandled = true;
 
                 }
@@ -68,7 +68,7 @@ namespace Simulator.Events
                 if (Category == 3)
                 {
                     //Customer left vehicle i at stop x with destination y
-                    CategorySuccess = Customer.Leave(Vehicle,Time);
+                    OperationSuccess = Customer.Leave(Vehicle,Time);
                     AlreadyHandled = true;
 
                 }

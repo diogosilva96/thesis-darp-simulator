@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Simulator.Objects.Data_Objects.Simulation_Objects
 {
-    public class Customer:Person
+    public class Customer
     {
-
+        private static int nextId;
+        public int Id { get; internal set; }
         public long RideTime => RealTimeWindow[1]-RealTimeWindow[0];
 
         public Stop[] PickupDelivery;
@@ -22,8 +24,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public long WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
-        public long DelayTime =>
-            RealTimeWindow[1] - DesiredTimeWindow[1] > 0 ? RealTimeWindow[1] - DesiredTimeWindow[1] : 0;
+        public long DelayTime => RealTimeWindow[1] - DesiredTimeWindow[1] > 0 ? RealTimeWindow[1] - DesiredTimeWindow[1] : 0;
 
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
@@ -52,7 +53,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             }
 
 
-            var pickupTime = rng.Next(pickupTimeWindow[0], pickupTimeWindow[1]); //the minimum pickup time is 0 minutes above the requestTime and maximum pickup is the end time of the simulation 
+            var pickupTime = rng.Next(pickupTimeWindow[0], pickupTimeWindow[1]); //the minimum pickup time will be inside the interval [pickupTimeWindow[0],pickupTimeWindow[1]]
             var deliveryTime = rng.Next(pickupTime + 15 * 60, pickupTime + 45 * 60); //delivery time will be at minimum 15 minutes above the pickuptime and at max 45 minutes from the pickup time
             if (pickupTime > deliveryTime)
             {
@@ -73,6 +74,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public void Init()
         {
+            Id = Interlocked.Increment(ref nextId);
             IsInVehicle = false;
             AlreadyServed = false;
             RealTimeWindow = new long[2];

@@ -22,9 +22,14 @@ namespace Simulator.Objects
         static RandomNumberGenerator()
         {
             Seed = 1;
+            GenerateNewRandomSeed();
         }
         private static int _seed;
 
+        public static void GenerateNewRandomSeed()
+        {
+            Seed = Random.Next(int.MaxValue);
+        }
 
         public static Random Random;
 

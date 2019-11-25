@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using MathNet.Numerics.Statistics;
 using Simulator.Logger;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
@@ -23,13 +24,14 @@ namespace Simulator.SimulationViews
                 var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv")), "AlgorithmName, AllowDropNodes, SolutionIsFeasible, SearchTimeLimit, ComputationTime, ObjectiveValue, MaxUpperBoundInMinutes, TotalServedCustomers, TotalDistanceTraveledInMeters, TotalRouteTimesInMinutes, VehiclesNumberUsed, DataModelId"));
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDatset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
                 var vehicleNumber = 20;
-                for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
+                for (int customersNumber = 50; customersNumber <= 200; customersNumber = customersNumber + 25)
                 {
-                    for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20)
+                    for (int searchTime = 20; searchTime <= 20; searchTime = searchTime + 20)
                     {
-                            for (int i = 0; i < 5; i++) // tests 10 different data models for the same setting
+                            for (int i = 0; i <10; i++) // tests 10 different data models for the same setting
                             {
                                 var allowDropNodes = false;
+                                RandomNumberGenerator.GenerateNewRandomSeed();
                                 //Print("Allow drop nodes penalties?");
                                 //Print("1 - Yes");
                                 //Print("2 - No");
