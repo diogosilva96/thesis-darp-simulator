@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Simulator.Events
+﻿namespace Simulator.Events.Handlers
 {
     public interface IEventHandler
     {

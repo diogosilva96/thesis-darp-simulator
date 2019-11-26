@@ -375,7 +375,18 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
                         if (arcTransit != transit)
                         {
-                            tw2 = tw1 + transit - arcTransit;
+                            if (tw1 == tw2 && slack1 != 0)
+                            {
+                                tw2 = tw1 + slack1;
+                                transit = transit - slack1;
+                            }
+                        }
+                        else
+                        {
+                            if (tw1 == tw2 && slack1 != 0)
+                            {
+                                tw2 = tw1 + transit + slack1;
+                            }
                         }
                         
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
@@ -453,7 +464,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
             return printableList;
         }
-        public void PrintSolutionWithCumulVars(Assignment solution)
+        public void PrintSolution(Assignment solution)
         {
 
             if (solution != null)

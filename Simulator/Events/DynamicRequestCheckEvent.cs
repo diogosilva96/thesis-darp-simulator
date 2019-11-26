@@ -38,14 +38,5 @@ namespace Simulator.Events
             _probabilityThreshold = probabilityThreshold;
 
         }
-
-        public override void Treat()
-        {
-            AlreadyHandled = true;
-            if (GenerateNewDynamicRequest)
-            {
-                //Console.WriteLine("Dynamic request check event:" + _probability);
-            }
-        }
     }
 }

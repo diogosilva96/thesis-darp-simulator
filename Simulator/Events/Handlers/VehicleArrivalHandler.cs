@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Simulator.Objects.Data_Objects;
-using Simulator.Objects.Data_Objects.Simulation_Objects;
 using Simulator.Objects.Simulation;
 
-namespace Simulator.Events
+namespace Simulator.Events.Handlers
 {
     class VehicleArrivalHandler:EventHandler
     {
@@ -14,10 +12,45 @@ namespace Simulator.Events
             if (evt.Category == 0 && evt is VehicleStopEvent arriveEvent)
             {
                 Log(evt);
-
-                var arrivalTime = evt.Time;
-                arriveEvent.Vehicle.Arrive(arriveEvent.Stop, arrivalTime); //vehicle arrives
                 evt.AlreadyHandled = true;
+                var arrivalTime = evt.Time;
+
+                //Handle arrival evt
+                if (arriveEvent.Vehicle.TripIterator.Current != null && arriveEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop == arriveEvent.Stop)
+                {
+
+                    arriveEvent.Vehicle.IsIdle = true;
+                    if (arriveEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex == 0) //check if the trip has started
+                    {
+                        arriveEvent.Vehicle.TripIterator.Current.Start(arrivalTime);
+                        _consoleLogger.Log(" ");
+                        _consoleLogger.Log(arriveEvent.Vehicle.ToString() + arriveEvent.Vehicle.TripIterator.Current + " STARTED at " +
+                                          TimeSpan.FromSeconds(arrivalTime) + ".");
+
+                    }
+
+                    _consoleLogger.Log(arriveEvent.Vehicle.ToString() + "ARRIVED at " + arriveEvent.Stop + " at " + TimeSpan.FromSeconds(arrivalTime) + ".");
+                    arriveEvent.Vehicle.TripIterator.Current.VisitedStops.Add(arriveEvent.Stop); //adds the current stop to the visited stops
+                    arriveEvent.Vehicle.TripIterator.Current.StopsTimeWindows.Add(new long[] { arrivalTime, arrivalTime }); //adds the current time window
+
+                    if (arriveEvent.Vehicle.TripIterator.Current.StopsIterator.IsDone && arriveEvent.Vehicle.Customers.Count == 0) //this means that the trip is complete
+                    {
+                        arriveEvent.Vehicle.TripIterator.Current.Finish(arrivalTime); //Finishes the trip
+                        _consoleLogger.Log(arriveEvent.Vehicle.ToString() + arriveEvent.Vehicle.TripIterator.Current + " FINISHED at " +
+                                          TimeSpan.FromSeconds(arrivalTime) + ", Duration:" +
+                                          Math.Round(TimeSpan.FromSeconds(arriveEvent.Vehicle.TripIterator.Current.RouteDuration)
+                                              .TotalMinutes) + " minutes.");
+
+                        arriveEvent.Vehicle.TripIterator.MoveNext();
+                        if (arriveEvent.Vehicle.TripIterator.Current == null)
+                        {
+                            arriveEvent.Vehicle.TripIterator.Reset();
+                            arriveEvent.Vehicle.TripIterator.MoveNext();
+                        }
+                    }
+
+                }
+                //end of arrival event handle
 
                 //INSERTION (APPEND) OF CUSTOMER ENTER VEHICLE AND LEAVE VEHICLE EVENTS AND GENERATION OF THE DEPART EVENT FROM THE CURRENT STOP---------------------------------------
                 var customerLeaveVehicleEvents = EventGenerator.Instance().GenerateCustomerLeaveVehicleEvents(arriveEvent.Vehicle, arriveEvent.Stop, arrivalTime); //Generates customer leave vehicle event
@@ -96,8 +129,6 @@ namespace Simulator.Events
 
                 var nextDepartEvent = EventGenerator.Instance().GenerateVehicleDepartEvent(arriveEvent.Vehicle, maxInsertedTime + 2);
                 Simulation.AddEvent(nextDepartEvent);
-
-
             }
             else
             {

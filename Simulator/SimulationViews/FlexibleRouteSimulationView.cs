@@ -43,7 +43,7 @@ namespace Simulator.SimulationViews
                     ;
                     if (timeWindowSolution != null)
                     {
-                        routingSolver.PrintSolutionWithCumulVars(timeWindowSolution);
+                        routingSolver.PrintSolution(timeWindowSolution);
                         routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
                     }
                     Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);

@@ -21,28 +21,6 @@ namespace Simulator.Events
             Stop = stop;
             Trip = vehicle.TripIterator.Current;
         }
-
-
-        public override void Treat()
-        {
-            if (Vehicle != null && Stop != null && !AlreadyHandled && Vehicle.TripIterator.Current == Trip)
-            {
-                if (Category == 0)
-                {
-                    Vehicle.Arrive(Stop, Time);
-                    AlreadyHandled = true;
-                }
-
-                if (Category == 1)
-                {
-                    Vehicle.Depart(Stop, Time);
-                    AlreadyHandled = true;
-                }
-            }
-
-        }
-  
-
         public override string GetTraceMessage()
         {
             string timestamp = DateTime.Now.ToString();

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Simulator.Logger;
+﻿using Simulator.Logger;
 using Simulator.Objects.Simulation;
 
-namespace Simulator.Events
+namespace Simulator.Events.Handlers
 {
    abstract class EventHandler:IEventHandler
    {

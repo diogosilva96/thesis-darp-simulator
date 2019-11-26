@@ -53,26 +53,5 @@ namespace Simulator.Events
             return message;
         }
 
-        public override void Treat()
-        {
-            if (Vehicle != null && Customer != null && !AlreadyHandled && Vehicle.TripIterator.Current == Trip)
-            {
-                if (Category == 2)
-                {
-                    //Customer entered vehicle i at stop x with destination y
-                    OperationSuccess = Customer.Enter(Vehicle,Time);
-                    AlreadyHandled = true;
-
-                }
-
-                if (Category == 3)
-                {
-                    //Customer left vehicle i at stop x with destination y
-                    OperationSuccess = Customer.Leave(Vehicle,Time);
-                    AlreadyHandled = true;
-
-                }
-            }
-        }
     }
 }

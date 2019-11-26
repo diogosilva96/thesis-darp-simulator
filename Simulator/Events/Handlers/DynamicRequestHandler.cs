@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 using Simulator.Objects.Simulation;
 
 namespace Simulator.Events.Handlers
@@ -16,6 +17,7 @@ namespace Simulator.Events.Handlers
             {
                 Log(evt);
                 evt.AlreadyHandled = true;
+                _consoleLogger.Log("New request:" + customerRequestEvent.Customer + " - " + customerRequestEvent.Customer.PickupDelivery[0] + " -> " + customerRequestEvent.Customer.PickupDelivery[1] + ", TimeWindows: {" + customerRequestEvent.Customer.DesiredTimeWindow[0] + "," + customerRequestEvent.Customer.DesiredTimeWindow[1] + "} at " + TimeSpan.FromSeconds(evt.Time).ToString());
 
                 //Check if request can be served, if so the 
                 Simulation.Stats.TotalDynamicRequests++;
@@ -28,10 +30,10 @@ namespace Simulator.Events.Handlers
                     var solution = solver.TryGetSolution(null);
                     if (solution != null)
                     {
+                        dataModel.PrintTimeMatrix();
                         dataModel.PrintPickupDeliveries();
                         dataModel.PrintTimeWindows();
-                        //dataModel.PrintTimeMatrix();
-                        solver.PrintSolutionWithCumulVars(solution);
+                        solver.PrintSolution(solution);
                         Simulation.Stats.TotalServedDynamicRequests++;
                         _consoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
 
@@ -98,12 +100,7 @@ namespace Simulator.Events.Handlers
                                 customers.FindAll(c =>
                                     !c.IsInVehicle); //the expected customers for the current vehicle are the ones that are not in that vehicle
 
-                            var vehicleEvents = Simulation.Events
-                                .FindAll(e =>
-                                    (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time) ||
-                                    (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time))
-                                .OrderBy(e => e.Time).ThenBy(e => e.Category)
-                                .ToList(); //gets all next vehicle depart or arrive events
+                            var vehicleEvents = Simulation.Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time) || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
                             _consoleLogger.Log("ALL NEXT VEHICLE " + vehicle.Id + " EVENTS (COUNT:" +
                                                vehicleEvents.Count + ") (TIME >=" + evt.Time + "):");
                             foreach (var vEvent in vehicleEvents)
@@ -114,32 +111,39 @@ namespace Simulator.Events.Handlers
                                     _consoleLogger.Log(vehicleStopArriveEvent.GetTraceMessage());
                                 }
 
-                                if (vEvent is VehicleStopEvent vehicleStopDepartEvent && vEvent.Category == 1
-                                ) //vehicle depart stop event
+                                if (vEvent is VehicleStopEvent vehicleStopDepartEvent && vEvent.Category == 1) //vehicle depart stop event
                                 {
+                                    var departTime = vEvent.Time;
                                     _consoleLogger.Log(vehicleStopDepartEvent.GetTraceMessage());
-                                    if (vehicleStopDepartEvent.Stop ==
-                                        vehicle.TripIterator.Current.StopsIterator.CurrentStop)
+                                    if (vehicleStopDepartEvent.Stop == vehicle.TripIterator.Current.StopsIterator.CurrentStop)
                                     {
-                                        _consoleLogger.Log("New event depart: " +
-                                                           (vehicle.TripIterator.Current.ScheduledTimeWindows[
-                                                                    vehicle.TripIterator.Current.StopsIterator
-                                                                        .CurrentIndex]
-                                                                [1] + 2));
-                                        vEvent.Time =
-                                            (int) vehicle.TripIterator.Current.ScheduledTimeWindows[
-                                                vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1] +
-                                            1; //recalculates new event depart time
+                                        departTime = (int)vehicle.TripIterator.Current.ScheduledTimeWindows[vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1] + 2; //recalculates new event depart time;
+                                        _consoleLogger.Log("New event depart: " + departTime);
+                                        
+                                        vEvent.Time = departTime;
+                                    }
+
+                                    var allEnterLeaveEventsForCurrentVehicle = Simulation.Events.FindAll(e =>
+                                        e.Time >= evt.Time && (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList();
+
+                                    foreach (var enterOrLeaveEvt in allEnterLeaveEventsForCurrentVehicle)
+                                    {
+                                        if (enterOrLeaveEvt.Time > departTime) //if the event time is greater than the depart time removes those events, otherwise maintain the enter and leave events for current stop
+                                        {
+                                            Simulation.Events.Remove(enterOrLeaveEvt);
+                                            _consoleLogger.Log("Enter Leave event removed (depart time:"+departTime+"; evt time:"+enterOrLeaveEvt.Time+"): "+enterOrLeaveEvt.GetTraceMessage());
+                                        }
+                                        
                                     }
                                 }
 
-                                if (vEvent is CustomerVehicleEvent customerVehicleEvent &&
-                                    (vEvent.Category == 2 || vEvent.Category == 3)
-                                ) //if customer enter vehicle or leave vehicle event
-                                {
-                                    _consoleLogger.Log(customerVehicleEvent.GetTraceMessage());
-                                    Simulation.Events.Remove(vEvent);
-                                }
+                                //if (vEvent is CustomerVehicleEvent customerVehicleEvent &&
+                                //    (vEvent.Category == 2 || vEvent.Category == 3)
+                                //) //if customer enter vehicle or leave vehicle event
+                                //{
+                                //    _consoleLogger.Log(customerVehicleEvent.GetTraceMessage());
+                                //    Simulation.Events.Remove(vEvent);
+                                //}
                             }
 
                         }

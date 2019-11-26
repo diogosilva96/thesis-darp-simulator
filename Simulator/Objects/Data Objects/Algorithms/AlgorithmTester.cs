@@ -73,7 +73,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 MaxUpperBoundInMinutes = (int)TimeSpan.FromSeconds(Solver.MaxUpperBound).TotalMinutes;
                 ComputationTimeInSeconds = elapsedSeconds;
                 Solution = solution;
-                Solver.PrintSolutionWithCumulVars(solution);
+                Solver.PrintSolution(solution);
             }
         }
 

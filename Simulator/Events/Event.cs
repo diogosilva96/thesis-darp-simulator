@@ -19,8 +19,6 @@ namespace Simulator.Events
 
         public abstract string GetTraceMessage();
 
-        public abstract void Treat();
-
         public override string ToString()
         {
             return "Category:" + Category + ", Time:" + Time;

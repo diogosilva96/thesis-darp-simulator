@@ -84,41 +84,6 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             return "Customer "+Id+" ";
         }
 
-        public bool Enter(Vehicle v, int time)
-        {  
-            if (!IsInVehicle)
-            {
-                var customerAdded = v.AddCustomer(this);
-                TimeSpan t = TimeSpan.FromSeconds(time);
-                if (customerAdded)
-                {
-                    if (v.TripIterator.Current.ExpectedCustomers.Contains(this))
-                    {
-                        v.TripIterator.Current.ExpectedCustomers.Remove(this);
-                    }
-                    RealTimeWindow[0] = time; //assigns the real enter time of the timewindow
-                    IsInVehicle = true;
-                    var waitTimeStr = "";
-                    if (DesiredTimeWindow != null && RealTimeWindow != null)
-                    {
-                        waitTimeStr = "(Wait time: " + WaitTime + " seconds)";
-                    }
-                    Console.WriteLine(v.SeatsState + this.ToString() + waitTimeStr+ " ENTERED at " + PickupDelivery[0] +
-                                      " at " + t.ToString() + ".");
-                    
-                }
-                else
-                {
-                    Console.WriteLine(v.SeatsState+this.ToString() + "was not serviced at "+PickupDelivery[0]+" at "+t.ToString()+", because vehicle is FULL!");
-                    IsInVehicle = false;
-                }
-
-                return customerAdded; //returns true if vehicle is not full and false if it is full
-            }
-
-            return false;
-        }
-
         public void PrintPickupDelivery()
         {
             string stringToBePrinted = this.ToString() + " - PickupDelivery: [" + PickupDelivery[0] + " -> " + PickupDelivery[1] + "]";
@@ -129,44 +94,5 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             Console.WriteLine(stringToBePrinted);
         }
 
-        public bool Leave(Vehicle vehicle, int time)
-        {
-            if (IsInVehicle)
-            {
-                var customerLeft = vehicle.RemoveCustomer(this);
-                if (customerLeft)
-                {                   
-                    TimeSpan t = TimeSpan.FromSeconds(time);
-                    RealTimeWindow[1] = time; //assigns the real leave time of the time window
-                    IsInVehicle = false;
-                    AlreadyServed = true;
-                    var delayTimeStr = "";
-                    if (DesiredTimeWindow != null && RealTimeWindow != null)
-                    {
-                        delayTimeStr = " ; Delay time: " + DelayTime + " seconds";
-                    }
-
-                    Console.WriteLine(vehicle.SeatsState + this.ToString() + "(Ride time:" + this.RideTime + " seconds"+delayTimeStr+") LEFT at " + PickupDelivery[1] +
-                                      " at " + t.ToString()+".");
-                    if (vehicle.TripIterator.Current != null && (vehicle.TripIterator.Current.StopsIterator.IsDone && vehicle.Customers.Count ==0))//this means that the trip is complete
-                    {
-                        vehicle.TripIterator.Current.Finish(time); //Finishes the service
-                        Console.WriteLine(vehicle.ToString()+vehicle.TripIterator.Current + " FINISHED at " +
-                                           TimeSpan.FromSeconds(time).ToString() + ", Duration:" + Math.Round(TimeSpan.FromSeconds(vehicle.TripIterator.Current.RouteDuration).TotalMinutes) + " minutes.");
-                        vehicle.TripIterator.MoveNext();
-                        if (vehicle.TripIterator.Current == null)
-                        {
-                            vehicle.TripIterator.Reset();
-                            vehicle.TripIterator.MoveNext();
-                        }
-                    }
-
-                }
-
-                return customerLeft;
-            }
-
-            return false;
-        }
     }
 }

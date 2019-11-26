@@ -16,11 +16,32 @@ namespace Simulator.Events.Handlers
             if (evt.Category == 1 && evt is VehicleStopEvent departEvent)
             {
                 Log(evt);
-
-                var departTime = departEvent.Time; //the time the vehicle departed on the previous depart event
-                departEvent.Vehicle.Depart(departEvent.Stop, departTime); //vehicle depart
                 evt.AlreadyHandled = true;
+                var departTime = departEvent.Time; //the time the vehicle departed on the previous depart event
+                //DEPART EVENT HANDLE
+                if (departEvent.Vehicle.TripIterator.Current != null && departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop == departEvent.Stop)
+                {
+                    _consoleLogger.Log(departEvent.Vehicle.ToString() + "DEPARTED from " + departEvent.Stop + " at " + TimeSpan.FromSeconds(departTime) + ".");
+                    var tuple = Tuple.Create(departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop,
+                        departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop);
+                    var currentStopIndex = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
+                    departEvent.Vehicle.TripIterator.Current.StopsTimeWindows[currentStopIndex][1] = departTime;
+                    TransportationNetwork.ArcDictionary.TryGetValue(tuple, out var distance);
+    
+                    //vehicle start transversing to next stop
+                    if (departEvent.Vehicle.TripIterator.Current?.StopsIterator != null && !departEvent.Vehicle.TripIterator.Current.StopsIterator.IsDone)
+                    {
+                        departEvent.Vehicle.IsIdle = false;
+                        var t = TimeSpan.FromSeconds(departTime);
+                        departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled =
+                            departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled + distance;
+                        _consoleLogger.Log(departEvent.Vehicle.ToString() + "started traveling to " +
+                                          departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop + " (Distance: " + Math.Round(distance) + " meters) at " + t + ".");
+                    }
+                    //end of vehicle transverse to next stop
 
+                }
+                //END OF DEPART EVENT HANDLE
 
                 //INSERTION (APPEND) OF VEHICLE NEXT STOP ARRIVE EVENT
                 if (departEvent.Vehicle.TripIterator.Current != null)

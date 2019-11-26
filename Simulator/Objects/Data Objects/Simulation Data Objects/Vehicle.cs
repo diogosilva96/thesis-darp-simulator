@@ -110,68 +110,12 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             }
         }
 
-        public bool Arrive(Stop stop, int time)
-        {
-            IsIdle = true;
-            if (TripIterator.Current != null && TripIterator.Current.StopsIterator.CurrentStop == stop)
-            {
-                if (TripIterator.Current.StopsIterator.CurrentIndex == 0)
-                {
-                    TripIterator.Current.Start(time);
-                    Console.WriteLine(" ");
-                    Console.WriteLine(ToString() + TripIterator.Current + " STARTED at " +
-                                      TimeSpan.FromSeconds(time) + ".");
-
-                }
-
-                Console.WriteLine(ToString() + "ARRIVED at " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
-                TripIterator.Current.VisitedStops.Add(stop); //adds the current stop to the visited stops
-                TripIterator.Current.StopsTimeWindows.Add(new long[] {time,time}); //adds the current time window
-                
-                if (TripIterator.Current.StopsIterator.IsDone && Customers.Count == 0
-                ) //this means that the trip is complete
-                {
-                    TripIterator.Current.Finish(time); //Finishes the trip
-                    Console.WriteLine(ToString() + TripIterator.Current + " FINISHED at " +
-                                      TimeSpan.FromSeconds(time) + ", Duration:" +
-                                      Math.Round(TimeSpan.FromSeconds(TripIterator.Current.RouteDuration)
-                                          .TotalMinutes) + " minutes.");
-              
-                    TripIterator.MoveNext();
-                    if (TripIterator.Current == null)
-                    {
-                        TripIterator.Reset();
-                        TripIterator.MoveNext();
-                    }
-                }
-
-                return true;
-            }
-
-            return false;
-        }
 
         public override string ToString()
         {
             return "[Vehicle " + Id + "] ";
         }
 
-        public bool Depart(Stop stop, int time)
-        {
-            if (TripIterator.Current != null && TripIterator.Current.StopsIterator.CurrentStop == stop)
-            {
-                Console.WriteLine(ToString() + "DEPARTED from " + stop + " at " + TimeSpan.FromSeconds(time) + ".");
-                var tuple = Tuple.Create(TripIterator.Current.StopsIterator.CurrentStop,
-                    TripIterator.Current.StopsIterator.NextStop);
-                var currentStopIndex = TripIterator.Current.StopsIterator.CurrentIndex;
-                TripIterator.Current.StopsTimeWindows[currentStopIndex][1]=time;
-                TransportationNetwork.ArcDictionary.TryGetValue(tuple, out var distance);
-                TransverseToNextStop(distance, time);
-                return true;
-            }
-
-            return false;
-        }
 
         public bool RemoveCustomer(Customer customer)
         {
@@ -179,27 +123,11 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
             if (!Customers.Contains(customer)) return false;
             Customers.Remove(customer);
-            if (TripIterator.Current == null) return true;
+            if (TripIterator.Current == null) return false;
             TripIterator.Current.ServicedCustomers.Add(customer);
             return true;
 
         }
 
-        public bool TransverseToNextStop(double distance, int startTime)
-        {
-            if (TripIterator.Current?.StopsIterator != null && !TripIterator.Current.StopsIterator.IsDone)
-            {
-                IsIdle = false;
-                var t = TimeSpan.FromSeconds(startTime);
-                TripIterator.Current.TotalDistanceTraveled =
-                    TripIterator.Current.TotalDistanceTraveled + distance;
-                Console.WriteLine(ToString() + "started traveling to " +
-                                  TripIterator.Current.StopsIterator.NextStop + " (Distance: "+Math.Round(distance)+" meters) at " + t + ".");
-                
-                return true;
-            }
-
-            return false;
-        }
     }
 }
