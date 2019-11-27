@@ -88,9 +88,9 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
 
                 List<Customer> allCustomers = new List<Customer>(_routingSolver.DataModel.IndexManager.Customers);
-                vehicleStopCustomerTimeWindowsDictionary =
-                    new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
+                vehicleStopCustomerTimeWindowsDictionary = new Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>();
                 var timeDim = _routingSolver.RoutingModel.GetMutableDimension("Time");
+                var capacityDim = _routingSolver.RoutingModel.GetMutableDimension("Capacity");
                 for (int i = 0; i < _routingSolver.DataModel.IndexManager.Vehicles.Count; ++i)
                 {
                     List<Stop> routeStops = new List<Stop>();
@@ -129,6 +129,20 @@ namespace Simulator.Objects.Data_Objects.Routing
                             routeTimeWindows.Add(timeWindow); //adds the timewindow to the list
                         }
 
+                        if (capacityDim.TransitVar(index) == -1)
+                        {
+                            var customersCurrentStopAsDelivery = allCustomers.FindAll(c => c.PickupDelivery[1] == currentStop);
+                            foreach (var customer in customersCurrentStopAsDelivery)
+                            {
+                                if (routeStops.Contains(customer.PickupDelivery[0]))
+                                {
+                                    var pickupIndex = routeStops.FindIndex(s=>s == customer.PickupDelivery[0]);
+                                    var rideTime = routeTimeWindows[routeStops.FindLastIndex(s => s == currentStop)][1] - routeTimeWindows[pickupIndex][1];
+                                    Console.WriteLine(customer.ToString()+" ride time:"+rideTime);//need to fix this
+                                }
+                            }
+
+                        }
                         index = solution.Value(_routingSolver.RoutingModel.NextVar(index)); //increments the iterator
                         previousStop = currentStop;
                     }

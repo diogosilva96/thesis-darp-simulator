@@ -34,6 +34,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int[][] VehicleCustomers; // Matrix that contains the vehicle's customers, the row specifies the vehicleIndex and the value inside the column specifies the customerIndex , Matrix size: [Vehicles.Count,Stops.Count]
 
+
         public bool ForceCumulToZero
         {
             get
@@ -63,21 +64,25 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public RoutingDataModel(DataModelIndexManager indexManger,int maxCustomerRideTime,int maxAllowedUpperBound) //if different end and start depot
         {
-                Id = Interlocked.Increment(ref nextId);
-                IndexManager = indexManger;
-                MaxAllowedUpperBoundTime = maxAllowedUpperBound;
-                MaxCustomerRideTime = maxCustomerRideTime;
-                Starts = IndexManager.GetVehicleStarts();
-                Ends = IndexManager.GetVehicleEnds();
-                VehicleCapacities = IndexManager.GetVehicleCapacities();
-                PickupsDeliveries = IndexManager.GetPickupDeliveries();
-                TravelTimes = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
-                TimeWindows = IndexManager.GetTimeWindows();
-                Demands = IndexManager.GetDemands();
-                VehicleCustomers = IndexManager.GetVehicleCustomers();
+                Initialize(indexManger,maxCustomerRideTime,maxAllowedUpperBound);
         }
 
-        
+        public void Initialize(DataModelIndexManager indexManger, int maxCustomerRideTime, int maxAllowedUpperBound)
+        {
+            Id = Interlocked.Increment(ref nextId);
+            IndexManager = indexManger;
+            MaxAllowedUpperBoundTime = maxAllowedUpperBound;
+            MaxCustomerRideTime = maxCustomerRideTime;
+            Starts = IndexManager.GetVehicleStarts();
+            Ends = IndexManager.GetVehicleEnds();
+            VehicleCapacities = IndexManager.GetVehicleCapacities();
+            PickupsDeliveries = IndexManager.GetPickupDeliveries();
+            TravelTimes = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
+            TimeWindows = IndexManager.GetTimeWindows();
+            Demands = IndexManager.GetDemands();
+            VehicleCustomers = IndexManager.GetVehicleCustomers();
+
+        }
 
         public override string ToString()
         {

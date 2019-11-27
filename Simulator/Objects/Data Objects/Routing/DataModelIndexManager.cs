@@ -114,6 +114,28 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         }
 
+        public long[] GetCustomersRideTime() //gets current customersRideTime for the customers already inside a vehicle, to be used on the maxRideTime constraint if needed!
+        {
+            long[] customersRideTime = new long[Customers.Count];
+            var vehicleCustomers = GetVehicleCustomers();
+            for (int i = 0; i < vehicleCustomers.Length; i++)
+            {
+                if (vehicleCustomers[i] != null)
+                {
+                    for (int j = 0; j < vehicleCustomers[i].Length; j++)
+                    {
+                        var currentTime = StartDepotArrivalTimes[i];
+                        var customerIndex = vehicleCustomers[i][j];
+                        var customer = GetCustomer(customerIndex);
+                        var rideTime = currentTime - customer.RealTimeWindow[0];
+                        customersRideTime[customerIndex] = rideTime;
+                        Console.WriteLine(customer.ToString()+ " current Ride time: "+rideTime);
+                    }
+                }
+            }
+
+            return customersRideTime;
+        }
         private List<Stop> GetStops() //Gets all stops that will be used by the datamodel
         {
             var stops = new List<Stop>(); //clears stop list
