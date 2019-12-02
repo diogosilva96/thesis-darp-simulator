@@ -32,9 +32,9 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
-        public int[][] VehicleCustomers; // Matrix that contains the vehicle's customers, the row specifies the vehicleIndex and the value inside the column specifies the customerIndex , Matrix size: [Vehicles.Count,Stops.Count]
+        public int[] CustomersVehicle; // array that contains each customers vehicle index (for the customers that are already inside a veihcle), each cell has the vehicle index and each array index indicates the customer
 
-
+        public long[] CustomerRideTimes; //matrix that contains the customer ride times, for the already in vehicle customers
         public bool ForceCumulToZero
         {
             get
@@ -80,8 +80,8 @@ namespace Simulator.Objects.Data_Objects.Routing
             TravelTimes = IndexManager.GetTimeMatrix(true); //calculates timeMatrix using Haversine distance formula
             TimeWindows = IndexManager.GetTimeWindows();
             Demands = IndexManager.GetDemands();
-            VehicleCustomers = IndexManager.GetVehicleCustomers();
-
+            CustomersVehicle = IndexManager.GetCustomersVehicle();
+            CustomerRideTimes = IndexManager.GetCustomersRideTime();
         }
 
         public override string ToString()

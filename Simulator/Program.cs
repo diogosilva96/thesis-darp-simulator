@@ -27,7 +27,7 @@ namespace Simulator
             //int[] Starts = { 0, 0, 0, 0 };
             //int[] Ends = { 0, 0, 0, 0 };
             //long[] VehicleCapacities = { 10, 10, 10, 10 };
-            //int[][] VehicleCustomers = new int[2][];
+            //int[][] CustomersVehicle = new int[2][];
             //long[,] TimeMatrix =
             //{
             //    {0, 6, 9, 8, 7, 3, 6},
@@ -182,16 +182,16 @@ namespace Simulator
             //            timeDimension.CumulVar(deliveryIndex)));
             //    }
             //    //constraints to enforce that if there is a customer inside a vehicle, it has to be served by that vehicle
-            //    if (VehicleCustomers != null) //if vehicleDeliveries is null it means there are no customer inside the vehicle for the current routing problem
+            //    if (CustomersVehicle != null) //if vehicleDeliveries is null it means there are no customer inside the vehicle for the current routing problem
             //    {
-            //        for (int vehicleIndex = 0; vehicleIndex < VehicleCustomers.GetLength(0); vehicleIndex++)
+            //        for (int vehicleIndex = 0; vehicleIndex < CustomersVehicle.GetLength(0); vehicleIndex++)
             //        {
-            //            if (VehicleCustomers[vehicleIndex] != null)
+            //            if (CustomersVehicle[vehicleIndex] != null)
             //            {
-            //                for (int j = 0; j < VehicleCustomers[vehicleIndex].GetLength(0); j++)
+            //                for (int j = 0; j < CustomersVehicle[vehicleIndex].GetLength(0); j++)
             //                {
             //                    var vehicleStartIndex = routing.Start(vehicleIndex);
-            //                    var deliveryIndex =PickupsDeliveries[VehicleCustomers[vehicleIndex][0]][1]; //gets the deliveryIndex
+            //                    var deliveryIndex =PickupsDeliveries[CustomersVehicle[vehicleIndex][0]][1]; //gets the deliveryIndex
             //                    var nodeDeliveryIndex = manager.NodeToIndex(deliveryIndex);
             //                    solver.Add(solver.MakeEquality(routing.VehicleVar(vehicleStartIndex),
             //                        routing.VehicleVar(
@@ -275,7 +275,7 @@ namespace Simulator
             //routingDataModel.TimeWindows = TimeWindows;
             //routingDataModel.TravelTimes = TimeMatrix;
             //routingDataModel.VehicleCapacities = VehicleCapacities;
-            //routingDataModel.VehicleCustomers = VehicleCustomers;
+            //routingDataModel.CustomersVehicle = CustomersVehicle;
             //RoutingSolver Solver = new RoutingSolver(routingDataModel,false);
             //var Solution = Solver.TryGetSolution(null);
             //Solver.PrintSolutionUsingRoutingVars(Solution);

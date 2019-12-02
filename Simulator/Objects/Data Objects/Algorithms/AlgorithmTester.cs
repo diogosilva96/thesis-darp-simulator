@@ -24,7 +24,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public long Objective => Solution.ObjectiveValue();
 
-        public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? Solver.GetSolutionObject(this.Solution).CustomerNumber : 0;
+        public int TotalServedCustomers => Solver.GetSolutionObject(Solution) != null ? (int)Solver.GetSolutionObject(this.Solution).CustomerNumber: 0;
 
         public int TotalDistanceTraveledInMeters => SolutionObject != null ? (int) SolutionObject.TotalDistanceInMeters : 0;
 
@@ -97,10 +97,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 toPrintList.Add("Total distance traveled: " + TotalDistanceTraveledInMeters + " meters.");
                 toPrintList.Add("Total route times: " + TotalRouteTimesInMinutes + " minutes.");
                 toPrintList.Add("Total Load: " + SolutionObject.TotalLoad);
-                if (SolutionObject.TotalLoad != SolutionObject.CustomerNumber)
-                {
-                    throw new Exception("EXCEPTION : TOTAL LOAD != CUSTOMERNUMBER");
-                }
+                //if (SolutionObject.TotalLoad != SolutionObject.CustomerNumber)
+                //{
+                //    throw new Exception("EXCEPTION : TOTAL LOAD != CUSTOMERNUMBER");
+                //}
                 toPrintList.Add("Total vehicles used: " + TotalVehiclesUsed);
                 toPrintList.Add("Average Distance traveled per request:" + TotalDistanceTraveledInMeters /
                                 TotalServedCustomers + " meters.");

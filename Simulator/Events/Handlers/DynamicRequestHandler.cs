@@ -136,14 +136,6 @@ namespace Simulator.Events.Handlers
                                         
                                     }
                                 }
-
-                                //if (vEvent is CustomerVehicleEvent customerVehicleEvent &&
-                                //    (vEvent.Category == 2 || vEvent.Category == 3)
-                                //) //if customer enter vehicle or leave vehicle event
-                                //{
-                                //    _consoleLogger.Log(customerVehicleEvent.GetTraceMessage());
-                                //    Simulation.Events.Remove(vEvent);
-                                //}
                             }
 
                         }

@@ -150,21 +150,21 @@ namespace Simulator.Objects.Data_Objects.Routing
                 }
 
                 //Add client max ride time constraint, enabling better service quality
-                for (int i = 0; i < RoutingModel.Size(); i++)
+                for (int i = 0; i < DataModel.PickupsDeliveries.Length; i++) //iterates over each pickupDelivery pair
                 {
-                    var pickupDeliveryPairs = Array.FindAll(DataModel.PickupsDeliveries, pd => pd[0] == i); //finds all the pickupdelivery pairs with pickup index i 
-                    foreach (var pickupDelivery in pickupDeliveryPairs) //iterates over each deliverypair to ensure the maximum ride time constraint
+                    int vehicleIndex = -1;
+                    if (DataModel.PickupsDeliveries[i][0] == -1)//if the pickupDelivery is a customer inside a vehicle
                     {
-                        if (pickupDelivery[0] != -1)//if the pickupDelivery isnt a customer inside a vehicle
-                        {
-                            var deliveryIndex = RoutingIndexManager.NodeToIndex(pickupDelivery[1]);
-                            var directRideTimeDuration = DataModel.TravelTimes[pickupDelivery[0], pickupDelivery[1]];
-                            var realRideTimeDuration = timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(i); //subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
-                            solver.Add(realRideTimeDuration < directRideTimeDuration + DataModel.MaxCustomerRideTime); //adds the constraint so that the current ride time duration does not exceed the directRideTimeDuration + maxCustomerRideTimeDuration
-                        }
+                        vehicleIndex = DataModel.CustomersVehicle[i]; //gets the vehicle index
                     }
+                    var pickupIndex = vehicleIndex == -1 ? RoutingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][0]):RoutingModel.Start(vehicleIndex);//if is a customer inside a vehicle the pickupIndex will be the vehicle startIndex, otherwise its the customers real pickupIndex
+                    var deliveryIndex = RoutingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][1]);
+                    var rideTime = DataModel.CustomerRideTimes[i];
+                    var directRideTimeDuration = DataModel.TravelTimes[pickupIndex,DataModel.PickupsDeliveries[i][1]];
+                    var realRideTimeDuration = rideTime+(timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(pickupIndex));//adds the currentRideTime of the customer and subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
+                    solver.Add(realRideTimeDuration < directRideTimeDuration + DataModel.MaxCustomerRideTime);//adds the constraint so that the current ride time duration does not exceed the directRideTimeDuration + maxCustomerRideTimeDuration
                 }
-
+                //Add precedence and same vehicle Constraints
                 for (int i = 0; i < DataModel.PickupsDeliveries.GetLength(0); i++)
                 {
                     if (DataModel.PickupsDeliveries[i][0] != -1)
@@ -176,24 +176,16 @@ namespace Simulator.Objects.Data_Objects.Routing
                         solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
                     }
                 }
-                //constraints to enforce that if there is a customer inside a vehicle, it has to be served by that vehicle
-                if (DataModel.VehicleCustomers != null) //if vehicleDeliveries is null it means there are no customer inside the vehicle for the current routing problem
+                //Constraints to enforce that if there is a customer inside a vehicle, it has to be served by that vehicle
+                for (int customerIndex = 0; customerIndex < DataModel.CustomersVehicle.GetLength(0); customerIndex++)
                 {
-                    for (int vehicleIndex = 0; vehicleIndex < DataModel.VehicleCustomers.GetLength(0); vehicleIndex++)
+                    var vehicleIndex = DataModel.CustomersVehicle[customerIndex];
+                    if (vehicleIndex != -1)//if the current customer is inside a vehicle
                     {
-                        if (DataModel.VehicleCustomers[vehicleIndex] != null)
-                        {
-                            for (int j = 0; j < DataModel.VehicleCustomers[vehicleIndex].GetLength(0); j++)
-                            {
-                                var vehicleStartIndex = RoutingModel.Start(vehicleIndex);
-                                var deliveryIndex = DataModel.PickupsDeliveries[DataModel.VehicleCustomers[vehicleIndex][0]][1]; //gets the deliveryIndex
-                                var nodeDeliveryIndex = RoutingIndexManager.NodeToIndex(deliveryIndex);
-                                solver.Add(solver.MakeEquality(RoutingModel.VehicleVar(vehicleStartIndex),
-                                    RoutingModel.VehicleVar(
-                                        nodeDeliveryIndex))); //vehicle with vehicleIndex has to be the one that delivers customer with nodeDeliveryIndex;
-                                //this constraint enforces that the vehicle indexed by vehicleIndex has to be the vehicle which services (goes to) the nodeDeliveryIndex as well
-                            }
-                        }
+                        var vehicleStartIndex = RoutingModel.Start(vehicleIndex); //vehicle start depot index
+                        var deliveryIndex = RoutingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[customerIndex][1]); //gets the deliveryIndex
+                        solver.Add(solver.MakeEquality(RoutingModel.VehicleVar(vehicleStartIndex), RoutingModel.VehicleVar(deliveryIndex))); //vehicle with vehicleIndex has to be the one that delivers customer with nodeDeliveryIndex;
+                        //this constraint enforces that the vehicle indexed by vehicleIndex has to be the vehicle which services (goes to) the nodeDeliveryIndex as well
                     }
                 }
 
@@ -372,22 +364,22 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var slack2 = solution.Max(timeDim.SlackVar(index));
                         var transit = solution.Value(timeDim.TransitVar(index));
               
-                        var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
-                        if (arcTransit != transit)
-                        {
-                            if (tw1 == tw2 && slack1 != 0)
-                            {
-                                tw2 = tw1 + slack1;
-                                transit = transit - slack1;
-                            }
-                        }
-                        else
-                        {
-                            if (tw1 == tw2 && slack1 != 0)
-                            {
-                                tw2 = tw1 + transit + slack1;
-                            }
-                        }
+                        //var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
+                        //if (arcTransit != transit)
+                        //{
+                        //    if (tw1 == tw2 && slack1 != 0)
+                        //    {
+                        //        tw2 = tw1 + slack1;
+                        //        transit = transit - slack1;
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    if (tw1 == tw2 && slack1 != 0)
+                        //    {
+                        //        tw2 = tw1 + transit + slack1;
+                        //    }
+                        //}
                         
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
                         double timeToTravel = solution.Value(timeTransitVar)-solution.Value(timeSlackVar);

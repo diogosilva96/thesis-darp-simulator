@@ -81,56 +81,42 @@ namespace Simulator.Objects.Data_Objects.Routing
         }
 
 
-        public int[][] GetVehicleCustomers()
+        public int[] GetCustomersVehicle()
         {
-            int[][] vehicleDeliveries = new int[Vehicles.Count][];
-            var insertedDeliveries = 0;
+            int[] customersVehicle = new int[Customers.Count];
+
             foreach (var customerDict in _customersPickupDeliveriesDictionary)
             {
                 var customer = customerDict.Key;
                 var pickupDelivery = customerDict.Value;
+                var vehicleIndex = -1;
                 if (pickupDelivery[0] == -1) //if the current customer is inside a vehicle
                 {
-                    int insertIndex = 0;
-                    var vehicle = Vehicles.Find(v => v.Customers.Contains(customer));
-                    var vehicleIndex = GetVehicleIndex(vehicle);
-                    if (vehicleDeliveries.Length > vehicleIndex)
-                    {
-                        
-                        if (vehicleDeliveries[vehicleIndex] != null)
-                        {
-                            insertIndex = vehicleDeliveries[vehicleIndex].GetLength(0) - 1;
-                        }
-
-
-                    }
-                    Array.Resize(ref vehicleDeliveries[vehicleIndex],insertIndex+1);
-                    vehicleDeliveries[vehicleIndex][insertIndex] = GetCustomerIndex(customer); //inserts the customerIndex in the matrix cell(vehicleIndex,index)
-                    insertedDeliveries++;
+                    vehicleIndex = Vehicles.FindIndex(v => v.Customers.Contains(customer));
                 }
+
+                customersVehicle[GetCustomerIndex(customer)] = vehicleIndex;
             }
 
-            return vehicleDeliveries;
+            return customersVehicle;
 
         }
 
         public long[] GetCustomersRideTime() //gets current customersRideTime for the customers already inside a vehicle, to be used on the maxRideTime constraint if needed!
         {
             long[] customersRideTime = new long[Customers.Count];
-            var vehicleCustomers = GetVehicleCustomers();
-            for (int i = 0; i < vehicleCustomers.Length; i++)
+            var customersVehicle = GetCustomersVehicle();
+            for (int i = 0; i < customersVehicle.Length; i++)
             {
-                if (vehicleCustomers[i] != null)
+                if (customersVehicle[i] != -1)
                 {
-                    for (int j = 0; j < vehicleCustomers[i].Length; j++)
-                    {
-                        var currentTime = StartDepotArrivalTimes[i];
-                        var customerIndex = vehicleCustomers[i][j];
-                        var customer = GetCustomer(customerIndex);
-                        var rideTime = currentTime - customer.RealTimeWindow[0];
-                        customersRideTime[customerIndex] = rideTime;
-                        Console.WriteLine(customer.ToString()+ " current Ride time: "+rideTime);
-                    }
+                    var vehicleIndex = customersVehicle[i];
+                    var currentTime = StartDepotArrivalTimes[vehicleIndex];
+                    var customerIndex = i;
+                    var customer = GetCustomer(customerIndex);
+                    var rideTime = currentTime - customer.RealTimeWindow[0];
+                    customersRideTime[customerIndex] = rideTime;
+                    Console.WriteLine(customer.ToString()+ " current Ride time: "+rideTime);
                 }
             }
 
