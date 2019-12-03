@@ -36,6 +36,8 @@ namespace Simulator.SimulationViews
                 Simulation.Params.VehicleSpeed = GetIntInput(1, 100);
                 ConsoleLogger.Log("Please insert the vehicle capacity (Current = " + Simulation.Params.VehicleCapacity + "):");
                 Simulation.Params.VehicleCapacity = GetIntInput(1, 80);
+                ConsoleLogger.Log("Please insert the Number of dynamic request per hour (Current = " + Simulation.Params.DynamicRequestsPerHour + "):");
+                Simulation.Params.DynamicRequestsPerHour = GetIntInput(1, 100);
         }
 
         public ConfigSimulationParamsView(Objects.Simulation.Simulation simulation) : base(simulation)

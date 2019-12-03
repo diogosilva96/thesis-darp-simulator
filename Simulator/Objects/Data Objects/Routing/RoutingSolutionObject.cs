@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Google.OrTools.ConstraintSolver;
@@ -29,6 +30,24 @@ namespace Simulator.Objects.Data_Objects.Routing
         private long[] _routeDistancesInMeters;
 
         private long[] _routeTimesInSeconds;
+
+        public int TotalCustomerRideTimes
+        {
+            get
+            {
+                var totalRideTime = 0;
+                if (CustomerRideTimes != null)
+                {
+                    
+                    foreach (var customer in CustomerRideTimes)
+                    {
+                        totalRideTime += customer.Value;
+                    }
+                }
+
+                return totalRideTime;
+            }
+        }
 
         private Dictionary<Customer, int> CustomerRideTimes;
 
@@ -118,9 +137,20 @@ namespace Simulator.Objects.Data_Objects.Routing
                     {
                         nodeIndex = _routingSolver.RoutingIndexManager.IndexToNode(index);
                         currentStop = _routingSolver.DataModel.IndexManager.GetStop(nodeIndex);
-                        var timeVar = timeDim.CumulVar(index);
+                        var tw1 = solution.Min(timeDim.CumulVar(index));
+                        var tw2 = solution.Max(timeDim.CumulVar(index));
+                        var slack1 = solution.Min(timeDim.SlackVar(index));
+                        var transit = solution.Value(timeDim.TransitVar(index));
+                        var arcTransit = _routingSolver.DataModel.TravelTimes[_routingSolver.DataModel.Starts[i], _routingSolver.RoutingIndexManager.IndexToNode(solution.Value(_routingSolver.RoutingModel.NextVar(index)))]; //arc transit
+                        if (arcTransit != transit)
+                        {
+                            tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + slack1 : tw2;
+                        }
+                        else
+                        {
+                            tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + transit + slack1 : tw2;
+                        }
 
-                        
                         //calculate routeDistance
                         double timeToTravel = solution.Value(timeDim.TransitVar(index));
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
@@ -128,13 +158,13 @@ namespace Simulator.Objects.Data_Objects.Routing
                         //add currentLoad
                         routeLoad += solution.Value(capacityDim.TransitVar(index)) > 0 ? solution.Value(capacityDim.TransitVar(index)) : 0; //adds the load if it is greater than 0
                         //auxiliary data structures add
-                        auxiliaryTimeWindows.Add(new long[]{solution.Min(timeVar),solution.Max(timeVar)}); //adds current timeWindow
+                        auxiliaryTimeWindows.Add(new long[]{tw1,tw2}); //adds current timeWindow
                         routeStopsIndex.Add(nodeIndex); //adds current stopIndex
                         if (currentStop != null && previousStop != null && currentStop.Id == previousStop.Id)//if current stop is the same as the previous one
                         {
                             routeStops.Remove(previousStop); //removes previous stop
                             routeStops.Add(currentStop); //adds current stop
-                            var joinedTimeWindow = new[] { timeWindow[0], solution.Max(timeVar) }; //adds the new timewindow the junction of the previous min time from the dummy stop
+                            var joinedTimeWindow = new[] { timeWindow[0], tw2 }; //adds the new timewindow the junction of the previous min time from the dummy stop
                             //with max timewindow value for the currentstop (the real stop)
                             routeTimeWindows.Remove(timeWindow); //removes previous time window
                             routeTimeWindows.Add(joinedTimeWindow);
@@ -147,7 +177,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             }
                             routeStops.Add(currentStop); //adds the current stop
                             //timeWindow add       
-                            timeWindow = new[] { solution.Min(timeVar), solution.Max(timeVar) };
+                            timeWindow = new[] { tw1, tw2 };
                             routeTimeWindows.Add(timeWindow); //adds the timewindow to the list
                         }
                         //Check if vehicle serves any customer, if so, adds the ride time for that client for the routing solution
@@ -227,7 +257,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     }
                 }
 
-                if (allrouteCustomers.Count != allCustomers.Count)
+                if (allrouteCustomers.Count != allCustomers.Count && _routingSolver.DropNodesAllowed == false)
                 {
                     throw new Exception("Routing solution is not serving all the customers");
                 }

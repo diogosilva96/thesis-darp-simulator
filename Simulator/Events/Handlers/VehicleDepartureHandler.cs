@@ -62,17 +62,12 @@ namespace Simulator.Events.Handlers
                                 currentStop.Longitude, nextStop.Latitude, nextStop.Longitude);
                         }
 
-                        var travelTime =
-                            DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed,
-                                distance); //Gets the time it takes to travel from the currentStop to the nextStop
-                        var nextArrivalTime =
-                            Convert.ToInt32(departTime +
-                                            travelTime); //computes the arrival time for the next arrive event
+                        var travelTime = DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed,
+                            distance); //Gets the time it takes to travel from the currentStop to the nextStop
+                        var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
                         departEvent.Vehicle.TripIterator.Current.StopsIterator
                             .Next(); //Moves the iterator to the next stop
-                        var nextArriveEvent =
-                            EventGenerator.Instance().GenerateVehicleArriveEvent(departEvent.Vehicle,
-                                nextArrivalTime); //generates the arrive event
+                        var nextArriveEvent = EventGenerator.Instance().GenerateVehicleArriveEvent(departEvent.Vehicle, nextArrivalTime); //generates the arrive event
                         Simulation.AddEvent(nextArriveEvent);
                         //DEBUG!
                         if (departEvent.Vehicle.FlexibleRouting)

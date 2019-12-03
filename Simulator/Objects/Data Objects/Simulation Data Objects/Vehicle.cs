@@ -66,6 +66,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         {
             if (stops != null)
             {
+
                 Console.WriteLine("Route for Vehicle "+this.Id +" (Total stops: "+stops.Count+"):");
                 var totalEnterVehicle = 0;
                 var totalLeaveVehicle = 0;
@@ -80,15 +81,14 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
                     if (routeCustomers != null && timeWindows != null)
                     {
-                        //need to check
-                        var numCustomersEnterAtCurrentStop = routeCustomers.FindAll(c =>
-                            c.PickupDelivery[0] == stops[i] && stops.Contains(c.PickupDelivery[1]) && i <= stops.IndexOf(c.PickupDelivery[1]) && c.DesiredTimeWindow[0] <= timeWindows[i][1]).Count;
-                        var numCustomersLeaveAtCurrentStop =
-                            routeCustomers.FindAll(c => c.PickupDelivery[1] == stops[i] && stops.Contains(c.PickupDelivery[0]) && stops.IndexOf(c.PickupDelivery[0]) <= i && timeWindows[i][0] >= c.DesiredTimeWindow[0]).Count;
-                        var currentLoad = numCustomersEnterAtCurrentStop - numCustomersLeaveAtCurrentStop;
-                        totalEnterVehicle += numCustomersEnterAtCurrentStop;
-                        totalLeaveVehicle += numCustomersLeaveAtCurrentStop;
-                        load = "IN:" + (numCustomersEnterAtCurrentStop) + "; " + "OUT:" + (numCustomersLeaveAtCurrentStop) + "";
+                        //need to check bug
+                        var customersEnterAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[0] == stops[i] && stops.Contains(c.PickupDelivery[1]) && i <= stops.IndexOf(c.PickupDelivery[1]) && c.DesiredTimeWindow[0] <= timeWindows[i][1]).Count;
+                        var customersLeaveAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[1] == stops[i] && stops.Contains(c.PickupDelivery[0]) && stops.IndexOf(c.PickupDelivery[0]) <= i && timeWindows[i][0] >= c.DesiredTimeWindow[0]).Count;
+                        var currentLoad = customersEnterAtCurrentStop - customersLeaveAtCurrentStop;
+                        totalEnterVehicle += customersEnterAtCurrentStop;
+                        totalLeaveVehicle += customersLeaveAtCurrentStop;
+                        load = "IN:" + (customersEnterAtCurrentStop) + "; " + "OUT:" + (customersLeaveAtCurrentStop) + "";
+
 
 
                     }
@@ -98,6 +98,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                         break;
                     }
                     Console.Write(stops[i].Id + "("+stopTimeWindow+ load +") -> ");
+                
                    
                 }
                 Console.WriteLine("Total Customer Enters: "+totalEnterVehicle);

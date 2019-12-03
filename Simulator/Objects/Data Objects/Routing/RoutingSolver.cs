@@ -174,6 +174,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                         RoutingModel.AddPickupAndDelivery(pickupIndex, deliveryIndex); //Notifies that the pickupIndex and deliveryIndex form a pair of nodes which should belong to the same route.
                         solver.Add(solver.MakeEquality(RoutingModel.VehicleVar(pickupIndex), RoutingModel.VehicleVar(deliveryIndex))); //Adds a constraint to the solver, that defines that both these pickup and delivery pairs must be picked up and delivered by the same vehicle (same route)
                         solver.Add(solver.MakeLessOrEqual(timeDimension.CumulVar(pickupIndex), timeDimension.CumulVar(deliveryIndex))); //Adds the precedence constraint to the solver, which defines that each item must be picked up at pickup index before it is delivered to the delivery index
+                        //timeDimension.SlackVar(pickupIndex).SetMin(4);//mininimum slack will be 3 seconds (customer enter timer)
+                        //timeDimension.SlackVar(deliveryIndex).SetMin(3); //minimum slack will be 3 seconds (customer leave time)
                     }
                 }
                 //Constraints to enforce that if there is a customer inside a vehicle, it has to be served by that vehicle
@@ -363,24 +365,19 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var slack1 = solution.Min(timeDim.SlackVar(index));
                         var slack2 = solution.Max(timeDim.SlackVar(index));
                         var transit = solution.Value(timeDim.TransitVar(index));
-              
-                        //var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
-                        //if (arcTransit != transit)
-                        //{
-                        //    if (tw1 == tw2 && slack1 != 0)
-                        //    {
-                        //        tw2 = tw1 + slack1;
-                        //        transit = transit - slack1;
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //    if (tw1 == tw2 && slack1 != 0)
-                        //    {
-                        //        tw2 = tw1 + transit + slack1;
-                        //    }
-                        //}
-                        
+
+                        var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
+                        if (arcTransit != transit)
+                        {
+                            tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + slack1 : tw2;
+                            transit = (tw1 == tw2 && slack1 != 0) ? transit - slack1 : transit;
+
+                        }
+                        else
+                        {
+                            tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + transit + slack1:tw2;
+                        }
+
                         Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
                         double timeToTravel = solution.Value(timeTransitVar)-solution.Value(timeSlackVar);
                         routeSlackTime += solution.Value(timeSlackVar);
@@ -390,13 +387,13 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + tw1 + ";" + tw2 + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
 
                         }
                         if (DataModel.IndexManager.GetStop(RoutingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {
                             concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
-                                                  solution.Min(timeCumulVar) + ";" + solution.Max(timeCumulVar) + "}; L:" +
+                                                  tw1 + ";" + tw2 + "}; L:" +
                                                   currentLoad + ")";
                         }
 

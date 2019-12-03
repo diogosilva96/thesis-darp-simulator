@@ -30,6 +30,8 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public int TotalRouteTimesInMinutes => SolutionObject != null ? (int) TimeSpan.FromSeconds(SolutionObject.TotalTimeInSeconds).TotalMinutes : 0;
 
+        public int TotalCustomerRideTimesInMinutes => SolutionObject != null ? (int) TimeSpan.FromSeconds(SolutionObject.TotalCustomerRideTimes).TotalMinutes : 0;
+
         public int TotalVehiclesUsed => SolutionObject != null ? (int) SolutionObject.TotalVehiclesUsed : 0;
         protected AlgorithmTester()
         {
@@ -45,7 +47,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 string splitter = ",";
                 int allowDropNodes = AllowDropNodes ? 1 : 0;
                 int feasible = SolutionIsFeasible ? 1 : 0;
-                string message = Name + splitter +allowDropNodes+splitter+ feasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed+splitter+DataModel.Id;
+                string message = Name + splitter +allowDropNodes+splitter+ feasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed+splitter+TotalCustomerRideTimesInMinutes+splitter+DataModel.Id;
                 return message;
             }
 

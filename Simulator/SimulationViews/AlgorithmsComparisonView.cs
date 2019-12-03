@@ -20,27 +20,27 @@ namespace Simulator.SimulationViews
         {
 
 
-                var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv")), "AlgorithmName, AllowDropNodes, SolutionIsFeasible, SearchTimeLimit, ComputationTime, ObjectiveValue, MaxUpperBoundInMinutes, TotalServedCustomers, TotalDistanceTraveledInMeters, TotalRouteTimesInMinutes, VehiclesNumberUsed, DataModelId"));
-                var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDatset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
+                var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv")), "AlgorithmName, AllowDropNodes, SolutionIsFeasible, SearchTimeLimit, ComputationTime, ObjectiveValue, MaxUpperBoundInMinutes, TotalServedCustomers, TotalDistanceTraveledInMeters, TotalRouteTimesInMinutes, VehiclesNumberUsed, TotalCustomerRideTimes,DataModelId"));
+                var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
                 var vehicleNumber = 20;
-                for (int customersNumber = 50; customersNumber <= 200; customersNumber = customersNumber + 50)
+                for (int customersNumber =25; customersNumber <= 100; customersNumber = customersNumber + 25)
                 {
                     for (int i = 0; i < 10; i++) // tests 10 different data models
                     {
+                        //ConsoleLogger.Log("Allow drop nodes penalties?");
+                        //ConsoleLogger.Log("1 - Yes");
+                        //ConsoleLogger.Log("2 - No");
+                        //bool allowDropNodes = GetIntInput(1, 2) == 1;
+                        bool allowDropNodes = false;
                         RandomNumberGenerator.GenerateNewRandomSeed();
-                        var allowDropNodes = false;
                         var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber, customersNumber, allowDropNodes, Simulation.Params);
                         var printableList = dataModel.GetSettingsPrintableList();
                         ConsoleLogger.Log(printableList);
                         dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
                     for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
                         {
-
                         //Simulation.Params.Seed = 852505172;
-                        //ConsoleLogger.Log("Allow drop nodes penalties?");
-                        //ConsoleLogger.Log("1 - Yes");
-                        //ConsoleLogger.Log("2 - No");
-                        //bool allowDropNodes = GetIntInput(1, 2) == 1;
+
                         //Print("Use random generated Data to test the different algorithms?");
                         //Print("1 - Yes");
                         //Print("2 - No");
@@ -97,8 +97,8 @@ namespace Simulator.SimulationViews
                         //var dataModel = Simulation.GenerateRandomInitialDataModel(customersNumber, vehicleNumber, allowDropNodes);
                         //Print("Please insert the search time limit:");
                         //var searchTime = GetIntInput(1, int.MaxValue);
-                                    
-                            AlgorithmContainer algorithmContainer = new AlgorithmContainer();
+
+                        AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                             foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
                             {
                                 var algorithmsTester = new SearchAlgorithmTester(searchAlgorithm,searchTime);

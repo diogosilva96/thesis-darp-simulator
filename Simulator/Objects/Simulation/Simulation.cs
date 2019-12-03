@@ -8,6 +8,7 @@ using Simulator.Events.Handlers;
 using Simulator.Logger;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
+using Simulator.Objects.Data_Objects.Simulation_Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Simulation
@@ -32,10 +33,11 @@ namespace Simulator.Objects.Simulation
 
         public void InitEventHandlers()
         {
-            var dynamicRequestCheckHandler = new RequestGenerationCheckHandler(this);
-            FirstEventHandler = dynamicRequestCheckHandler;
+            //var dynamicRequestCheckHandler = new RequestGenerationCheckHandler(this);
+            
             var arrivalHandler = new VehicleArrivalHandler(this);
-            dynamicRequestCheckHandler.Successor = arrivalHandler;
+            FirstEventHandler = arrivalHandler;
+            //dynamicRequestCheckHandler.Successor = arrivalHandler;
             var departureHandler = new VehicleDepartureHandler(this);
             arrivalHandler.Successor = departureHandler;
             var customerLeaveHandler = new CustomerLeaveHandler(this);
@@ -58,8 +60,13 @@ namespace Simulator.Objects.Simulation
         
         public void InitVehicleEvents()
         {
-            var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(Params.SimulationTimeWindow[0], Params.DynamicRequestThreshold);//initializes dynamic requests
-            AddEvent(eventDynamicRequestCheck);
+ 
+            if (VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0)
+            {
+                GenerateDynamicRequestEvents();
+                //var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(Params.SimulationTimeWindow[0], Params.DynamicRequestThreshold);//initializes dynamic requests
+                //AddEvent(eventDynamicRequestCheck);
+            }
             foreach (var vehicle in VehicleFleet)
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
                 {
@@ -99,6 +106,26 @@ namespace Simulator.Objects.Simulation
             Stats = new SimulationStats(this);//initializes Stats
         }
 
+        public void GenerateDynamicRequestEvents()
+        {
+            List<Stop> excludedStops = new List<Stop>();
+            excludedStops.Add(TransportationNetwork.Depot);
+            for (int hour = (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[0]).TotalHours; hour < (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[1]).TotalHours; hour++)
+            {
+                var hourInSeconds = TimeSpan.FromHours(hour).TotalSeconds;
+                for (int i = 0; i < Params.DynamicRequestsPerHour; i++)
+                {
+                    var maxHourTime = (int)hourInSeconds + (60 * 60)-1;
+                    var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);
+                    var pickupTimeWindow = new int[] {requestTime, maxHourTime};
+                    var customer = CustomerFactory.Instance().CreateRandomCustomer(TransportationNetwork.Stops,
+                        excludedStops, requestTime, pickupTimeWindow); //Generates a random customer
+                    var customerRequestEvent =
+                        EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
+                    this.AddEvent(customerRequestEvent);
+                }
+            }
+        }
         public void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
         {
             if (routingSolutionObject != null)

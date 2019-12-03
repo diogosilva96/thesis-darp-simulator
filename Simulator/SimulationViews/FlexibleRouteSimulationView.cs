@@ -5,6 +5,7 @@ using Google.OrTools.ConstraintSolver;
 using Google.Protobuf.WellKnownTypes;
 using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Objects;
+using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Simulation;
 
@@ -25,7 +26,9 @@ namespace Simulator.SimulationViews
                 ConsoleLogger.Log("2 - No");
                 var allowDropNodes = GetIntInput(1, 2) == 1;
                 //var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
-                var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation.Params);
+                //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation.Params);
+                var dataModel = DataModelFactory.Instance()
+                    .CreateRouteDataModel(TransportationNetwork.Routes.Find(r => r.Id == 9), Simulation.Params);
                 if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);

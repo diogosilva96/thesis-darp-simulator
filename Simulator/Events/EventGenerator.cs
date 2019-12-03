@@ -5,7 +5,9 @@ using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Statistics.Mcmc;
 using Simulator.Objects;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.Simulation_Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
+using Simulator.Objects.Simulation;
 
 
 namespace Simulator.Events

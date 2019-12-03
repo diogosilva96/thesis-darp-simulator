@@ -34,6 +34,8 @@ namespace Simulator.Objects.Simulation
 
         public string LoggerBasePath;
 
+        public int DynamicRequestsPerHour;
+
 
         public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedUpperBoundTimeSeconds,double dynamicRequestThreshold)
         {
@@ -43,6 +45,7 @@ namespace Simulator.Objects.Simulation
             SimulationTimeWindow = new int[2];
             SimulationTimeWindow[0] = 0;
             SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
+            DynamicRequestsPerHour = 5;
             MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
             MaximumAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
             InitParams();
@@ -98,6 +101,7 @@ namespace Simulator.Objects.Simulation
             _consoleLogger.Log("Vehicle average speed: " + VehicleSpeed + " km/h.");
             _consoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
             _consoleLogger.Log("Vehicle number: "+VehicleNumber);
+            _consoleLogger.Log("Dynamic Requests per hour: "+DynamicRequestsPerHour);
             _consoleLogger.Log("Press any key to Start the Simulation...");
             Console.Read();
         }
@@ -117,6 +121,7 @@ namespace Simulator.Objects.Simulation
             settingsLogger.Log(nameof(VehicleNumber)+ " : "+VehicleNumber);
             settingsLogger.Log(nameof(VehicleSpeed) + ": " + VehicleSpeed);
             settingsLogger.Log(nameof(VehicleCapacity) + ": " + VehicleCapacity);
+            settingsLogger.Log(nameof(DynamicRequestsPerHour)+": "+DynamicRequestsPerHour);
         }
     }
 }

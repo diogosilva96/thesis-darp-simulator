@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using Simulator.Objects.Data_Objects;
+using Simulator.Objects.Data_Objects.Routing;
+using Simulator.Objects.Data_Objects.Simulation_Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 using Simulator.Objects.Simulation;
 
@@ -29,7 +31,7 @@ namespace Simulator.Events.Handlers
                    
                     var requestTime = evt.Time + 1;
                     var pickupTimeWindow = new int[] { requestTime + 5 * 60, requestTime + 60 * 60 };
-                    var customer = new Customer(TransportationNetwork.Stops, excludedStops, requestTime, pickupTimeWindow);//Generates a random customer
+                    var customer = CustomerFactory.Instance().CreateRandomCustomer(TransportationNetwork.Stops, excludedStops, requestTime, pickupTimeWindow);//Generates a random customer
                     var nextCustomerRequestEvent =
                         EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
                     Simulation.AddEvent(nextCustomerRequestEvent);

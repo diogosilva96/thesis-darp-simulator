@@ -106,13 +106,12 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             long[] customersRideTime = new long[Customers.Count];
             var customersVehicle = GetCustomersVehicle();
-            for (int i = 0; i < customersVehicle.Length; i++)
+            for (int customerIndex = 0; customerIndex < customersVehicle.Length; customerIndex++)
             {
-                if (customersVehicle[i] != -1)
+                if (customersVehicle[customerIndex] != -1)
                 {
-                    var vehicleIndex = customersVehicle[i];
+                    var vehicleIndex = customersVehicle[customerIndex];
                     var currentTime = StartDepotArrivalTimes[vehicleIndex];
-                    var customerIndex = i;
                     var customer = GetCustomer(customerIndex);
                     var rideTime = currentTime - customer.RealTimeWindow[0];
                     customersRideTime[customerIndex] = rideTime;
@@ -125,7 +124,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         private List<Stop> GetStops() //Gets all stops that will be used by the datamodel
         {
             var stops = new List<Stop>(); //clears stop list
-            var addedCustomers = new List<Customer>();
+
             // initializes the list with the start depots
             if (StartDepots != null)
             {

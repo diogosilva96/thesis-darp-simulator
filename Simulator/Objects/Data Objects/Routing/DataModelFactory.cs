@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Text;
+using Google.OrTools.ConstraintSolver;
+using Google.Protobuf.WellKnownTypes;
 using Simulator.Events;
+using Simulator.Objects.Data_Objects.Simulation_Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 using Simulator.Objects.Simulation;
 
@@ -29,8 +33,16 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
             return _instance;
         }
+
+
+        public override string ToString()
+        {
+            return "["+this.GetType().Name+"] ";
+        }
+
         public RoutingDataModel CreateRandomInitialDataModel(int numberVehicles, int numberCustomers, bool allowDropNodes, SimulationParams simulationParams)
         {
+            Console.WriteLine(this.ToString()+"Creating new random DataModel for "+numberVehicles+ " Vehicles and "+numberCustomers+ " Customers, AllowDropNodes: "+allowDropNodes);
             GenerateNewDataModelLabel:
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
@@ -52,13 +64,16 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
                 var requestTime = 0;
                 var pickupTimeWindow = new int[] { requestTime, simulationParams.SimulationTimeWindow[1] };//the customer pickup time will be between the current request time and the end of simulation time
-                var customer = new Customer(TransportationNetwork.Stops, excludedStops, requestTime, pickupTimeWindow);
+                var customer = CustomerFactory.Instance().CreateRandomCustomer(TransportationNetwork.Stops, excludedStops, requestTime, pickupTimeWindow);//Generates a random customer
                 customersToBeServed.Add(customer);
             }
             var indexManager = new DataModelIndexManager(startDepots, endDepots, dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
             var routingDataModel = new RoutingDataModel(indexManager, simulationParams.MaximumCustomerRideTime, simulationParams.MaximumAllowedUpperBoundTime);
             var solver = new RoutingSolver(routingDataModel, allowDropNodes);
-            var solution = solver.TryGetSolution(null);
+            RoutingSearchParameters searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
+            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.Automatic;
+            searchParameters.SolutionLimit = 1; //until it finds 1 solution
+            var solution = solver.TryGetSolution(searchParameters);
             if (solution == null)
             {
                 goto GenerateNewDataModelLabel;
@@ -157,8 +172,56 @@ namespace Simulator.Objects.Data_Objects.Routing
             return dataModel;
         }
 
-        public RoutingDataModel CreateFixedDataModel(SimulationParams simulationParams) {
-        GenerateNewDataModelLabel:
+        public RoutingDataModel CreateRouteDataModel(Route route,SimulationParams simulationParams)
+        {
+            var routeTrip = route.Trips[0];
+            var demandDataObject = TransportationNetwork.DemandsDataObject;
+            var stops = new List<Stop>(routeTrip.Stops);
+            List<int> demands = new List<int>();
+            foreach (var stop in stops)
+            {
+                var stopDemand = demandDataObject.GetDemand(stop.Id, route.Id, 20);
+                demands.Add(stopDemand); //generates dictionay for each stop with the demand
+            }
+
+            List<Vehicle> dataModelVehicles = new List<Vehicle>();
+            List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
+            List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
+            int numberVehicles = 1;
+            List<long> startDepotsArrivalTime = new List<long>(numberVehicles);
+            //Creates two available vehicles to be able to perform flexible routing for the pdtwdatamodel
+            for (int i = 0; i < numberVehicles; i++)
+            {
+                dataModelVehicles.Add(new Vehicle(simulationParams.VehicleSpeed, simulationParams.VehicleCapacity, true));
+                startDepots.Add(stops[0]);
+                endDepots.Add(stops[stops.Count-1]);
+                startDepotsArrivalTime.Add(0);//startDepotArrival time  = 0 for all the vehicles
+            }
+
+            var customersToBeServed = new List<Customer>();
+
+
+            for (int i = 0; i < 4; i++)
+            {
+                var stopIndex = demands.FindIndex(d => d == demands.Max());
+                var maxDemandStop = stops[stopIndex];
+                stops.RemoveAt(stopIndex);
+                demands.RemoveAt(stopIndex);
+                var pickupTime = RandomNumberGenerator.Random.Next(0, 30*60);
+                var deliveryTime = RandomNumberGenerator.Random.Next(pickupTime + 15 * 60, pickupTime + 45 * 60);
+                var timeWindow = new long[] {pickupTime, deliveryTime};
+                customersToBeServed.Add(new Customer(new Stop[] { maxDemandStop, stops[RandomNumberGenerator.Random.Next(stops.IndexOf(maxDemandStop) + 1, stops.Count)] },timeWindow, 0));
+            }
+            
+            var indexManager = new DataModelIndexManager(startDepots, endDepots, dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
+            var routingDataModel = new RoutingDataModel(indexManager, simulationParams.MaximumCustomerRideTime, simulationParams.MaximumAllowedUpperBoundTime);
+            routingDataModel.PrintTimeMatrix();
+            routingDataModel.PrintPickupDeliveries();
+            routingDataModel.PrintTimeWindows();
+
+            return routingDataModel;
+        }
+        public RoutingDataModel CreateFixedDataModel(SimulationParams simulationParams) { //test and debug
             List<Vehicle> dataModelVehicles = new List<Vehicle>();
             List<Stop> startDepots = new List<Stop>(); //array with the start depot for each vehicle, each index is a vehicle
             List<Stop> endDepots = new List<Stop>();//array with the end depot for each vehicle, each index is a vehicle
@@ -174,10 +237,8 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
 
             var customersToBeServed = new List<Customer>();
-            List<Stop> excludedStops = new List<Stop>();
-            excludedStops.Add(TransportationNetwork.Depot);
 
-                customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[1], TransportationNetwork.Stops[2] },new long[]{500,1200},0));
+            customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[1], TransportationNetwork.Stops[2] },new long[]{500,1200},0));
                 customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[1], TransportationNetwork.Stops[3] }, new long[] { 600,1600 }, 0));
                 //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[5], TransportationNetwork.Stops[4] }, new long[] { 800,3500 }, 0));
                 //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[8], TransportationNetwork.Stops[9] }, new long[] {3000, 5000 }, 0));
@@ -187,13 +248,6 @@ namespace Simulator.Objects.Data_Objects.Routing
             routingDataModel.PrintTimeMatrix();
             routingDataModel.PrintPickupDeliveries();
             routingDataModel.PrintTimeWindows();
-            var solver = new RoutingSolver(routingDataModel, false);
-            var solution = solver.TryGetSolution(null);
-            if (solution == null)
-            {
-                goto GenerateNewDataModelLabel;
-            }
-
             return routingDataModel;
         }
     }
