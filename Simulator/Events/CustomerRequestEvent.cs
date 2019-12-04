@@ -11,15 +11,13 @@ namespace Simulator.Events
     public class CustomerRequestEvent:Event
     {
         public Customer Customer { get; internal set; }
-
-        public RoutingSolutionObject SolutionObject;
+  
 
         public CustomerRequestEvent(int category, int time, Customer customer) : base(category, time)
         {
             Time = time;
             Category = category;
             Customer = customer;
-            SolutionObject = null;
         }
 
 

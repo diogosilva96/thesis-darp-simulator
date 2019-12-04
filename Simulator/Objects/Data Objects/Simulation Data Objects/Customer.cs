@@ -19,6 +19,8 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         public bool IsInVehicle;
 
         public bool AlreadyServed;
+
+        public bool ServicedOnTime => RealTimeWindow[1] <= DesiredTimeWindow[1];
         
         public int RequestTime;//request time in seconds
 

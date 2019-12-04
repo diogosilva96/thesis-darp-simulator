@@ -106,16 +106,6 @@ namespace Simulator.Events
             return events;
         }
 
-        public Event GenerateDynamicRequestCheckEvent(int time,double probabilityThreshold)
-        {
-            Event evt = null;
-            evt = _eventFactory.CreateEvent(5, time, null, null, null);
-            if (evt is DynamicRequestCheckEvent drcEVT)
-            {
-                drcEVT.SetThreshold(probabilityThreshold);
-            }
-            return evt;
-        }
         public Event GenerateCustomerRequestEvent(int time, Customer customer)
         {     
                 Event evt = _eventFactory.CreateEvent(4, time, null, null, customer);

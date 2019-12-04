@@ -79,15 +79,13 @@ namespace Simulator.Objects.Simulation
             toPrintList.Add("-------------------------------------");
             foreach (var vehicle in _simulation.VehicleFleet.FindAll(v => v.FlexibleRouting))
             {
-                if (vehicle.TripIterator != null && vehicle.TripIterator.Current != null)
-                {
-                    vehicle.PrintRoute(vehicle.TripIterator.Current.Stops,
-                        vehicle.TripIterator.Current.ScheduledTimeWindows,
-                        vehicle.TripIterator.Current.ServicedCustomers); //scheduled route
-                    vehicle.PrintRoute(vehicle.TripIterator.Current.VisitedStops,
-                        vehicle.TripIterator.Current.StopsTimeWindows,
-                        vehicle.TripIterator.Current.ServicedCustomers); //simulation route
-                }
+
+                    vehicle.PrintRoute(vehicle.TripIterator?.Current?.Stops,
+                        vehicle.TripIterator?.Current?.ScheduledTimeWindows,
+                        vehicle.TripIterator?.Current?.ServicedCustomers); //scheduled route
+                    vehicle.PrintRoute(vehicle.TripIterator?.Current?.VisitedStops,
+                        vehicle.TripIterator?.Current?.StopsTimeWindows,
+                        vehicle.TripIterator?.Current?.ServicedCustomers); //simulation route
             }
 
             foreach (var route in TransportationNetwork.Routes)
@@ -126,14 +124,13 @@ namespace Simulator.Objects.Simulation
 
                     }
 
-                    var vehicleServiceStatistics = new VehicleServiceStatistics(allRouteVehicles);
+                    var vehicleServiceStatistics = new ServiceStatistics(allRouteVehicles);
                     var overallStatsPrintableList = vehicleServiceStatistics.GetOverallStatsPrintableList();
-                    var perServiceStatsPrintableList = vehicleServiceStatistics.GetPerServiceStatsPrintableList();
-
-                    foreach (var perServiceStats in perServiceStatsPrintableList)
-                    {
-                        toPrintList.Add(perServiceStats);
-                    }
+                    //var perServiceStatsPrintableList = vehicleServiceStatistics.GetPerServiceStatsPrintableList();               
+                    //foreach (var perServiceStats in perServiceStatsPrintableList)
+                    //{
+                    //    toPrintList.Add(perServiceStats);
+                    //}
 
                     foreach (var overallStats in overallStatsPrintableList)
                     {

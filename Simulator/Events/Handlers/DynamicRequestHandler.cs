@@ -38,7 +38,6 @@ namespace Simulator.Events.Handlers
                         _consoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
 
                         solutionObject = solver.GetSolutionObject(solution);
-                        customerRequestEvent.SolutionObject = solutionObject;
                     }
                     else
                     {
