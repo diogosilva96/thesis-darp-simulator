@@ -26,7 +26,7 @@ namespace Simulator.Events.Handlers
                         departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop);
                     var currentStopIndex = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                     departEvent.Vehicle.TripIterator.Current.StopsTimeWindows[currentStopIndex][1] = departTime;
-                    TransportationNetwork.ArcDictionary.TryGetValue(tuple, out var distance);
+                    Simulation.Context.ArcDictionary.TryGetValue(tuple, out var distance);
     
                     //vehicle start transversing to next stop
                     if (departEvent.Vehicle.TripIterator.Current?.StopsIterator != null && !departEvent.Vehicle.TripIterator.Current.StopsIterator.IsDone)
@@ -46,15 +46,15 @@ namespace Simulator.Events.Handlers
                 //INSERTION (APPEND) OF VEHICLE NEXT STOP ARRIVE EVENT
                 if (departEvent.Vehicle.TripIterator.Current != null)
                 {
-                    var currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? TransportationNetwork.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
+                    var currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? Simulation.Context.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
                     if (departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop != null)
                     {
                         var nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy
-                            ? TransportationNetwork.Stops.Find(s =>
+                            ? Simulation.Context.Stops.Find(s =>
                                 s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id)
                             : departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
                         var stopTuple = Tuple.Create(currentStop, nextStop);
-                        TransportationNetwork.ArcDictionary.TryGetValue(stopTuple, out var distance);
+                        Simulation.Context.ArcDictionary.TryGetValue(stopTuple, out var distance);
 
                         if (distance == 0)
                         {

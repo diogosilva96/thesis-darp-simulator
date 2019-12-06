@@ -23,7 +23,7 @@ namespace Simulator.Events.Handlers
                 Simulation.Stats.TotalDynamicRequests++;
                 var newCustomer = customerRequestEvent.Customer;
                 RoutingSolutionObject solutionObject = null;
-                if (Simulation.VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0 && newCustomer != null && Simulation.VehicleFleet.FindAll(v => v.TripIterator.Current != null && !v.TripIterator.Current.IsDone).Count > 0)
+                if (Simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0 && newCustomer != null && Simulation.Context.VehicleFleet.FindAll(v => v.TripIterator.Current != null && !v.TripIterator.Current.IsDone).Count > 0)
                 {
                     var dataModel = DataModelFactory.Instance().CreateCurrentSimulationDataModel(Simulation, newCustomer, evt.Time);
                     var solver = new RoutingSolver(dataModel, false);
@@ -47,7 +47,7 @@ namespace Simulator.Events.Handlers
 
                 if (solutionObject != null)
                 {
-                    var vehicleFlexibleRouting = Simulation.VehicleFleet.FindAll(v => v.FlexibleRouting);
+                    var vehicleFlexibleRouting = Simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting);
                     _consoleLogger.Log("Flexible routing vehicles count: " + vehicleFlexibleRouting.Count);
                     foreach (var vehicle in vehicleFlexibleRouting)
                     {
@@ -99,7 +99,7 @@ namespace Simulator.Events.Handlers
                                 customers.FindAll(c =>
                                     !c.IsInVehicle); //the expected customers for the current vehicle are the ones that are not in that vehicle
 
-                            var vehicleEvents = Simulation.Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && vse.Time >= evt.Time) || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && cve.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
+                            var vehicleEvents = Simulation.Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && e.Time >= evt.Time) || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && e.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
                             _consoleLogger.Log("ALL NEXT VEHICLE " + vehicle.Id + " EVENTS (COUNT:" +
                                                vehicleEvents.Count + ") (TIME >=" + evt.Time + "):");
                             foreach (var vEvent in vehicleEvents)

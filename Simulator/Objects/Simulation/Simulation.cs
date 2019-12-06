@@ -24,9 +24,12 @@ namespace Simulator.Objects.Simulation
 
         public SimulationStats Stats;
 
+        public SimulationContext Context;
+
         public Simulation(SimulationParams @params)
         {
             Params = @params;
+            Context = new SimulationContext();
             InitEventHandlers();
 
         }
@@ -53,7 +56,7 @@ namespace Simulator.Objects.Simulation
             Params.InitParams(); //inits the params that need to be updates (seed and loggerPaths)
             Params.Seed = 1;//debug
             Events.Clear(); //clears all events 
-            VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
+            Context.VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
             
         }
 
@@ -61,13 +64,13 @@ namespace Simulator.Objects.Simulation
         public void InitVehicleEvents()
         {
  
-            if (VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0)
+            if (Context.VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0)
             {
                 GenerateDynamicRequestEvents();
                 //var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(Params.SimulationTimeWindow[0], Params.DynamicRequestThreshold);//initializes dynamic requests
                 //AddEvent(eventDynamicRequestCheck);
             }
-            foreach (var vehicle in VehicleFleet)
+            foreach (var vehicle in Context.VehicleFleet)
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
                 {
                     vehicle.TripIterator.Reset();
@@ -99,7 +102,7 @@ namespace Simulator.Objects.Simulation
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(Params.CurrentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,OperationSuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             ValidationsLogger = new Logger.Logger(validationsRecorder);
             InitVehicleEvents();//initializes vehicle events and dynamic requests events (if there is any event to be initialized)
-            Params.VehicleNumber = VehicleFleet.Count;
+            Params.VehicleNumber = Context.VehicleFleet.Count;
             Params.PrintParams();
             var paramsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"params.txt");
             Params.SaveParams(paramsPath);
@@ -109,7 +112,7 @@ namespace Simulator.Objects.Simulation
         public void GenerateDynamicRequestEvents()
         {
             List<Stop> excludedStops = new List<Stop>();
-            excludedStops.Add(TransportationNetwork.Depot);
+            excludedStops.Add(Context.Depot);
             for (int hour = (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[0]).TotalHours; hour < (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[1]).TotalHours; hour++)
             {
                 var hourInSeconds = TimeSpan.FromHours(hour).TotalSeconds;
@@ -118,7 +121,7 @@ namespace Simulator.Objects.Simulation
                     var maxHourTime = (int)hourInSeconds + (60 * 60)-1;
                     var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);
                     var pickupTimeWindow = new int[] {requestTime, maxHourTime};
-                    var customer = CustomerFactory.Instance().CreateRandomCustomer(TransportationNetwork.Stops,
+                    var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops,
                         excludedStops, requestTime, pickupTimeWindow); //Generates a random customer
                     var customerRequestEvent =
                         EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
@@ -137,14 +140,15 @@ namespace Simulator.Objects.Simulation
                     var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
                     trip.StartTime =
                        time+(int)routingSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time, might need to change!
-                    trip.Route = TransportationNetwork.Routes.Find(r => r.Id == 1000); //flexible route Id
+                    trip.Route = Context.Routes.Find(r => r.Id == 1000); //flexible route Id
                     trip.Stops = routingSolutionObject.GetVehicleStops(solutionVehicle);
                     trip.ExpectedCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
                     trip.ScheduledTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
                     solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
-                    
+                    solutionVehicle.StartStop = Context.Depot;
+                    solutionVehicle.EndStop = Context.Depot;
                    
-                    VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
+                    Context.VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
                 }
             }
             else
@@ -155,7 +159,7 @@ namespace Simulator.Objects.Simulation
 
         public void AssignAllConventionalTripsToVehicles() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
         {
-            foreach (var route in TransportationNetwork.Routes)
+            foreach (var route in Context.Routes)
             {
                 var allRouteTrips = route.Trips.FindAll(t => t.StartTime >= Params.SimulationTimeWindow[0] && t.StartTime < Params.SimulationTimeWindow[1]);
                 if (allRouteTrips.Count > 0)
@@ -172,9 +176,9 @@ namespace Simulator.Objects.Simulation
                             {
                                 trip.Reset();
                             }
-                            var v = new Vehicle(Params.VehicleSpeed, Params.VehicleCapacity,false);
+                            var v = new Vehicle(Params.VehicleSpeed, Params.VehicleCapacity);
                             v.AddTrip(trip); //Adds the service
-                            VehicleFleet.Add(v);
+                            Context.VehicleFleet.Add(v);
                             tripCount++;
                         }
                     }

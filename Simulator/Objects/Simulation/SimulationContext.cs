@@ -1,22 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
-namespace Simulator.Objects.Data_Objects
+namespace Simulator.Objects.Simulation
 {
-    public static class TransportationNetwork//Class that contains all data for the transportation network such as arc distances, all the routes, all the stops, the demands for each stop
+    public class SimulationContext
     {
-        private static readonly TransportationNetworkDataLoader TransportationNetworkDataLoader = new TransportationNetworkDataLoader(true);
-        public static List<Route> Routes => TransportationNetworkDataLoader.Routes;
+        public List<Vehicle> VehicleFleet;
 
-        public static List<Stop> Stops => TransportationNetworkDataLoader.Stops;
-
-        public static Stop Depot => Stops.Find(s => s.Id == 2183);
-
-        public static Dictionary<Tuple<Stop, Stop>, double> ArcDictionary
+        public SimulationContext()
         {
-            get {
+            VehicleFleet = new List<Vehicle>();
+            var transportationNetworkDataLoader = new TransportationNetworkDataLoader(true);
+            Routes = transportationNetworkDataLoader.Routes;
+            Stops = transportationNetworkDataLoader.Stops;
+            DemandsDataObject = transportationNetworkDataLoader.DemandsDataObject;
+        }
+
+
+        public List<Route> Routes;
+
+        public List<Stop> Stops;
+        public Stop Depot => Stops.Find(s => s.Id == 2183);
+
+        public  Dictionary<Tuple<Stop, Stop>, double> ArcDictionary
+        {
+            get
+            {
                 if (_arcDictionary == null)
                 {
                     _arcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
@@ -40,8 +52,7 @@ namespace Simulator.Objects.Data_Objects
             }
         } //Dictionary with tuples of stops and its respective distances
 
-        private static Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
-        public static DemandsDataObject DemandsDataObject => TransportationNetworkDataLoader.DemandsDataObject;
-
+        private  Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
+        public DemandsDataObject DemandsDataObject;
     }
 }

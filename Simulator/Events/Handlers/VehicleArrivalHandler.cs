@@ -64,7 +64,7 @@ namespace Simulator.Events.Handlers
                     int expectedDemand = 0;
                     try
                     {
-                        expectedDemand = !arriveEvent.Vehicle.FlexibleRouting ? TransportationNetwork.DemandsDataObject.GetDemand(arriveEvent.Stop.Id, arriveEvent.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(arriveEvent.Time).Hours) : 0;
+                        expectedDemand = !arriveEvent.Vehicle.FlexibleRouting ? Simulation.Context.DemandsDataObject.GetDemand(arriveEvent.Stop.Id, arriveEvent.Vehicle.TripIterator.Current.Route.Id, TimeSpan.FromSeconds(arriveEvent.Time).Hours) : 0;
 
                     }
                     catch (Exception)

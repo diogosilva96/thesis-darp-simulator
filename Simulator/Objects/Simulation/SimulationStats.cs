@@ -63,9 +63,9 @@ namespace Simulator.Objects.Simulation
                 }
             }
 
-            toPrintList.Add("Total Number of vehicles available: " + _simulation.VehicleFleet.Count + " vehicle(s).");
+            toPrintList.Add("Total Number of vehicles available: " + _simulation.Context.VehicleFleet.Count + " vehicle(s).");
             toPrintList.Add("Total number of vehicles used: " +
-                            _simulation.VehicleFleet.FindAll(v => v.TripIterator != null).Count);
+                            _simulation.Context.VehicleFleet.FindAll(v => v.TripIterator != null).Count);
             toPrintList.Add("Average Dynamic requests per hour: " + TotalDynamicRequests /
                             TimeSpan.FromSeconds(_simulation.Params.TotalSimulationTime).TotalHours);
             toPrintList.Add("Total simulation time: " +
@@ -77,7 +77,7 @@ namespace Simulator.Objects.Simulation
             toPrintList.Add("-------------------------------------");
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
-            foreach (var vehicle in _simulation.VehicleFleet.FindAll(v => v.FlexibleRouting))
+            foreach (var vehicle in _simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting))
             {
 
                     vehicle.PrintRoute(vehicle.TripIterator?.Current?.Stops,
@@ -88,10 +88,10 @@ namespace Simulator.Objects.Simulation
                         vehicle.TripIterator?.Current?.ServicedCustomers); //simulation route
             }
 
-            foreach (var route in TransportationNetwork.Routes)
+            foreach (var route in _simulation.Context.Routes)
             {
 
-                var allRouteVehicles = _simulation.VehicleFleet.FindAll(v =>
+                var allRouteVehicles = _simulation.Context.VehicleFleet.FindAll(v =>
                     v.TripIterator != null && v.TripIterator.Current != null && v.TripIterator.Current.Route == route);
 
                 if (allRouteVehicles.Count > 0)

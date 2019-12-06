@@ -11,22 +11,27 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public IEnumerator<Trip> TripIterator;
 
-        public Vehicle(int speed, int capacity, bool flexibleRouting)
+        public Vehicle(int speed, int capacity)
         {
-            Id = Interlocked.Increment(ref _nextId);
-            Speed = speed;
-            Capacity = capacity;
-            Customers = new List<Customer>(Capacity);
-            ServiceTrips = new List<Trip>();
-            FlexibleRouting = flexibleRouting;
-            IsIdle = true;
+            Initialize(speed,capacity);
+            FlexibleRouting = false;
         }
 
+        public Vehicle(int speed, int capacity,Stop startStop,Stop endStop)
+        {
+            Initialize(speed,capacity);
+            FlexibleRouting = true;
+            StartStop = startStop;
+            EndStop = endStop;
+        }
         public bool FlexibleRouting; // true if the vehicle does flexible routing
         public int Id { get; internal set; }
         public int Speed { get; internal set; } // vehicle speed in km/h
         public int Capacity { get; internal set; }
 
+        public Stop StartStop;
+
+        public Stop EndStop;
         public string SeatsState => "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] ";
 
         public bool IsFull => Customers.Count >= Capacity;
@@ -37,6 +42,15 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public bool IsIdle;
 
+        public void Initialize(int speed, int capacity)
+        {
+            Id = Interlocked.Increment(ref _nextId);
+            Speed = speed;
+            Capacity = capacity;
+            Customers = new List<Customer>(Capacity);
+            ServiceTrips = new List<Trip>();
+            IsIdle = true;
+        }
         public bool AddCustomer(Customer customer)
         {
             if (customer == null) throw new ArgumentNullException();

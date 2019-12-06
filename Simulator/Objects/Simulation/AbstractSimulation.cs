@@ -10,8 +10,6 @@ namespace Simulator.Objects.Simulation
     {
         public List<Event> Events;
 
-        public List<Vehicle> VehicleFleet;
-
         protected EventGenerator EventGenerator;
 
         protected int TotalEventsHandled;
@@ -21,7 +19,6 @@ namespace Simulator.Objects.Simulation
         protected AbstractSimulation()
         {
             Events = new List<Event>();
-            VehicleFleet = new List<Vehicle>();
             EventGenerator = EventGenerator.Instance();
         }
 
@@ -34,8 +31,6 @@ namespace Simulator.Objects.Simulation
         public void Simulate()
         {
 
-                if (VehicleFleet.FindAll(v=>v.ServiceTrips.Count>0).Count>0)
-                {
                     OnSimulationStart();
                     var handler = FirstEventHandler;
                     for (int i = 0; i < Events.Count ;i++)
@@ -44,9 +39,7 @@ namespace Simulator.Objects.Simulation
                         handler.Handle(currentEvent);
                         SortEvents();
                     }
-                    OnSimulationEnd();
-                }
-            
+                    OnSimulationEnd();            
         }
 
         public abstract void OnSimulationEnd();

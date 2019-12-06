@@ -28,7 +28,7 @@ namespace Simulator.SimulationViews
                 //var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
                 //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation.Params);
                 var dataModel = DataModelFactory.Instance()
-                    .CreateRouteDataModel(TransportationNetwork.Routes.Find(r => r.Id == 9), Simulation.Params);
+                    .CreateRouteDataModel(Simulation.Context.Routes.Find(r => r.Id == 9), Simulation);
                 if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);

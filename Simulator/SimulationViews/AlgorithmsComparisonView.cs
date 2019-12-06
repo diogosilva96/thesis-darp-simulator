@@ -33,7 +33,7 @@ namespace Simulator.SimulationViews
                         //bool allowDropNodes = GetIntInput(1, 2) == 1;
                         bool allowDropNodes = false;
                         RandomNumberGenerator.GenerateNewRandomSeed();
-                        var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber, customersNumber, allowDropNodes, Simulation.Params);
+                        var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(vehicleNumber, customersNumber, allowDropNodes, Simulation);
                         var printableList = dataModel.GetSettingsPrintableList();
                         ConsoleLogger.Log(printableList);
                         dataSetLogger.Log(dataModel.GetCSVSettingsMessage());

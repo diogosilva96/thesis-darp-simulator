@@ -170,11 +170,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             routeTimeWindows.Add(joinedTimeWindow);
                         }
                         else
-                        {
-                            if (currentStop != null && currentStop.IsDummy)
-                            {
-                                currentStop = TransportationNetwork.Stops.Find(s => s.Id == currentStop.Id); //finds the non dummy stop
-                            }
+                        {                       
                             routeStops.Add(currentStop); //adds the current stop
                             //timeWindow add       
                             timeWindow = new[] { tw1, tw2 };
