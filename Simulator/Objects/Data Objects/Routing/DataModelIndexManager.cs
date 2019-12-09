@@ -10,25 +10,19 @@ namespace Simulator.Objects.Data_Objects.Routing
         public List<Stop> Stops;
         public readonly List<Vehicle> Vehicles;
         public readonly List<Customer> Customers;
-        public readonly List<Stop> StartDepots;
-        public readonly List<Stop> EndDepots;
+        public List<Stop> StartDepots;
+        public List<Stop> EndDepots;
         public readonly List<long> StartDepotArrivalTimes;
         private Dictionary<Customer, int[]> _customersPickupDeliveriesDictionary;
 
 
-        public DataModelIndexManager(List<Stop> startDepots, List<Stop> endDepots, List<Vehicle> vehicles,
+        public DataModelIndexManager(List<Stop> startDepots,List<Stop> endDepots,List<Vehicle> vehicles,
             List<Customer> customers, List<long> startDepotsArrivalTimes)
         {
-            if (startDepotsArrivalTimes.Count != startDepots.Count || vehicles.Count != startDepots.Count ||
-                startDepots.Count != endDepots.Count)
-            {
-                throw new ArgumentException("Index manager input arguments do not have the same size");
-            }
-
-            StartDepots = startDepots;
-            EndDepots = endDepots;
             Vehicles = vehicles;
             Customers = customers;
+            StartDepots = startDepots;
+            EndDepots = endDepots;
             StartDepotArrivalTimes = startDepotsArrivalTimes;
             _customersPickupDeliveriesDictionary = new Dictionary<Customer, int[]>();
             Stops = GetStops();

@@ -46,13 +46,10 @@ namespace Simulator.Events.Handlers
                 //INSERTION (APPEND) OF VEHICLE NEXT STOP ARRIVE EVENT
                 if (departEvent.Vehicle.TripIterator.Current != null)
                 {
-                    var currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.IsDummy ? Simulation.Context.Stops.Find(s => s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop.Id) : departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;//if it is a dummy stop gets the real object in TransportationNetwork stops list
+                    var currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;
                     if (departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop != null)
                     {
-                        var nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.IsDummy
-                            ? Simulation.Context.Stops.Find(s =>
-                                s.Id == departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop.Id)
-                            : departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
+                        var nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
                         var stopTuple = Tuple.Create(currentStop, nextStop);
                         Simulation.Context.ArcDictionary.TryGetValue(stopTuple, out var distance);
 

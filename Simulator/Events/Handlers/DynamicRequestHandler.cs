@@ -58,14 +58,9 @@ namespace Simulator.Events.Handlers
                         {
                             var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                             var currentStopList =
-                                new List<Stop>(vehicle.TripIterator.Current
-                                    .Stops); //current stoplist for vehicle (before adding the new request)
-                            var currentTimeWindows =
-                                new List<long[]>(vehicle.TripIterator.Current.ScheduledTimeWindows);
-                            var customers =
-                                solutionObject
-                                    .GetVehicleCustomers(
-                                        vehicle); //contains all customers (already inside and not yet in vehicle)
+                                new List<Stop>(vehicle.TripIterator.Current.Stops); //current stoplist for vehicle (before adding the new request)
+                            var currentTimeWindows = new List<long[]>(vehicle.TripIterator.Current.ScheduledTimeWindows);
+                            var customers = solutionObject.GetVehicleCustomers(vehicle); //contains all customers (already inside and not yet in vehicle)
                             List<Stop> visitedStops = new List<Stop>();
                             List<long[]> visitedTimeWindows = new List<long[]>();
                             _consoleLogger.Log("Vehicle " + vehicle.Id + ":");

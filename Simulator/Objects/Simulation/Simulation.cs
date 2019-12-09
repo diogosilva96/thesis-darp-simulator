@@ -116,7 +116,7 @@ namespace Simulator.Objects.Simulation
             for (int hour = (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[0]).TotalHours; hour < (int)TimeSpan.FromSeconds(Params.SimulationTimeWindow[1]).TotalHours; hour++)
             {
                 var hourInSeconds = TimeSpan.FromHours(hour).TotalSeconds;
-                for (int i = 0; i < Params.DynamicRequestsPerHour; i++)
+                for (int i = 0; i < Params.NumberDynamicRequestsPerHour; i++)
                 {
                     var maxHourTime = (int)hourInSeconds + (60 * 60)-1;
                     var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);

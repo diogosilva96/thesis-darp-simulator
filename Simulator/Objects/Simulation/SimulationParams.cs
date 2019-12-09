@@ -14,11 +14,9 @@ namespace Simulator.Objects.Simulation
         }
 
 
-        public int MaximumAllowedUpperBoundTime;
+        public int MaximumAllowedDeliveryDelay;
 
         public int MaximumCustomerRideTime;
-
-        public double DynamicRequestThreshold;
 
         public int[] SimulationTimeWindow;
 
@@ -34,20 +32,22 @@ namespace Simulator.Objects.Simulation
 
         public string LoggerBasePath;
 
-        public int DynamicRequestsPerHour;
+        public int NumberDynamicRequestsPerHour;
+
+        public int NumberInitialRequests;
 
 
-        public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedUpperBoundTimeSeconds,double dynamicRequestThreshold)
+        public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedDeliveryDelaySeconds,int numberDynamicRequestsPerHour, int numberInitialRequests)
         {
             VehicleCapacity = 20;
             VehicleSpeed = 40;
-            DynamicRequestThreshold = dynamicRequestThreshold;
             SimulationTimeWindow = new int[2];
             SimulationTimeWindow[0] = 0;
             SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
-            DynamicRequestsPerHour = 5;
+            NumberInitialRequests = numberInitialRequests;
+            NumberDynamicRequestsPerHour = numberDynamicRequestsPerHour;
             MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
-            MaximumAllowedUpperBoundTime = maxAllowedUpperBoundTimeSeconds;
+            MaximumAllowedDeliveryDelay = maxAllowedDeliveryDelaySeconds;
             InitParams();
         }
 
@@ -88,10 +88,9 @@ namespace Simulator.Objects.Simulation
             _consoleLogger.Log("-------------------------------");
             _consoleLogger.Log("Random Number Generator Seed: " + Seed);
             _consoleLogger.Log("Maximum Allowed UpperBound Time: " +
-                               TimeSpan.FromSeconds(MaximumAllowedUpperBoundTime).TotalMinutes + " minutes");
+                               TimeSpan.FromSeconds(MaximumAllowedDeliveryDelay).TotalMinutes + " minutes");
             _consoleLogger.Log("Maximum Customer ride time: " +
                                TimeSpan.FromSeconds(MaximumCustomerRideTime).TotalMinutes + " minutes");
-            _consoleLogger.Log("Dynamic request check probability threshold: " + DynamicRequestThreshold);
             _consoleLogger.Log("Simulation Start Time: " +
                                TimeSpan.FromSeconds(SimulationTimeWindow[0]).ToString());
             _consoleLogger.Log("Simulation End Time: " +
@@ -101,7 +100,7 @@ namespace Simulator.Objects.Simulation
             _consoleLogger.Log("Vehicle average speed: " + VehicleSpeed + " km/h.");
             _consoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
             _consoleLogger.Log("Vehicle number: "+VehicleNumber);
-            _consoleLogger.Log("Dynamic Requests per hour: "+DynamicRequestsPerHour);
+            _consoleLogger.Log("Dynamic Requests per hour: "+NumberDynamicRequestsPerHour);
             _consoleLogger.Log("Press any key to Start the Simulation...");
             Console.Read();
         }
@@ -113,15 +112,14 @@ namespace Simulator.Objects.Simulation
             IRecorder settingsFileRecorder = new FileRecorder(path);
             var settingsLogger = new Logger.Logger(settingsFileRecorder);
             settingsLogger.Log(nameof(RandomNumberGenerator.Seed) + ": " + RandomNumberGenerator.Seed);
-            settingsLogger.Log(nameof(MaximumAllowedUpperBoundTime) + ": " + MaximumAllowedUpperBoundTime);
+            settingsLogger.Log(nameof(MaximumAllowedDeliveryDelay) + ": " + MaximumAllowedDeliveryDelay);
             settingsLogger.Log(nameof(MaximumCustomerRideTime) + ": " + MaximumCustomerRideTime);
-            settingsLogger.Log(nameof(DynamicRequestThreshold) + ": " + DynamicRequestThreshold);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[0]: " + SimulationTimeWindow[0]);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[1]: " + SimulationTimeWindow[1]);
             settingsLogger.Log(nameof(VehicleNumber)+ " : "+VehicleNumber);
             settingsLogger.Log(nameof(VehicleSpeed) + ": " + VehicleSpeed);
             settingsLogger.Log(nameof(VehicleCapacity) + ": " + VehicleCapacity);
-            settingsLogger.Log(nameof(DynamicRequestsPerHour)+": "+DynamicRequestsPerHour);
+            settingsLogger.Log(nameof(NumberDynamicRequestsPerHour)+": "+NumberDynamicRequestsPerHour);
         }
     }
 }

@@ -20,8 +20,8 @@ namespace Simulator.SimulationViews
                     ConsoleLogger.Log("Please insert the Custom Seed (Current = " + RandomNumberGenerator.Seed + "):");
                     GetIntInput(0, int.MaxValue);
                 }
-                ConsoleLogger.Log("Please insert the Maximum Allowed UpperBound Time (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumAllowedUpperBoundTime).TotalMinutes + " minutes): ");
-                Simulation.Params.MaximumAllowedUpperBoundTime = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
+                ConsoleLogger.Log("Please insert the Maximum Allowed UpperBound Time (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumAllowedDeliveryDelay).TotalMinutes + " minutes): ");
+                Simulation.Params.MaximumAllowedDeliveryDelay = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
                 ConsoleLogger.Log("Please insert the Maximum Customer Ride Time Duration (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumCustomerRideTime).TotalMinutes + " minutes):");
                 Simulation.Params.MaximumCustomerRideTime = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
                 int startTimeHour = 0;
@@ -36,8 +36,10 @@ namespace Simulator.SimulationViews
                 Simulation.Params.VehicleSpeed = GetIntInput(1, 100);
                 ConsoleLogger.Log("Please insert the vehicle capacity (Current = " + Simulation.Params.VehicleCapacity + "):");
                 Simulation.Params.VehicleCapacity = GetIntInput(1, 80);
-                ConsoleLogger.Log("Please insert the Number of dynamic request per hour (Current = " + Simulation.Params.DynamicRequestsPerHour + "):");
-                Simulation.Params.DynamicRequestsPerHour = GetIntInput(1, 100);
+                ConsoleLogger.Log("Please insert the Number of dynamic request per hour (Current = " + Simulation.Params.NumberDynamicRequestsPerHour + "):");
+                Simulation.Params.NumberDynamicRequestsPerHour = GetIntInput(1, 100);
+                ConsoleLogger.Log("Please insert the Number of initial request (Current = " + Simulation.Params.NumberInitialRequests + "):");
+                Simulation.Params.NumberInitialRequests = GetIntInput(1, 100);
         }
 
         public ConfigSimulationParamsView(Objects.Simulation.Simulation simulation) : base(simulation)

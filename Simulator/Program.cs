@@ -73,7 +73,7 @@ namespace Simulator
             //};
             //long[] Demands = { 0, 1, 6, 1, 2, 1, 1 };
 
-            //for (int MaxUpperBound = 0; MaxUpperBound < 30; MaxUpperBound++)
+            //for (int MaximumAllowedDeliveryDelay = 0; MaximumAllowedDeliveryDelay < 30; MaximumAllowedDeliveryDelay++)
             //{
 
 
@@ -116,7 +116,7 @@ namespace Simulator
             //        long index = manager.NodeToIndex(i);
             //        var lowerBound = TimeWindows[i, 0]; //minimum time to be at current index (lower bound for the timeWindow of current Index)
             //        var softUpperBound = TimeWindows[i, 1]; //soft maxUpperBound for the timeWindow at current index
-            //        var upperBound = softUpperBound + MaxUpperBound; //maxUpperBound to be at current index (upperbound for the timeWindow at current index)
+            //        var upperBound = softUpperBound + MaximumAllowedDeliveryDelay; //maxUpperBound to be at current index (upperbound for the timeWindow at current index)
             //                                                         //softupperbound and upperbound are different because the upperbound is usually bigger than the softuppberbound in order to soften the current timeWindows, enabling to generate a solution that accomodates more requests
             //        timeDimension.CumulVar(index).SetRange(lowerBound, upperBound); //sets the maximum upper bound and lower bound limit for the timeWindow at the current index
             //        timeDimension.CumulVar(index).SetMax(upperBound);
@@ -262,7 +262,7 @@ namespace Simulator
             //    }
             //    else
             //    {
-            //        Console.WriteLine("No sol found upperbound:" + MaxUpperBound);
+            //        Console.WriteLine("No sol found upperbound:" + MaximumAllowedDeliveryDelay);
             //    }
             //}
 
@@ -270,7 +270,7 @@ namespace Simulator
             //routingDataModel.Starts = Starts;
             //routingDataModel.Ends = Ends;
             //routingDataModel.Demands = Demands;
-            //routingDataModel.MaxAllowedUpperBoundTime = 30 * 60;
+            //routingDataModel.MaxAllowedDeliveryDelayTime = 30 * 60;
             //routingDataModel.PickupsDeliveries = PickupsDeliveries;
             //routingDataModel.TimeWindows = TimeWindows;
             //routingDataModel.TravelTimes = TimeMatrix;
@@ -282,7 +282,7 @@ namespace Simulator
 
             //var dataStructurer = new AlgorithmDataStructurer();
             //dataStructurer.StructureFile(Path.Combine(@Path.Combine(Environment.CurrentDirectory, @"Logger", @"Algorithms.csv")));
-            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 0.02);
+            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5,15);
             AbstractSimulation sim = new Simulation(simulationParams);
             sim.MainLoop();
             Console.Read();

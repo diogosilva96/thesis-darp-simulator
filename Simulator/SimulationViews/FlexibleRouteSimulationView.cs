@@ -17,18 +17,18 @@ namespace Simulator.SimulationViews
         public override void PrintView()
         {
 
-                ConsoleLogger.Log("Please insert the number of customers to be served: ");
-                var numberCustomers = GetIntInput(1, int.MaxValue);
-                ConsoleLogger.Log("Please insert the number of available vehicles: ");
-                var numberVehicles = GetIntInput(1, numberCustomers);
+                //ConsoleLogger.Log("Please insert the number of customers to be served: ");
+                //var numberCustomers = GetIntInput(1, int.MaxValue);
+                //Simulation.Params.NumberInitialRequests = numberCustomers;
+                //ConsoleLogger.Log("Please insert the number of available vehicles: ");
+                //var numberVehicles = GetIntInput(1, numberCustomers);
                 ConsoleLogger.Log("Allow drop nodes?");
                 ConsoleLogger.Log("1 - Yes");
                 ConsoleLogger.Log("2 - No");
                 var allowDropNodes = GetIntInput(1, 2) == 1;
-                //var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(numberVehicles,numberCustomers,allowDropNodes,Simulation.Params);
-                //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation.Params);
-                var dataModel = DataModelFactory.Instance()
-                    .CreateRouteDataModel(Simulation.Context.Routes.Find(r => r.Id == 9), Simulation);
+                //var dataModel = DataModelFactory.Instance().CreateRandomInitialDataModel(Simulation.Params.VehicleNumber,Simulation.Params.NumberInitialRequests,allowDropNodes,Simulation);
+                //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation);
+                var dataModel = DataModelFactory.Instance().CreateRouteDataModel(Simulation.Context.Routes.Find(r => r.Id == 9), Simulation);
                 if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);

@@ -15,13 +15,15 @@ namespace Simulator.Objects.Data_Objects.Routing
         public RoutingModel RoutingModel;
         public bool DropNodesAllowed;
 
-        public int MaxUpperBound; //the current upper bound limit of the timeWindows for the found solution (in seconds)
+        public int MaximumDeliveryDelayTime; //the current upper bound limit of the timeWindows for the found solution (in seconds)
+
+
 
 
         public RoutingSolver(RoutingDataModel dataModel, bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
-            MaxUpperBound = 0; //default value
+            MaximumDeliveryDelayTime = 0; //default value
             if (dataModel.TimeWindows.GetLength(0) == dataModel.TravelTimes.GetLength(0))
             {
                 DataModel = dataModel;
@@ -99,6 +101,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                     }
                 }
 
+
+                var vehicleCost = 10000;
+                RoutingModel.SetFixedCostOfAllVehicles(vehicleCost);//adds a penalty for using each vehicle
+
                 RoutingModel.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex); //Sets the cost function of the model such that the cost of a segment of a route between node 'from' and 'to' is evaluator(from, to), whatever the route or vehicle performing the route.
 
                 //Adds capacity constraints
@@ -127,7 +133,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     {
                         var lowerBound = DataModel.TimeWindows[i, 0]; //minimum time to be at current index (lower bound for the timeWindow of current Index)
                         var softUpperBound = DataModel.TimeWindows[i, 1]; //soft maxUpperBound for the timeWindow at current index
-                        var upperBound = softUpperBound + MaxUpperBound; //maxUpperBound to be at current index (upperbound for the timeWindow at current index)
+                        var upperBound = softUpperBound + MaximumDeliveryDelayTime; //maxUpperBound to be at current index (upperbound for the timeWindow at current index)
                         //softupperbound and upperbound are different because the upperbound is usually bigger than the softuppberbound in order to soften the current timeWindows, enabling to generate a solution that accomodates more requests
                         timeDimension.CumulVar(index).SetRange(lowerBound, upperBound); //sets the maximum upper bound and lower bound limit for the timeWindow at the current index
                         timeDimension.SetCumulVarSoftUpperBound(index, softUpperBound, 10000); //adds soft upper bound limit which is the requested time window
@@ -251,7 +257,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
             else
             {
-                Console.WriteLine("No sol found upperbound:" + MaxUpperBound);
+                Console.WriteLine("No sol found upperbound:" + MaximumDeliveryDelayTime);
             }
         }
         private RoutingSearchParameters GetDefaultSearchParameters()
@@ -275,9 +281,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 searchParameters = GetDefaultSearchParameters();
             }
             //for loop that tries to find the earliest feasible solution (trying to minimize the maximum upper bound) within a maximum delay delivery time (upper bound), using the current customer requests
-            for (int maxUpperBound = 0; maxUpperBound < DataModel.MaxAllowedUpperBoundTime; maxUpperBound = maxUpperBound + 60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
+            for (int currentMaximumDelayTime = 0; currentMaximumDelayTime < DataModel.MaxAllowedDeliveryDelayTime; currentMaximumDelayTime = currentMaximumDelayTime + 60) //iterates adding 1 minute to maximum allowed timeWindow (60 seconds) if a feasible solution isnt found for the current upperbound
             {
-                MaxUpperBound = maxUpperBound;
+                MaximumDeliveryDelayTime = currentMaximumDelayTime;
                 Init();
                 //Get the solution of the problem
                 try
@@ -365,8 +371,11 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var slack1 = solution.Min(timeDim.SlackVar(index));
                         var slack2 = solution.Max(timeDim.SlackVar(index));
                         var transit = solution.Value(timeDim.TransitVar(index));
-
-                        var arcTransit = DataModel.TravelTimes[index, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
+                        if (nodeIndex > DataModel.TravelTimes.GetLength(0))
+                        {
+                            throw new Exception("Index out of bounds for nodeIndex");
+                        }
+                        var arcTransit = DataModel.TravelTimes[nodeIndex, RoutingIndexManager.IndexToNode(solution.Value(RoutingModel.NextVar(index)))];
                         if (arcTransit != transit)
                         {
                             tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + slack1 : tw2;
@@ -464,7 +473,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("T - Time Windows");
                 Console.WriteLine("L - Load of the vehicle");
-                Console.WriteLine("Maximum Upper Bound limit:" + TimeSpan.FromSeconds(MaxUpperBound).TotalMinutes + " minutes");
+                Console.WriteLine("Maximum Upper Bound limit:" + TimeSpan.FromSeconds(MaximumDeliveryDelayTime).TotalMinutes + " minutes");
                 Console.WriteLine("Maximum Customer Ride Time Duration: "+TimeSpan.FromSeconds(DataModel.MaxCustomerRideTime).TotalMinutes + " minutes");
                 var printableList = GetSolutionPrintableList(solution);
                 foreach (var stringToBePrinted in printableList)

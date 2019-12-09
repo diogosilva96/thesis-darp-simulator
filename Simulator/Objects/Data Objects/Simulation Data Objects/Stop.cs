@@ -13,7 +13,6 @@ namespace Simulator.Objects.Data_Objects
         public double Longitude { get;}
         public bool IsUrban { get; set; }
 
-        public bool IsDummy { get; set; }
 
         public Stop(int id, string code,string name, double lat, double lon)
         {
@@ -23,17 +22,11 @@ namespace Simulator.Objects.Data_Objects
             Latitude = lat;
             Longitude = lon;
             IsUrban = false;
-            IsDummy = false;
         }
 
         public override string ToString()
         {
             string toString = "Stop(" + Id + ")";
-            if (IsDummy)
-            {
-                toString = "Dummy " + toString;
-            }
-
             return toString;
         }
 

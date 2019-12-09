@@ -30,7 +30,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int MaxCustomerRideTime; //maximum time a customer can spend in a vehicle (in seconds)
 
-        public int MaxAllowedUpperBoundTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
+        public int MaxAllowedDeliveryDelayTime; //maximum delay in the timeWindows, to be used by RoutingSolver to find feasible solutions when the current timeWindowUpperBound isnt feasible
 
         public int[] CustomersVehicle; // array that contains each customers vehicle index (for the customers that are already inside a veihcle), each cell has the vehicle index and each array index indicates the customer
 
@@ -71,7 +71,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             Id = Interlocked.Increment(ref nextId);
             IndexManager = indexManger;
-            MaxAllowedUpperBoundTime = maxAllowedUpperBound;
+            MaxAllowedDeliveryDelayTime = maxAllowedUpperBound;
             MaxCustomerRideTime = maxCustomerRideTime;
             Starts = IndexManager.GetVehicleStarts();
             Ends = IndexManager.GetVehicleEnds();
@@ -112,7 +112,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         {
             string splitter = ",";
             string message = Id+splitter+IndexManager.Customers.Count + splitter + IndexManager.Vehicles.Count + splitter +
-                             TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes + splitter + TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes+splitter+RandomNumberGenerator.Seed;
+                             TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes + splitter + TimeSpan.FromSeconds(MaxAllowedDeliveryDelayTime).TotalMinutes+splitter+RandomNumberGenerator.Seed;
             return message;
 
         }
@@ -125,7 +125,7 @@ namespace Simulator.Objects.Data_Objects.Routing
            stringList.Add("Number of vehicles: "+IndexManager.Vehicles.Count);
            stringList.Add("Number of customers: "+IndexManager.Customers.Count);
            stringList.Add("Maximum Customer Ride Time: "+TimeSpan.FromSeconds(MaxCustomerRideTime).TotalMinutes +" minutes");
-           stringList.Add("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(MaxAllowedUpperBoundTime).TotalMinutes + " minutes");
+           stringList.Add("Maximum Allowed Upper Bound Time: "+TimeSpan.FromSeconds(MaxAllowedDeliveryDelayTime).TotalMinutes + " minutes");
            return stringList;
         }
 

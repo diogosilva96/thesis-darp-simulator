@@ -32,6 +32,10 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         public Stop StartStop;
 
         public Stop EndStop;
+
+        public Stop CurrentStop => TripIterator.Current?.StopsIterator.CurrentStop;
+
+        public Stop NextStop => TripIterator.Current?.StopsIterator.NextStop;
         public string SeatsState => "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] ";
 
         public bool IsFull => Customers.Count >= Capacity;
@@ -95,7 +99,6 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
                     if (routeCustomers != null && timeWindows != null)
                     {
-                        //need to check bug
                         var customersEnterAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[0] == stops[i] && stops.Contains(c.PickupDelivery[1]) && i <= stops.IndexOf(c.PickupDelivery[1]) && c.DesiredTimeWindow[0] <= timeWindows[i][1]).Count;
                         var customersLeaveAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[1] == stops[i] && stops.Contains(c.PickupDelivery[0]) && stops.IndexOf(c.PickupDelivery[0]) <= i && timeWindows[i][0] >= c.DesiredTimeWindow[0]).Count;
                         var currentLoad = customersEnterAtCurrentStop - customersLeaveAtCurrentStop;

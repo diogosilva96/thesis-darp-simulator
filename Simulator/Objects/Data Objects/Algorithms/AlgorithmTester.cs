@@ -28,6 +28,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
         public int TotalDistanceTraveledInMeters => SolutionObject != null ? (int) SolutionObject.TotalDistanceInMeters : 0;
 
+        public int TotalStops => SolutionObject != null ? (int)SolutionObject.TotalStops : 0;
+
+        public int TotalDelayTimeInMinutes => SolutionObject != null ? (int)TimeSpan.FromSeconds(SolutionObject.TotalCustomerDelayTime).TotalMinutes : 0;
+
+        public int TotalCustomersDelayed => SolutionObject != null ? (int) SolutionObject.TotalCustomersDelayed : 0;
+
+        public int TotalCustomersEarlier => SolutionObject != null ? (int)SolutionObject.TotalCustomersEarlier : 0;
+
         public int TotalRouteTimesInMinutes => SolutionObject != null ? (int) TimeSpan.FromSeconds(SolutionObject.TotalTimeInSeconds).TotalMinutes : 0;
 
         public int TotalCustomerRideTimesInMinutes => SolutionObject != null ? (int) TimeSpan.FromSeconds(SolutionObject.TotalCustomerRideTimes).TotalMinutes : 0;
@@ -47,7 +55,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 string splitter = ",";
                 int allowDropNodes = AllowDropNodes ? 1 : 0;
                 int feasible = SolutionIsFeasible ? 1 : 0;
-                string message = Name + splitter +allowDropNodes+splitter+ feasible+splitter+SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter + TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter + TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed+splitter+TotalCustomerRideTimesInMinutes+splitter+DataModel.Id;
+                string message = Name + splitter + allowDropNodes + splitter + feasible + splitter +
+                                 SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter +
+                                 Solution.ObjectiveValue() + splitter + MaxUpperBoundInMinutes + splitter +
+                                 TotalServedCustomers + splitter + TotalDistanceTraveledInMeters + splitter +
+                                 TotalRouteTimesInMinutes + splitter + TotalVehiclesUsed + splitter +
+                                 TotalCustomerRideTimesInMinutes + splitter + TotalStops + splitter+TotalDelayTimeInMinutes+splitter+TotalCustomersDelayed+splitter+TotalCustomersEarlier+splitter+DataModel.Id;
                 return message;
             }
 
@@ -72,7 +85,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             if (SolutionIsFeasible) //solution != null (means earliest feasible solution was found)
             {
                 //Saves the important metrics for the earliest feasible solution           
-                MaxUpperBoundInMinutes = (int)TimeSpan.FromSeconds(Solver.MaxUpperBound).TotalMinutes;
+                MaxUpperBoundInMinutes = (int)TimeSpan.FromSeconds(Solver.MaximumDeliveryDelayTime).TotalMinutes;
                 ComputationTimeInSeconds = elapsedSeconds;
                 Solution = solution;
                 Solver.PrintSolution(solution);
@@ -97,7 +110,11 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
                 toPrintList.Add("Number of served requests: " + TotalServedCustomers);
                 toPrintList.Add("Total distance traveled: " + TotalDistanceTraveledInMeters + " meters.");
+                toPrintList.Add("Total delay times: "+ TotalDelayTimeInMinutes+ "  minutes.");
+                toPrintList.Add("Total Stops: "+TotalStops);
                 toPrintList.Add("Total route times: " + TotalRouteTimesInMinutes + " minutes.");
+                toPrintList.Add("Total Customers delivered delayed: "+TotalCustomersDelayed);
+                toPrintList.Add("Total Customers delivered earlier: "+TotalCustomersEarlier);
                 toPrintList.Add("Total Load: " + SolutionObject.TotalLoad);
                 //if (SolutionObject.TotalLoad != SolutionObject.CustomerNumber)
                 //{
