@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Security.Cryptography.X509Certificates;
 using Google.OrTools.ConstraintSolver;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
@@ -15,16 +16,19 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
 
-        public long TotalLoad => GetTotalValue(_routeLoads);
+        public long TotalCustomers => GetTotalValue(_routeLoads);
 
         private readonly RoutingSolver _routingSolver;
 
         private readonly Assignment _solution;
 
+        public Dictionary<string, int> MetricsDictionary;
+
         public long TotalDistanceInMeters => GetTotalValue(_routeDistancesInMeters);
 
         public long TotalTimeInSeconds => GetTotalValue(_routeTimesInSeconds);
 
+        public long ObjectiveValue => _solution.ObjectiveValue();
         public long TotalStops
         {
             get
@@ -49,7 +53,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         private long[] _routeTimesInSeconds;
 
-        public int TotalCustomerRideTimes
+        public int TotalCustomerRideTimesInSeconds
         {
             get
             {
@@ -71,7 +75,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         private Dictionary<Customer,int> _customerDelayTimes;
 
-        public int TotalCustomerDelayTime
+        public int TotalCustomerDelayTimeInSeconds
         {
             get
             {
@@ -155,7 +159,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return _customerNumber;
             }
         }
-         
+
+        public int AvgCustomerRideTime => TotalCustomerRideTimesInSeconds / CustomerNumber;
 
         private int _customerNumber = -1;
 
@@ -166,8 +171,34 @@ namespace Simulator.Objects.Data_Objects.Routing
             _solution = solution;
             ComputeSolutionData(_solution);
             //SolutionToVehicleRouteMetrics(_solution);
+            MetricsDictionary = new Dictionary<string, int>();
+            ComputeAllMetrics();
         }
 
+        public void AddSolutionMetrics(string nameOfMetric,int value)
+        {
+            if (!MetricsDictionary.ContainsKey(nameOfMetric))
+            {
+                MetricsDictionary.Add(nameOfMetric,value);
+            }
+        }
+
+        public void ComputeAllMetrics()
+        {
+            AddSolutionMetrics(nameof(TotalCustomers), (int)TotalCustomers);
+            AddSolutionMetrics(nameof(TotalCustomersEarlier), TotalCustomersEarlier);
+            AddSolutionMetrics(nameof(TotalCustomersDelayed), TotalCustomersDelayed);
+            AddSolutionMetrics(nameof(TotalVehiclesUsed), TotalVehiclesUsed);
+            AddSolutionMetrics(nameof(ObjectiveValue),(int)ObjectiveValue);
+            AddSolutionMetrics(nameof(TotalDistanceInMeters),(int)TotalDistanceInMeters);
+            AddSolutionMetrics(nameof(TotalCustomerDelayTimeInSeconds),TotalCustomerDelayTimeInSeconds);
+            AddSolutionMetrics(nameof(TotalCustomerRideTimesInSeconds),TotalCustomerRideTimesInSeconds);
+            AddSolutionMetrics(nameof(TotalStops),(int)TotalStops);
+            AddSolutionMetrics(nameof(TotalTimeInSeconds),(int)TotalTimeInSeconds);
+            AddSolutionMetrics(nameof(AvgCustomerRideTime),AvgCustomerRideTime);
+
+
+        }
         private void ComputeSolutionData(Assignment solution)
         {
             Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>
@@ -337,9 +368,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 }
 
                 //end of debug
-                _routeDistancesInMeters = routeDistances;//assigns the routeDistance metric
-                _routeTimesInSeconds = routeTimes;//assigns the routeDistance metric
-                _routeLoads = routeLoads;//assigns the routeDistance metric
+                _routeDistancesInMeters = routeDistances;//assigns the routeDistance value
+                _routeTimesInSeconds = routeTimes;//assigns the routeDistance value
+                _routeLoads = routeLoads;//assigns the routeDistance value
                 _customerRideTimes = customerRideTimes;//assigns customerRideTimes
                 _customerDelayTimes = customerDelayTimes;
 

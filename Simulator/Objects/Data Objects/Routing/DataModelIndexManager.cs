@@ -16,13 +16,13 @@ namespace Simulator.Objects.Data_Objects.Routing
         private Dictionary<Customer, int[]> _customersPickupDeliveriesDictionary;
 
 
-        public DataModelIndexManager(List<Stop> startDepots,List<Stop> endDepots,List<Vehicle> vehicles,
+        public DataModelIndexManager(List<Vehicle> vehicles,
             List<Customer> customers, List<long> startDepotsArrivalTimes)
         {
             Vehicles = vehicles;
             Customers = customers;
-            StartDepots = startDepots;
-            EndDepots = endDepots;
+            StartDepots = GetStartDepots();
+            EndDepots = GetEndDepots();
             StartDepotArrivalTimes = startDepotsArrivalTimes;
             _customersPickupDeliveriesDictionary = new Dictionary<Customer, int[]>();
             Stops = GetStops();
@@ -34,6 +34,35 @@ namespace Simulator.Objects.Data_Objects.Routing
             return Customers.FindIndex(c => c == customer);
         }
 
+        private List<Stop> GetStartDepots()
+        {
+            List<Stop> startDepots = new List<Stop>();
+            foreach (var vehicle in Vehicles)
+            {
+                if (vehicle.TripIterator?.Current != null && vehicle.TripIterator?.Current.StopsIterator.CurrentStop != null)
+                {
+                    startDepots.Add(vehicle.TripIterator.Current.StopsIterator.CurrentStop);
+                }
+                else
+                {
+                    startDepots.Add(vehicle.StartStop);
+                }
+
+            }
+
+            return startDepots;
+        }
+        private List<Stop> GetEndDepots()
+        {
+            List<Stop> endDepots = new List<Stop>();
+            foreach (var vehicle in Vehicles)
+            {
+                endDepots.Add(vehicle.EndStop);
+
+            }
+
+            return endDepots;
+        }
         public Customer GetCustomer(int index)
         {
             return Customers[index];

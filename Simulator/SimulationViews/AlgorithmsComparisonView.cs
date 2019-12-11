@@ -18,9 +18,10 @@ namespace Simulator.SimulationViews
 
         public override void PrintView()
         {
-            var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv")), "AlgorithmName, AllowDropNodes, SolutionIsFeasible, SearchTimeLimit, ComputationTime, ObjectiveValue, MaxUpperBoundInMinutes, TotalServedCustomers, TotalDistanceTraveledInMeters, TotalRouteTimesInMinutes, VehiclesNumberUsed, TotalCustomerRideTimesInMinutes,TotalStops,TotalDelayTimeInMinutes,TotalCustomersDelayed,TotalCustomerEarlier, DataModelId"));
+            var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv"))));
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
+            var count = 0;
             for (int customersNumber = 50; customersNumber <= 100; customersNumber = customersNumber + 50)
             {
 
@@ -30,7 +31,7 @@ namespace Simulator.SimulationViews
                 var printableList = dataModel.GetSettingsPrintableList();
                 ConsoleLogger.Log(printableList);
                 dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                for (int searchTime = 20; searchTime <= 20; searchTime = searchTime + 20) //test different same datamodel with different search times
+                for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
                 {
                     AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                     var algorithm = algorithmContainer.SearchAlgorithms[2];
@@ -38,7 +39,14 @@ namespace Simulator.SimulationViews
                     var algorithmsTester = new SearchAlgorithmTester(algorithm, searchTime);
                     algorithmsTester.Test(dataModel, allowDropNodes);
                     ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
+                    if (count == 0)
+                    {
+
+                        //logs base message type style
+                        algorithmsLogger.Log(algorithmsTester.GetCSVMessageStyle());
+                    }
                     algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
+                    count++;
                 }
             }
 
