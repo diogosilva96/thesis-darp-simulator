@@ -98,7 +98,7 @@ namespace Simulator.Objects.Simulation
                 {
 
                     toPrintList.Add(route.ToString());
-                    toPrintList.Add("Number of services:" + allRouteVehicles.Count);
+                    toPrintList.Add("Number of Routes completed:" + allRouteVehicles.Count);
                     foreach (var v in allRouteVehicles)
                     {
                         //For debug purposes---------------------------------------------------------------------------

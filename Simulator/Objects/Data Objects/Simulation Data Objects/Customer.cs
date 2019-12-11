@@ -20,13 +20,11 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public bool AlreadyServed;
 
-        public bool ServicedOnTime => RealTimeWindow[1] <= DesiredTimeWindow[1];
-        
         public int RequestTime;//request time in seconds
 
         public long WaitTime => RealTimeWindow[0] - DesiredTimeWindow[0];
 
-        public long DelayTime => RealTimeWindow[1] - DesiredTimeWindow[1] > 0 ? RealTimeWindow[1] - DesiredTimeWindow[1] : 0;
+        public long DelayTime => RealTimeWindow[1] - DesiredTimeWindow[1];
 
         public Customer(Stop[] pickupDelivery, int requestTime)
         {

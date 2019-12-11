@@ -10,6 +10,7 @@ namespace Simulator.Objects
     {
         private readonly List<Trip> _completedTrips;
 
+        public MetricsContainer MetricsContainer;
 
         public ServiceStatistics(List<Vehicle> routeVehicles)
         {
@@ -21,9 +22,11 @@ namespace Simulator.Objects
                     _completedTrips.Add(vehicle.TripIterator.Current);
                 }
             }
+            MetricsContainer = new MetricsContainer();
+            ComputeOverallMetrics();
         }
 
-        public double AverageRouteDuration
+        public double AverageRouteDurationInSeconds
         {
             get { return _completedTrips.Average(s => s.RouteDuration); }
         }
@@ -53,7 +56,8 @@ namespace Simulator.Objects
             }
         }
 
-        public double AverageCustomerRideTime
+        public double TotalCustomersDelayed => TotalCustomers - TotalCustomerServicedEarlierOrOnTime;
+        public double AverageCustomerRideTimeInSeconds
         {
             get
             {
@@ -68,7 +72,23 @@ namespace Simulator.Objects
             }
         }
 
-        public double AverageCustomerWaitTime
+        public double LongestCustomerRideTimeInSeconds
+        {
+            get
+            {
+
+                try
+                {
+                    return _completedTrips.Max(s => s.ServicedCustomers.Max(c => c.RideTime));
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public double AverageCustomerWaitTimeInSeconds
         {
             get
             {
@@ -83,22 +103,42 @@ namespace Simulator.Objects
             }
         }
 
-        public double AverageCustomerDelayTime
+        public double AverageCustomerDelayTimeInSeconds
         {
             get
             {
-                try
+                long totalDelay = 0;
+                foreach (var trip in _completedTrips)
                 {
-         
-                    return _completedTrips.Average(s => s.ServicedCustomers.Average(c => c.DelayTime));
+                    var delayedCustomers = trip.ServicedCustomers.FindAll(c => c.DelayTime > 0);
+                    foreach (var delayedCustomer in delayedCustomers)
+                    {
+                        totalDelay += delayedCustomer.DelayTime;
+                    }
                 }
-                catch (Exception)
-                {
-                    return 0;
-                }
+
+                return (long)(totalDelay / TotalCustomersDelayed);
             }
         }
-        public double AverageDistanceTraveled
+
+        public double AverageCustomerEarlyTimeInSeconds
+        {
+            get
+            {
+                long totalEarlyTime = 0;
+                foreach (var trip in _completedTrips)
+                {
+                    var earlyCustomers = trip.ServicedCustomers.FindAll(c => c.DelayTime < 0);
+                    foreach (var earlyCustomer in earlyCustomers)
+                    {
+                        totalEarlyTime += earlyCustomer.DelayTime;
+                    }
+                }
+
+                return (long)(totalEarlyTime / TotalCustomerServicedEarlierOrOnTime);
+            }
+        }
+        public double AverageDistanceTraveledInMeters
         {
             get
             {
@@ -113,14 +153,14 @@ namespace Simulator.Objects
             }
         }
 
-        public int TotalCustomersServicedOnTime
+        public int TotalCustomerServicedEarlierOrOnTime
         {
             get
             {
                 var total = 0;
                 foreach (var trip in _completedTrips)
                 {
-                    var numCustomers = trip.ServicedCustomers.FindAll(c => c.ServicedOnTime).Count;
+                    var numCustomers = trip.ServicedCustomers.FindAll(c => c.DelayTime <= 0).Count;
                     total += numCustomers;
                 }
 
@@ -142,7 +182,7 @@ namespace Simulator.Objects
                 return total;
             }
         }
-        public double LongestRouteDuration
+        public double LongestRouteDurationInSeconds
         {
             get
             {
@@ -157,7 +197,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double LongestRouteDistance
+        public double LongestRouteDistanceInMeters
         {
             get
             {
@@ -172,7 +212,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double TotalDistanceTraveled
+        public double TotalDistanceTraveledInMeters
         {
             get
             {
@@ -187,7 +227,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double TotalCustomerWaitTimes
+        public double TotalCustomerWaitTimesInSeconds
         {
             get
             {
@@ -205,7 +245,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double TotalCustomerRideTimes
+        public double TotalCustomerRideTimesInSeconds
         {
             get
             {
@@ -237,36 +277,39 @@ namespace Simulator.Objects
             }
         }
 
-
+        private void ComputeOverallMetrics()
+        {
+            MetricsContainer.AddMetric(nameof(TotalDistanceTraveledInMeters),(int)TotalDistanceTraveledInMeters);
+            MetricsContainer.AddMetric(nameof(TotalCustomers),TotalCustomers);
+            MetricsContainer.AddMetric(nameof(TotalCustomerServicedEarlierOrOnTime),TotalCustomerServicedEarlierOrOnTime);
+            MetricsContainer.AddMetric(nameof(TotalCustomersDelayed), (int)(TotalCustomersDelayed));
+            MetricsContainer.AddMetric(nameof(TotalCustomerWaitTimesInSeconds),(int)TotalCustomerWaitTimesInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds), (int) TotalCustomerRideTimesInSeconds);
+            MetricsContainer.AddMetric(nameof(LongestRouteDurationInSeconds), (int)LongestRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(LongestRouteDistanceInMeters),(int)LongestRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(LongestCustomerRideTimeInSeconds),(int)LongestCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageRouteDurationInSeconds),(int)AverageRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageNumberRequests), (int) AverageNumberRequests);
+            MetricsContainer.AddMetric(nameof(AverageNumberServicedRequests), (int) AverageNumberServicedRequests);
+            MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests), (int) AverageNumberDeniedRequests);
+            MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio), (int) AverageServicedRequestsRatio);
+            MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio), (int) AverageNumberDeniedRequests);
+            MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds),(int)AverageCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), (int) AverageDistanceTraveledInMeters);
+            MetricsContainer.AddMetric(nameof(AverageNumberRequestsPerStop), (int) AverageNumberRequestsPerStop);
+            MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), (int) AverageCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerDelayTimeInSeconds),(int)AverageCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerEarlyTimeInSeconds),(int)AverageCustomerEarlyTimeInSeconds);
+        }
         public List<string> GetOverallStatsPrintableList()
         {
             var toPrintList = new List<string>();
 
             toPrintList.Add("Overall statistics:");
-            toPrintList.Add("Total Distance Traveled: " + TotalDistanceTraveled + " meters.");
-            toPrintList.Add("Total Customers Serviced: "+TotalCustomers);
-            toPrintList.Add("Total Customers Serviced On Time: " + TotalCustomersServicedOnTime);
-            toPrintList.Add("Total Customers Serviced with delay: "+(int)(TotalCustomers-TotalCustomersServicedOnTime));
-            toPrintList.Add("Total Customer Wait Times: "+TimeSpan.FromSeconds(TotalCustomerWaitTimes).TotalMinutes+" minutes");
-            toPrintList.Add("Total Customer Ride Times: "+TimeSpan.FromSeconds(TotalCustomerRideTimes).TotalMinutes+" minutes");
-            toPrintList.Add("Longest route duration: " + TimeSpan.FromSeconds(LongestRouteDuration).TotalMinutes +
-                            " minutes.");
-            toPrintList.Add("Longest route distance: " + LongestRouteDistance + " meters.");
-            toPrintList.Add(" ");
-            toPrintList.Add("Statistics (averages per service):");
-   
-            toPrintList.Add("Average route duration:" + TimeSpan.FromSeconds(AverageRouteDuration).TotalMinutes +
-                            " minutes.");
-            toPrintList.Add("Average number of requests:" + AverageNumberRequests);
-            toPrintList.Add("Average number of serviced requests: " + AverageNumberServicedRequests);
-            toPrintList.Add("Average number of denied requests: " + AverageNumberDeniedRequests);
-            toPrintList.Add("Average Serviced Requests ratio: " + AverageServicedRequestsRatio);
-            toPrintList.Add("Average Denied Requests Ratio: " + AverageDeniedRequestsRatio);
-            toPrintList.Add("Average customer ride time: " + TimeSpan.FromSeconds(AverageCustomerRideTime).TotalMinutes + " minutes.");
-            toPrintList.Add("Average Distance traveled: " + AverageDistanceTraveled + " meters.");
-            toPrintList.Add("Average number of requests per stop:" + AverageNumberRequestsPerStop);
-            toPrintList.Add("Average Customer Wait Time: " + TimeSpan.FromSeconds(AverageCustomerWaitTime).TotalMinutes + " minutes.");
-            toPrintList.Add("Average Customer Delay Time: "+TimeSpan.FromSeconds(AverageCustomerDelayTime).TotalMinutes+ " minutes.");
+            foreach (var metricValue in MetricsContainer.GetMetricsDictionary())
+            {
+             toPrintList.Add(MetricsContainer.MetricToString(metricValue));   
+            }
             return toPrintList;
         }
 
@@ -283,7 +326,7 @@ namespace Simulator.Objects
                 printableList.Add("Total requests: " + trip.TotalRequests);
                 printableList.Add("Serviced requests: " + trip.TotalServicedRequests);
                 printableList.Add("Denied requests: " + trip.TotalDeniedRequests);
-                printableList.Add("Total request served on time: "+trip.ServicedCustomers.FindAll(c=>c.ServicedOnTime).Count);
+                printableList.Add("Total request served on time: "+trip.ServicedCustomers.FindAll(c=>c.DelayTime<=0).Count);
                 try
                 {
                     printableList.Add(

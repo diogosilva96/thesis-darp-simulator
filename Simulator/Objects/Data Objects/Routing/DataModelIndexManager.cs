@@ -153,10 +153,9 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
                 foreach (var startDepot in StartDepots)
                 {
-                    if (!stops.Contains(startDepot))
-                    {
+                    
                         stops.Add(startDepot);
-                    }
+
                 }
             }
 
@@ -165,10 +164,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 //initializes the list with the end depots
                 foreach (var endDepot in EndDepots)
                 {
-                    if (!stops.Contains(endDepot))
-                    {
+       
                         stops.Add(endDepot);
-                    }
+                    
                 }
             }
 

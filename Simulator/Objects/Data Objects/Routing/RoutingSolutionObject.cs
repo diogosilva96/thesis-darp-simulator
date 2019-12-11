@@ -22,7 +22,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         private readonly Assignment _solution;
 
-        public Dictionary<string, int> MetricsDictionary;
+        public MetricsContainer MetricsContainer;
 
         public long TotalDistanceInMeters => GetTotalValue(_routeDistancesInMeters);
 
@@ -75,6 +75,8 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         private Dictionary<Customer,int> _customerDelayTimes;
 
+        private Dictionary<Customer, int> _customerWaitTimes; //only working for static routing atm
+
         public int TotalCustomerDelayTimeInSeconds
         {
             get
@@ -106,6 +108,46 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
+        public int LongestCustomerWaitTimeInSeconds
+        {
+            get
+            {
+                var maxCustomerWaitTime = 0;
+                foreach (var customerWaitTime in _customerWaitTimes)
+                {
+                    maxCustomerWaitTime = Math.Max(maxCustomerWaitTime, customerWaitTime.Value);
+                }
+                return maxCustomerWaitTime;
+            }
+        }
+
+        public int LongestCustomerRideTimeInSeconds
+        {
+            get
+            {
+                var maxCustomerRideTime = 0;
+                foreach (var customerRideTimes in _customerRideTimes)
+                {
+                    maxCustomerRideTime = Math.Max(maxCustomerRideTime, customerRideTimes.Value);
+                }
+
+                return maxCustomerRideTime;
+            }
+        }
+
+        public int LongestCustomerDelayTimeInSeconds
+        {
+            get
+            {
+                var maxCustomerDelay = 0;
+                foreach (var customerDelay in _customerDelayTimes)
+                {
+                    maxCustomerDelay = Math.Max(maxCustomerDelay, customerDelay.Value);
+                }
+
+                return maxCustomerDelay;
+            }
+        }
         public int TotalCustomersDelayed
         {
             get
@@ -160,7 +202,73 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int AvgCustomerRideTime => TotalCustomerRideTimesInSeconds / CustomerNumber;
+        public int AvgCustomerRideTimeInSeconds => (TotalCustomerRideTimesInSeconds / CustomerNumber);
+
+        public int AvgCustomerWaitTimeInSeconds => (TotalCustomersWaitTimeInSeconds / CustomerNumber);
+
+        public int TotalCustomersWaitTimeInSeconds
+        {
+            get
+            {
+                var totalWaitTime = 0;
+                foreach (var customerWaitTime in _customerWaitTimes)
+                {
+
+                    totalWaitTime += customerWaitTime.Value;
+                }
+
+                return totalWaitTime;
+            }
+        }
+        public int AvgCustomerDelayTimeInSeconds
+        {
+            get
+            {
+               
+                var avgCustomerDelayTime = 0;
+                if (TotalCustomersDelayed > 0)
+                {
+                    var totalDelayTimes = 0;
+                    foreach (var customerDelayTime in _customerDelayTimes)
+                    {
+                        if (customerDelayTime.Value > 0)
+                        {
+                            totalDelayTimes += customerDelayTime.Value;
+                        }
+
+                    }
+
+                    avgCustomerDelayTime = totalDelayTimes / TotalCustomersDelayed;
+
+                }
+
+                return (int) avgCustomerDelayTime;
+            }
+        }
+
+        public int AvgCustomerEarlyTimeInSeconds
+        {
+            get
+            {
+              
+                var avgCustomerEarlyTime = 0;
+                if (TotalCustomersDelayed > 0)
+                {
+                    foreach (var customerDelayTime in _customerDelayTimes)
+                    {
+                        var totalEarlyTimes = 0;
+                        if (customerDelayTime.Value <= 0)
+                        {
+                            totalEarlyTimes += customerDelayTime.Value;
+                        }
+
+                        avgCustomerEarlyTime = (int) (Math.Abs(totalEarlyTimes) / TotalCustomersDelayed);
+                    }
+                }
+
+                return avgCustomerEarlyTime;
+            }
+        }
 
         private int _customerNumber = -1;
 
@@ -171,40 +279,40 @@ namespace Simulator.Objects.Data_Objects.Routing
             _solution = solution;
             ComputeSolutionData(_solution);
             //SolutionToVehicleRouteMetrics(_solution);
-            MetricsDictionary = new Dictionary<string, int>();
+            MetricsContainer = new MetricsContainer();
             ComputeAllMetrics();
         }
 
-        public void AddSolutionMetrics(string nameOfMetric,int value)
-        {
-            if (!MetricsDictionary.ContainsKey(nameOfMetric))
-            {
-                MetricsDictionary.Add(nameOfMetric,value);
-            }
-        }
+ 
 
         public void ComputeAllMetrics()
         {
-            AddSolutionMetrics(nameof(TotalCustomers), (int)TotalCustomers);
-            AddSolutionMetrics(nameof(TotalCustomersEarlier), TotalCustomersEarlier);
-            AddSolutionMetrics(nameof(TotalCustomersDelayed), TotalCustomersDelayed);
-            AddSolutionMetrics(nameof(TotalVehiclesUsed), TotalVehiclesUsed);
-            AddSolutionMetrics(nameof(ObjectiveValue),(int)ObjectiveValue);
-            AddSolutionMetrics(nameof(TotalDistanceInMeters),(int)TotalDistanceInMeters);
-            AddSolutionMetrics(nameof(TotalCustomerDelayTimeInSeconds),TotalCustomerDelayTimeInSeconds);
-            AddSolutionMetrics(nameof(TotalCustomerRideTimesInSeconds),TotalCustomerRideTimesInSeconds);
-            AddSolutionMetrics(nameof(TotalStops),(int)TotalStops);
-            AddSolutionMetrics(nameof(TotalTimeInSeconds),(int)TotalTimeInSeconds);
-            AddSolutionMetrics(nameof(AvgCustomerRideTime),AvgCustomerRideTime);
-
+            MetricsContainer.AddMetric(nameof(TotalCustomers), (int)TotalCustomers);
+            MetricsContainer.AddMetric(nameof(TotalCustomersEarlier), TotalCustomersEarlier);
+            MetricsContainer.AddMetric(nameof(TotalCustomersDelayed), TotalCustomersDelayed);
+            MetricsContainer.AddMetric(nameof(TotalVehiclesUsed), TotalVehiclesUsed);
+            MetricsContainer.AddMetric(nameof(ObjectiveValue),(int)ObjectiveValue);
+            MetricsContainer.AddMetric(nameof(LongestCustomerWaitTimeInSeconds),(int)LongestCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(LongestCustomerRideTimeInSeconds),(int)LongestCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(LongestCustomerDelayTimeInSeconds),(int)LongestCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalDistanceInMeters),(int)TotalDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(TotalCustomerDelayTimeInSeconds),TotalCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds),TotalCustomerRideTimesInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalCustomersWaitTimeInSeconds),TotalCustomersWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalStops),(int)TotalStops);
+            MetricsContainer.AddMetric(nameof(TotalTimeInSeconds),(int)TotalTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AvgCustomerRideTimeInSeconds),AvgCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AvgCustomerDelayTimeInSeconds),AvgCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AvgCustomerEarlyTimeInSeconds),AvgCustomerEarlyTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AvgCustomerWaitTimeInSeconds),AvgCustomerWaitTimeInSeconds);
 
         }
         private void ComputeSolutionData(Assignment solution)
         {
-            Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>>
-                vehicleStopCustomerTimeWindowsDictionary = null;
+            Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> vehicleStopCustomerTimeWindowsDictionary = null;
             Dictionary<Customer, int> customerRideTimes = new Dictionary<Customer, int>();
             Dictionary<Customer,int> customerDelayTimes = new Dictionary<Customer, int>();
+            Dictionary<Customer,int> customerWaitTimes = new Dictionary<Customer, int>();
 
             var vehicleNumber = _routingSolver.DataModel.IndexManager.Vehicles.Count;
             //route metrics each index is the vehicle index
@@ -276,6 +384,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             routeTimeWindows.Add(timeWindow); //adds the timewindow to the list
                         }
                         //Check if vehicle serves any customer, if so, adds the ride time for that client for the routing solution
+                      
                         if (capacityDim.TransitVar(index) == -1)
                         {
                             var pickupDelivery = Array.Find(_routingSolver.DataModel.PickupsDeliveries, pd => pd[1] == nodeIndex);
@@ -298,6 +407,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                                     if (!customerRideTimes.ContainsKey(customer))
                                     {
                                         customerRideTimes.Add(customer, (int)customerRideTime);
+                                        //Console.WriteLine(customer.ToString()+"ride time:"+customerRideTime);
                                     }
 
                                     var customerDelayTime = auxiliaryTimeWindows[routeDeliveryIndex][0] - customer.DesiredTimeWindow[1];
@@ -308,7 +418,26 @@ namespace Simulator.Objects.Data_Objects.Routing
                                  
                                 }
                             }
+                        }
+                        if (capacityDim.TransitVar(index) == 1)
+                        {
+                            var customerIndex = Array.FindIndex(_routingSolver.DataModel.PickupsDeliveries, pd => pd[0] == nodeIndex);
+                            if (customerIndex != -1)
+                            {
+                                var customer = _routingSolver.DataModel.IndexManager.GetCustomer(customerIndex);
+                                var waitTime = routeTimeWindows[routeTimeWindows.Count - 1][0] - customer.DesiredTimeWindow[0];
+                                if (!customerWaitTimes.ContainsKey(customer))
+                                {
+                                    customerWaitTimes.Add(customer,(int)waitTime);
+                                    //Console.WriteLine(customer.ToString()+" wait time:"+waitTime);
+                                }
+                                else
+                                {
+                                    throw new Exception("More than one index for this customer");
+                                }
 
+                                
+                            }
                         }
                         index = solution.Value(_routingSolver.RoutingModel.NextVar(index)); //increments the iterator
                         previousStop = currentStop;
@@ -339,42 +468,36 @@ namespace Simulator.Objects.Data_Objects.Routing
                                 routeCustomers.Add(customer);
                             }
                         }
-
-
                     }
-
                     var tuple = Tuple.Create(routeStops, routeCustomers, routeTimeWindows);
-                    vehicleStopCustomerTimeWindowsDictionary.Add(_routingSolver.DataModel.IndexManager.GetVehicle(i), tuple); //adds the vehicle index + tuple with the customer and routestop list
-                    
-                   
+                    vehicleStopCustomerTimeWindowsDictionary.Add(_routingSolver.DataModel.IndexManager.GetVehicle(i), tuple); //adds the vehicle index + tuple with the customer and routeStop list
                 }
                 //debug
-                var allrouteCustomers = new List<Customer>();
+                var allRouteCustomers = new List<Customer>();
                 foreach (var dict in vehicleStopCustomerTimeWindowsDictionary)
                 {
                     foreach (var customer in dict.Value.Item2)
                     {
-                        allrouteCustomers.Add(customer);
+                        allRouteCustomers.Add(customer);
                     }
                 }
-
                 foreach (var customer in allCustomers)
                 {
-                    if (!allrouteCustomers.Contains(customer))
+                    if (!allRouteCustomers.Contains(customer))
                     {
                             Console.Write("Not in vehicle :");
                             customer.PrintPickupDelivery();
                     }
                 }
-
                 //end of debug
                 _routeDistancesInMeters = routeDistances;//assigns the routeDistance value
                 _routeTimesInSeconds = routeTimes;//assigns the routeDistance value
                 _routeLoads = routeLoads;//assigns the routeDistance value
                 _customerRideTimes = customerRideTimes;//assigns customerRideTimes
                 _customerDelayTimes = customerDelayTimes;
+                _customerWaitTimes = customerWaitTimes;
 
-                if (allrouteCustomers.Count != allCustomers.Count && _routingSolver.DropNodesAllowed == false)
+                if (allRouteCustomers.Count != allCustomers.Count && _routingSolver.DropNodesAllowed == false)
                 {
                     //throw new Exception("Routing solution is not serving all the customers");
                 }
