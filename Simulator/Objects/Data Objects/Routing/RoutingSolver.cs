@@ -364,8 +364,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var capacityCumulVar = capacityDim.CumulVar(index);
                         var capacityTransitVar = capacityDim.TransitVar(index);
                         nodeIndex = RoutingIndexManager.IndexToNode(index);
-                        Console.WriteLine("Stop:"+DataModel.IndexManager.GetStop(nodeIndex) +" Demand: "+ DataModel.Demands[DataModel.IndexManager.GetStopIndex(DataModel.IndexManager.GetStop(nodeIndex))]);
-                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") - Slack: (" + solution.Min(timeDim.SlackVar(index)) + "," + solution.Max(timeDim.SlackVar(index)) + ") - Transit: (" + solution.Value(timeDim.TransitVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)) + " Transit:" + solution.Value(capacityDim.TransitVar(index)));
+                        //Console.WriteLine("Stop:"+DataModel.IndexManager.GetStop(nodeIndex) +" Demand: "+ DataModel.Demands[DataModel.IndexManager.GetStopIndex(DataModel.IndexManager.GetStop(nodeIndex))]);
+                        //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") - Slack: (" + solution.Min(timeDim.SlackVar(index)) + "," + solution.Max(timeDim.SlackVar(index)) + ") - Transit: (" + solution.Value(timeDim.TransitVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)) + " Transit:" + solution.Value(capacityDim.TransitVar(index)));
                         var tw1 = solution.Min(timeDim.CumulVar(index));
                         var tw2 = solution.Max(timeDim.CumulVar(index));
                         var slack1 = solution.Min(timeDim.SlackVar(index));
@@ -387,7 +387,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             tw2 = (tw1 == tw2 && slack1 != 0) ? tw1 + transit + slack1:tw2;
                         }
 
-                        Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
+                        //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " TimeWindow ("+tw1+","+tw2+") Transit("+transit+")");
                         double timeToTravel = solution.Value(timeTransitVar)-solution.Value(timeSlackVar);
                         routeSlackTime += solution.Value(timeSlackVar);
                         routeTransitTime += solution.Value(timeTransitVar);

@@ -16,7 +16,7 @@ namespace Simulator.Events.Handlers
                 var arrivalTime = evt.Time;
 
                 //Handle arrival evt
-                if (arriveEvent.Vehicle.TripIterator.Current != null && arriveEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop == arriveEvent.Stop)
+                if (arriveEvent.Vehicle.TripIterator.Current != null && arriveEvent.Vehicle.CurrentStop == arriveEvent.Stop)
                 {
 
                     arriveEvent.Vehicle.IsIdle = true;
@@ -30,8 +30,8 @@ namespace Simulator.Events.Handlers
                     }
 
                     _consoleLogger.Log(arriveEvent.Vehicle.ToString() + "ARRIVED at " + arriveEvent.Stop + " at " + TimeSpan.FromSeconds(arrivalTime) + ".");
-                    arriveEvent.Vehicle.TripIterator.Current.VisitedStops.Add(arriveEvent.Stop); //adds the current stop to the visited stops
-                    arriveEvent.Vehicle.TripIterator.Current.StopsTimeWindows.Add(new long[] { arrivalTime, arrivalTime }); //adds the current time window
+                    arriveEvent.Vehicle.VisitedStops.Add(arriveEvent.Stop); //adds the current stop to the visited stops
+                    arriveEvent.Vehicle.StopsTimeWindows.Add(new long[] { arrivalTime, arrivalTime }); //adds the current time window
 
                     if (arriveEvent.Vehicle.TripIterator.Current.StopsIterator.IsDone && arriveEvent.Vehicle.Customers.Count == 0) //this means that the trip is complete
                     {

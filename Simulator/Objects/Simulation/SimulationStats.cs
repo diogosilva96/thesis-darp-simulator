@@ -80,12 +80,7 @@ namespace Simulator.Objects.Simulation
             foreach (var vehicle in _simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting))
             {
 
-                    vehicle.PrintRoute(vehicle.TripIterator?.Current?.Stops,
-                        vehicle.TripIterator?.Current?.ScheduledTimeWindows,
-                        vehicle.TripIterator?.Current?.ServicedCustomers); //scheduled route
-                    vehicle.PrintRoute(vehicle.TripIterator?.Current?.VisitedStops,
-                        vehicle.TripIterator?.Current?.StopsTimeWindows,
-                        vehicle.TripIterator?.Current?.ServicedCustomers); //simulation route
+                vehicle.PrintRoute();
             }
 
             foreach (var route in _simulation.Context.Routes)

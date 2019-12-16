@@ -37,13 +37,14 @@ namespace Simulator.Objects.Simulation
         public int NumberInitialRequests;
 
 
-        public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedDeliveryDelaySeconds,int numberDynamicRequestsPerHour, int numberInitialRequests)
+        public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedDeliveryDelaySeconds,int numberDynamicRequestsPerHour, int numberInitialRequests,int numberVehicles)
         {
             VehicleCapacity = 20;
             VehicleSpeed = 40;
             SimulationTimeWindow = new int[2];
             SimulationTimeWindow[0] = 0;
             SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
+            VehicleNumber = numberVehicles;
             NumberInitialRequests = numberInitialRequests;
             NumberDynamicRequestsPerHour = numberDynamicRequestsPerHour;
             MaximumCustomerRideTime = maxCustomerRideTimeSeconds;

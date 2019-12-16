@@ -231,8 +231,7 @@ namespace Simulator.Objects
         {
             get
             {
- 
-                    var waitTimes = 0;
+                var waitTimes = 0;
                     foreach (var trip in _completedTrips)
                     {
                         foreach (var customer in trip.ServicedCustomers)
@@ -240,7 +239,6 @@ namespace Simulator.Objects
                             waitTimes += (int)customer.WaitTime;
                         }
                     }
-
                     return waitTimes;
             }
         }
@@ -249,7 +247,6 @@ namespace Simulator.Objects
         {
             get
             {
-
                 var rideTimes = 0;
                 foreach (var trip in _completedTrips)
                 {
@@ -294,9 +291,9 @@ namespace Simulator.Objects
             MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests), (int) AverageNumberDeniedRequests);
             MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio), (int) AverageServicedRequestsRatio);
             MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio), (int) AverageNumberDeniedRequests);
-            MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds),(int)AverageCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), (int) AverageDistanceTraveledInMeters);
             MetricsContainer.AddMetric(nameof(AverageNumberRequestsPerStop), (int) AverageNumberRequestsPerStop);
+            MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds), (int)AverageCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), (int) AverageCustomerWaitTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerDelayTimeInSeconds),(int)AverageCustomerDelayTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerEarlyTimeInSeconds),(int)AverageCustomerEarlyTimeInSeconds);
@@ -305,7 +302,7 @@ namespace Simulator.Objects
         {
             var toPrintList = new List<string>();
 
-            toPrintList.Add("Overall statistics:");
+            toPrintList.Add("Overall statistics for "+_completedTrips.Count+" trips:");
             foreach (var metricValue in MetricsContainer.GetMetricsDictionary())
             {
              toPrintList.Add(MetricsContainer.MetricToString(metricValue));   

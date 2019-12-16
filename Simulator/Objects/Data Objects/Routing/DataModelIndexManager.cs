@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
@@ -7,13 +8,14 @@ namespace Simulator.Objects.Data_Objects.Routing
     public class
         DataModelIndexManager //index manager with the vehicles, stops, depots, and customer data, which enables to convert any of these objects to its index on the different lists to be used by the dataModel and routingSolver
     {
-        public List<Stop> Stops;
-        public readonly List<Vehicle> Vehicles;
-        public readonly List<Customer> Customers;
-        public List<Stop> StartDepots;
-        public List<Stop> EndDepots;
+        public List<Stop> Stops;//Same stop can have multiple indexes, depending on which customer or vehicle it was assigned to
+        public readonly List<Vehicle> Vehicles;//Each vehicle has a unique index
+        public readonly List<Customer> Customers; //Each customer has a unique index
+        public List<Stop> StartDepots;//each index represents the vehicle in that index in the Vehicles list.
+        public List<Stop> EndDepots;//each index represents the vehicle in that index in the Vehicles list.
         public readonly List<long> StartDepotArrivalTimes;
-        private Dictionary<Customer, int[]> _customersPickupDeliveriesDictionary;
+        private Dictionary<Customer, int[]> _customersPickupDeliveriesDictionary; //customerPickupDeliverydict, value => [0] = pickup index, [1] = delivery index
+        private Dictionary<Vehicle,int[]> _vehicleStartEndsDictionary; //vehicleStartEndDictionary, value => [0] = start index [1] = end index
 
 
         public DataModelIndexManager(List<Vehicle> vehicles,
@@ -25,6 +27,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             EndDepots = GetEndDepots();
             StartDepotArrivalTimes = startDepotsArrivalTimes;
             _customersPickupDeliveriesDictionary = new Dictionary<Customer, int[]>();
+            _vehicleStartEndsDictionary = new Dictionary<Vehicle, int[]>();
             Stops = GetStops();
         }
 
@@ -39,9 +42,9 @@ namespace Simulator.Objects.Data_Objects.Routing
             List<Stop> startDepots = new List<Stop>();
             foreach (var vehicle in Vehicles)
             {
-                if (vehicle.TripIterator?.Current != null && vehicle.TripIterator?.Current.StopsIterator.CurrentStop != null)
+                if (vehicle.CurrentStop != null)
                 {
-                    startDepots.Add(vehicle.TripIterator.Current.StopsIterator.CurrentStop);
+                    startDepots.Add(vehicle.CurrentStop);
                 }
                 else
                 {
@@ -68,11 +71,39 @@ namespace Simulator.Objects.Data_Objects.Routing
             return Customers[index];
         }
 
+        public int[] GetVehicleStartEndStopIndices(Vehicle vehicle)
+        {
+            int[] indices = new int[] {-1,-1};
+            if (_vehicleStartEndsDictionary.ContainsKey(vehicle))
+            {
+                _vehicleStartEndsDictionary.TryGetValue(vehicle, out var startEndIndices);
+                if (startEndIndices != null)
+                {
+                    indices = startEndIndices;
+                }
+            }
+
+            return indices;
+        }
         public int GetVehicleIndex(Vehicle vehicle)
         {
             return Vehicles.FindIndex(v => v == vehicle);
         }
 
+        public int[] GetCustomerPickupDeliveryIndices(Customer customer)
+        {
+            int[] pickupDeliveryIndices = new int[]{-1,-1};
+            if (_customersPickupDeliveriesDictionary.ContainsKey(customer))
+            {
+                _customersPickupDeliveriesDictionary.TryGetValue(customer, out var pdIndices);
+                if (pdIndices != null)
+                {
+                    pickupDeliveryIndices = pdIndices;
+                }
+            }
+
+            return pickupDeliveryIndices;
+        }
         public Vehicle GetVehicle(int index)
         {
             if (index >= Vehicles.Count)
@@ -107,13 +138,11 @@ namespace Simulator.Objects.Data_Objects.Routing
         public int[] GetCustomersVehicle()
         {
             int[] customersVehicle = new int[Customers.Count];
-
-            foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            foreach (var customer in Customers)
             {
-                var customer = customerDict.Key;
-                var pickupDelivery = customerDict.Value;
                 var vehicleIndex = -1;
-                if (pickupDelivery[0] == -1) //if the current customer is inside a vehicle
+                var pdIndices = GetCustomerPickupDeliveryIndices(customer);
+                if (pdIndices[0] == -1)//customer is inside a vehicle
                 {
                     vehicleIndex = Vehicles.FindIndex(v => v.Customers.Contains(customer));
                 }
@@ -149,25 +178,21 @@ namespace Simulator.Objects.Data_Objects.Routing
             var stops = new List<Stop>(); //clears stop list
 
             // initializes the list with the start depots
-            if (StartDepots != null)
+            if (StartDepots.Count == EndDepots.Count)
             {
-                foreach (var startDepot in StartDepots)
+                for(int vehicleIndex =0;vehicleIndex<StartDepots.Count;vehicleIndex++)// 
                 {
                     
-                        stops.Add(startDepot);
-
+                    stops.Add(StartDepots[vehicleIndex]);//add current stop index
+                    var startIndex = stops.Count - 1;
+                    stops.Add(EndDepots[vehicleIndex]);//add current end index
+                    var endIndex = stops.Count - 1;
+                    _vehicleStartEndsDictionary.Add(Vehicles[vehicleIndex],new int[]{startIndex,endIndex});
                 }
             }
-
-            if (EndDepots != null)
+            else
             {
-                //initializes the list with the end depots
-                foreach (var endDepot in EndDepots)
-                {
-       
-                        stops.Add(endDepot);
-                    
-                }
+                throw new Exception("StopDepots size != EndDepots size");
             }
 
             foreach (var customer in Customers) //loop to add the pickup and delivery stops for each customer, to the stop list, adds a stop for each customer (even if it is repeated)
@@ -189,33 +214,52 @@ namespace Simulator.Objects.Data_Objects.Routing
             return stops;
         }
 
-        private int[] GetVehiclesDepotArray(List<Stop> depots)
-        {
-            int[] vehicleDepots = null;
-            if (Vehicles != null && Stops != null)
-            {
-                if (Vehicles.Count > 0 && Vehicles.Count == depots.Count)
-                {
-                    vehicleDepots = new int[Vehicles.Count];
-                    foreach (var vehicle in Vehicles)
-                    {
-                        var vehicleIndex = GetVehicleIndex(vehicle);
-                        vehicleDepots[vehicleIndex] = GetStopIndex(depots[vehicleIndex]); //finds the index of the start depot stop in the stop list
-                    }
-                }
-            }
-            return
-                vehicleDepots; //returns vehicle depots, every index of the array represents a vehicle and its content represents the depot stop index
-        }
 
         public int[] GetVehicleStarts()
         {
-            return GetVehiclesDepotArray(StartDepots);
+            int[] vehicleStarts = null;
+            if (Vehicles.Count == _vehicleStartEndsDictionary.Count)//for checking purposes
+            {
+                vehicleStarts = new int[Vehicles.Count];
+                for (int i = 0; i < Vehicles.Count; i++)
+                {
+                    var vehicle = Vehicles[i];
+                    var startIndex = GetVehicleStartEndStopIndices(vehicle)[0]; //gets start index
+                    if (startIndex != -1)// if a valid index was found
+                    {
+                        vehicleStarts[i] = startIndex;
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception("Vehicle number != vehicleStartEnd dictionary size");
+            }
+            return vehicleStarts; //returns vehicle depots, every index of the array represents a vehicle and its content represents the depot stop index
         }
 
         public int[] GetVehicleEnds()
         {
-            return GetVehiclesDepotArray(EndDepots);
+            int[] vehicleEnds = null;
+            if (Vehicles.Count == _vehicleStartEndsDictionary.Count)
+            {
+                vehicleEnds = new int[Vehicles.Count];
+                for (int i = 0; i < Vehicles.Count; i++)
+                {
+                    var vehicle = Vehicles[i];
+                    var endIndex = GetVehicleStartEndStopIndices(vehicle)[1]; //gets end index
+                    if (endIndex != -1)// if a valid index was found
+                    {
+                        vehicleEnds[i] = endIndex;
+                    }
+
+                }
+            }
+            else
+            {
+                throw new Exception("Vehicle number != vehicleStartEnd dictionary size");
+            }
+            return vehicleEnds; //returns vehicle depots, every index of the array represents a vehicle and its content represents the depot stop index
         }
 
         public long[] GetVehicleCapacities()
@@ -251,10 +295,9 @@ namespace Simulator.Objects.Data_Objects.Routing
 
             
             long lowerBoundValue = 0;
-            foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            foreach (var customer in Customers)
             {
-                var pickupDelivery = customerDict.Value;
-                var customer = customerDict.Key;
+                var pickupDelivery = GetCustomerPickupDeliveryIndices(customer);
                 if (pickupDelivery[0] != -1) //if pickupIndex is -1 it means the customer is inside a vehicle
                 {
                     //LOWER BOUND (MINIMUM ARRIVAL VALUE AT A CERTAIN STOP) TIMEWINDOW CALCULATION
@@ -267,8 +310,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                     //because the vehicle must arrive that stop at most, at the greatest min time window value, in order to satisfy all requests
 
                     lowerBoundValue =
-                        Math.Max((long) arrayMinTimeWindow,
-                            (long) customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
+                        Math.Max((long)arrayMinTimeWindow,
+                            (long)customerMinTimeWindow); //the lower bound value is the maximum value between the current timewindow in the array and the current customer timewindow
                     //Console.WriteLine("LowerBound value " + customer.PickupDelivery[0] + " = MAX:" + arrayMinTimeWindow + "," + customerMinTimeWindow + " = " + lowerBoundValue);//debug
                     timeWindows[pickupIndex, 0] =
                         lowerBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
@@ -283,20 +326,24 @@ namespace Simulator.Objects.Data_Objects.Routing
                     timeWindows[deliveryIndex, 1]; //gets curent max timewindow for the delivery stop in minutes
                 //If there are multiple max timewindows for a given stop, the maximum time window will be the minimum between all those values
                 //because the vehicle must arrive that stop at most, at the lowest max time window value, in order to satisfy all the requests
-                var upperBoundValue = Math.Min((long) arrayMaxTimeWindow, (long) customerMaxTimeWindow); //the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
+                var upperBoundValue = Math.Min((long)arrayMaxTimeWindow, (long)customerMaxTimeWindow); //the upper bound Value is the minimum value between the current  timewindow in the array and the current customer timewindow;
                 //Console.WriteLine("UpperBound value " + customer.PickupDelivery[1] + " = Min:" + arrayMaxTimeWindow + "," + customerMaxTimeWindow + " = " + upperBoundValue); //debug
                 timeWindows[deliveryIndex, 1] = upperBoundValue; //Updates the timeWindow matrix with the new lowerBoundValue
             }
-
 
             //depot timewindows initialization
             if (StartDepots != null && timeWindows != null)
             {
                 for (int j = 0; j < StartDepots.Count; j++)
                 {
-
-                    timeWindows[GetStopIndex(StartDepots[j]), 0] = StartDepotArrivalTimes[j];
-                    timeWindows[GetStopIndex(StartDepots[j]), 1] = 24 * 60 * 60; //24 hours in seconds
+                    var currentVehicle = Vehicles[j];
+                    var startIndex = GetVehicleStartEndStopIndices(currentVehicle)[0];//gets vehicle start index
+                    if (startIndex != -1)//if index was found
+                    {
+                        timeWindows[startIndex, 0] = StartDepotArrivalTimes[j]; //assigns min value for depot timeWindow for currentVehicle
+                        timeWindows[startIndex, 1] = 24 * 60 * 60; //assigns max value for depot timeWindow for current Vehicle, 24 hours in seconds
+                        
+                    }
                 }
             }
 
@@ -320,12 +367,11 @@ namespace Simulator.Objects.Data_Objects.Routing
             var customerNumber = Customers.Count;
             int[][] pickupsDeliveries = new int[customerNumber][];
             //Transforms the data from stop the list into index matrix list in order to use it in google Or tools
-            var index = 0;
-            foreach (var customerDict in _customersPickupDeliveriesDictionary)
+            for(int customerIndex = 0; customerIndex<Customers.Count;customerIndex++)
             {
-                var pickupDelivery = customerDict.Value;
-                pickupsDeliveries[index] = pickupDelivery;
-                index++;
+                var customer = Customers[customerIndex];
+                var customerPickupDeliveryIndices = GetCustomerPickupDeliveryIndices(customer);
+                pickupsDeliveries[customerIndex] = customerPickupDeliveryIndices;
             }
             return pickupsDeliveries;
         }
@@ -339,17 +385,16 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
                 demands = new long[stops.Count];
 
-                if (_customersPickupDeliveriesDictionary.Count > 0)
+                if (Customers.Count > 0)
                 {
-                    foreach (var customerDictionary in _customersPickupDeliveriesDictionary)
+                    foreach (var customer in Customers)
                     {
-                        var pickupDelivery = customerDictionary.Value;
+                        var pickupDelivery = GetCustomerPickupDeliveryIndices(customer);
                         if (pickupDelivery[0] != -1)//if customer pickupIndex isnt -1 (-1 happends when a customer is inside avehicle)
                         {
                             var pickupIndex = pickupDelivery[0];//gets the index of the pickup stop
                             demands[pickupIndex] += 1;//adds 1 to the demand of the pickup index 
                         }
-
                         var deliveryIndex = pickupDelivery[1];//gets the index of the delivery stop
                         demands[deliveryIndex] -= 1;//subtracts 1 to the demand of the delivery index
                     }
@@ -357,7 +402,12 @@ namespace Simulator.Objects.Data_Objects.Routing
 
                 foreach (var vehicle in Vehicles)
                 {
-                    demands[GetStopIndex(StartDepots[GetVehicleIndex(vehicle)])] = vehicle.Customers.FindAll(c => c.IsInVehicle).Count; //the demand at the start depot for the current vehicle will be the number of customers inside that vehicle
+                    var startIndex = GetVehicleStartEndStopIndices(vehicle)[0];
+                    
+                    if (startIndex != -1) //if start index was found
+                    {
+                        demands[startIndex] = vehicle.Customers.FindAll(c => c.IsInVehicle).Count; //the demand at the start depot for the current vehicle will be the number of customers inside that vehicle
+                    }
                 }
             }
             return demands;

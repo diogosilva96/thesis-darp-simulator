@@ -15,6 +15,7 @@ using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Events;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
+using Simulator.Objects.Data_Objects.Simulation_Objects;
 using Simulator.Objects.Simulation;
 
 
@@ -24,9 +25,9 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
-
-           SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5,15);
-            AbstractSimulation sim = new Simulation(simulationParams);
+            SimulationContext simulationContext = new SimulationContext();
+            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5,15,20);
+            AbstractSimulation sim = new Simulation(simulationParams,simulationContext);
             sim.MainLoop();
             Console.Read();
 

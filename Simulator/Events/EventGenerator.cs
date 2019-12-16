@@ -83,7 +83,7 @@ namespace Simulator.Events
                 var sample = expectedDemand;
                 int currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
 
-                if (sample > 0 && currentStopIndex < vehicle.TripIterator.Current.StopsIterator.TotalStops - 1 && vehicle.TripIterator.Current.StopsIterator.CurrentStop == stop) // generation of customers at each stop
+                if (sample > 0 && currentStopIndex < vehicle.TripIterator.Current.StopsIterator.TotalStops - 1 && vehicle.CurrentStop == stop) // generation of customers at each stop
                 {
                     var enterTime = time;
                     for (int i = 1; i <= sample; i++)
@@ -118,7 +118,7 @@ namespace Simulator.Events
             Event evt = null;
             if (vehicle.TripIterator.Current != null)
             {
-                var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
+                var stop = vehicle.CurrentStop;
                 evt = _eventFactory.CreateEvent(0,time,vehicle,stop,null);
             }
             return evt;
@@ -134,7 +134,7 @@ namespace Simulator.Events
             {
                 if (vehicle.TripIterator.Current != null)
                 {
-                    var stop = vehicle.TripIterator.Current.StopsIterator.CurrentStop;
+                    var stop = vehicle.CurrentStop;
                     var evtDepart = _eventFactory.CreateEvent(1, time, vehicle, stop, null);
                     return evtDepart;
                 }

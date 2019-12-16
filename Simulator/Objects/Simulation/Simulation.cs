@@ -26,10 +26,10 @@ namespace Simulator.Objects.Simulation
 
         public SimulationContext Context;
 
-        public Simulation(SimulationParams @params)
+        public Simulation(SimulationParams @params, SimulationContext context)
         {
             Params = @params;
-            Context = new SimulationContext();
+            Context = context;
             InitEventHandlers();
 
         }
@@ -61,27 +61,24 @@ namespace Simulator.Objects.Simulation
         }
 
         
-        public void InitVehicleEvents()
+        public void AppendVehicleArriveEvent(Vehicle vehicle)
         {
- 
-            if (Context.VehicleFleet.FindAll(v => v.FlexibleRouting).Count > 0)
-            {
-                GenerateDynamicRequestEvents();
-                //var eventDynamicRequestCheck = EventGenerator.GenerateDynamicRequestCheckEvent(Params.SimulationTimeWindow[0], Params.DynamicRequestThreshold);//initializes dynamic requests
-                //AddEvent(eventDynamicRequestCheck);
-            }
-            foreach (var vehicle in Context.VehicleFleet)
+            
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
                 {
-                    vehicle.TripIterator.Reset();
-                    vehicle.TripIterator.MoveNext();//initializes the serviceIterator
+                    if (vehicle.TripIterator.Current == null)
+                    {
+                        vehicle.TripIterator.Reset();
+                        vehicle.TripIterator.MoveNext(); //initializes the serviceIterator
+                    }
+
                     if (vehicle.TripIterator.Current != null)
                     {
                         var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.TripIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
                         Events.Add(arriveEvt);
                     }
                 }
-            SortEvents();
+                SortEvents();
         }
         public override void MainLoop()
         {
@@ -101,7 +98,10 @@ namespace Simulator.Objects.Simulation
             EventLogger = new Logger.Logger(fileRecorder);
             IRecorder validationsRecorder = new FileRecorder(Path.Combine(Params.CurrentSimulationLoggerPath, @"validations.txt"), "ValidationId,CustomerId,Category,OperationSuccess,VehicleId,RouteId,TripId,ServiceStartTime,StopId,Time");
             ValidationsLogger = new Logger.Logger(validationsRecorder);
-            InitVehicleEvents();//initializes vehicle events and dynamic requests events (if there is any event to be initialized)
+            if (Params.NumberDynamicRequestsPerHour > 0)
+            {
+                AppendDynamicRequestEvents();
+            }
             Params.VehicleNumber = Context.VehicleFleet.Count;
             Params.PrintParams();
             var paramsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"params.txt");
@@ -109,7 +109,7 @@ namespace Simulator.Objects.Simulation
             Stats = new SimulationStats(this);//initializes Stats
         }
 
-        public void GenerateDynamicRequestEvents()
+        public void AppendDynamicRequestEvents()
         {
             List<Stop> excludedStops = new List<Stop>();
             excludedStops.Add(Context.Depot);
@@ -128,6 +128,7 @@ namespace Simulator.Objects.Simulation
                     this.AddEvent(customerRequestEvent);
                 }
             }
+            SortEvents();
         }
         public void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
         {
@@ -137,17 +138,22 @@ namespace Simulator.Objects.Simulation
                 for (int j = 0; j < routingSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
                 {
                     var solutionVehicle = routingSolutionObject.IndexToVehicle(j);
-                    var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
-                    trip.StartTime =
-                       time+(int)routingSolutionObject.GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time, might need to change!
-                    trip.Route = Context.Routes.Find(r => r.Id == 1000); //flexible route Id
-                    trip.Stops = routingSolutionObject.GetVehicleStops(solutionVehicle);
-                    trip.ExpectedCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
-                    trip.ScheduledTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
-                    solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
-                    solutionVehicle.StartStop = Context.Depot;
-                    solutionVehicle.EndStop = Context.Depot;
-                   
+                    var solutionVehicleStops = routingSolutionObject.GetVehicleStops(solutionVehicle);
+                    if (solutionVehicleStops.Count >= 2 && solutionVehicleStops[0] != solutionVehicleStops[1])
+                    {
+                        var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
+                        trip.StartTime =
+                            time + (int) routingSolutionObject
+                                .GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time, might need to change!
+                        trip.Route = Context.Routes.Find(r => r.Id == 1000); //flexible route Id
+                        trip.Stops = solutionVehicleStops;
+                        trip.ExpectedCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
+                        trip.ScheduledTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
+                        solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
+                        solutionVehicle.StartStop = Context.Depot;
+                        solutionVehicle.EndStop = Context.Depot;
+                        AppendVehicleArriveEvent(solutionVehicle);
+                    }
                     Context.VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
                 }
             }

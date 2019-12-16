@@ -19,13 +19,12 @@ namespace Simulator.Events.Handlers
                 evt.AlreadyHandled = true;
                 var departTime = departEvent.Time; //the time the vehicle departed on the previous depart event
                 //DEPART EVENT HANDLE
-                if (departEvent.Vehicle.TripIterator.Current != null && departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop == departEvent.Stop)
+                if (departEvent.Vehicle.TripIterator.Current != null && departEvent.Vehicle.CurrentStop == departEvent.Stop)
                 {
                     _consoleLogger.Log(departEvent.Vehicle.ToString() + "DEPARTED from " + departEvent.Stop + " at " + TimeSpan.FromSeconds(departTime) + ".");
-                    var tuple = Tuple.Create(departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop,
-                        departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop);
+                    var tuple = Tuple.Create(departEvent.Vehicle.CurrentStop, departEvent.Vehicle.NextStop);
                     var currentStopIndex = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
-                    departEvent.Vehicle.TripIterator.Current.StopsTimeWindows[currentStopIndex][1] = departTime;
+                    departEvent.Vehicle.StopsTimeWindows[currentStopIndex][1] = departTime;
                     Simulation.Context.ArcDictionary.TryGetValue(tuple, out var distance);
     
                     //vehicle start transversing to next stop
@@ -36,7 +35,7 @@ namespace Simulator.Events.Handlers
                         departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled =
                             departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled + distance;
                         _consoleLogger.Log(departEvent.Vehicle.ToString() + "started traveling to " +
-                                          departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop + " (Distance: " + Math.Round(distance) + " meters) at " + t + ".");
+                                          departEvent.Vehicle.NextStop + " (Distance: " + Math.Round(distance) + " meters) at " + t + ".");
                     }
                     //end of vehicle transverse to next stop
 
@@ -44,12 +43,12 @@ namespace Simulator.Events.Handlers
                 //END OF DEPART EVENT HANDLE
 
                 //INSERTION (APPEND) OF VEHICLE NEXT STOP ARRIVE EVENT
-                if (departEvent.Vehicle.TripIterator.Current != null)
+                if (departEvent.Vehicle.TripIterator?.Current != null)
                 {
-                    var currentStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentStop;
-                    if (departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop != null)
+                    var currentStop = departEvent.Vehicle.CurrentStop;
+                    if (departEvent.Vehicle.NextStop != null)
                     {
-                        var nextStop = departEvent.Vehicle.TripIterator.Current.StopsIterator.NextStop;
+                        var nextStop = departEvent.Vehicle.NextStop;
                         var stopTuple = Tuple.Create(currentStop, nextStop);
                         Simulation.Context.ArcDictionary.TryGetValue(stopTuple, out var distance);
 

@@ -33,9 +33,6 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public Stop EndStop;
 
-        public Stop CurrentStop => TripIterator.Current?.StopsIterator.CurrentStop;
-
-        public Stop NextStop => TripIterator.Current?.StopsIterator.NextStop;
         public string SeatsState => "[Vehicle " + Id + ", Seats:" + Customers.Count + "/" + Capacity + "] ";
 
         public bool IsFull => Customers.Count >= Capacity;
@@ -46,6 +43,16 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public bool IsIdle;
 
+        public List<Stop> VisitedStops { get; set; }
+
+        public List<long[]> StopsTimeWindows { get; set; }
+
+        public List<Customer> ServedCustomers { get; set; }
+
+        public Stop CurrentStop => TripIterator?.Current?.StopsIterator?.CurrentStop;
+
+        public Stop NextStop => TripIterator?.Current?.StopsIterator?.NextStop;
+
         public void Initialize(int speed, int capacity)
         {
             Id = Interlocked.Increment(ref _nextId);
@@ -53,6 +60,9 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             Capacity = capacity;
             Customers = new List<Customer>(Capacity);
             ServiceTrips = new List<Trip>();
+            VisitedStops = new List<Stop>();
+            ServedCustomers = new List<Customer>();
+            StopsTimeWindows = new List<long[]>();
             IsIdle = true;
         }
         public bool AddCustomer(Customer customer)
@@ -80,52 +90,39 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             return false;
         }
 
-        public void PrintRoute(List<Stop> stops, List<long[]> timeWindows, List<Customer> routeCustomers)//change the place of this function
+        public void PrintRoute() //debug purposes
         {
-            if (stops != null)
+            Console.WriteLine("Route for "+this.ToString());
+            List<Customer> pickupCustomers = new List<Customer>();
+            for (int i= 0;i<VisitedStops.Count;i++)
             {
-
-                Console.WriteLine("Route for Vehicle "+this.Id +" (Total stops: "+stops.Count+"):");
-                var totalEnterVehicle = 0;
-                var totalLeaveVehicle = 0;
-                for (int i = 0; i < stops.Count; i++)
+                var currentStop = VisitedStops[i];
+                var currentTimeWindow = StopsTimeWindows[i];
+                var message = currentStop.ToString() + " T:(" + currentTimeWindow[0] + "," + currentTimeWindow[1] + ") ";
+                var customersToEnter = ServedCustomers.FindAll(c => c.PickupDelivery[0] == currentStop);
+                var customersToLeave = ServedCustomers.FindAll(c => c.PickupDelivery[1] == currentStop);
+                foreach (var customer in customersToEnter)
                 {
-                    var stopTimeWindow = "";
-                    var load = "";
-                    if (timeWindows != null && timeWindows.Count == stops.Count)
-                    {
-                        stopTimeWindow = "T{" + timeWindows[i][0] + ";" + timeWindows[i][1] + "};";
-                    }
-
-                    if (routeCustomers != null && timeWindows != null)
-                    {
-                        var customersEnterAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[0] == stops[i] && stops.Contains(c.PickupDelivery[1]) && i <= stops.IndexOf(c.PickupDelivery[1]) && c.DesiredTimeWindow[0] <= timeWindows[i][1]).Count;
-                        var customersLeaveAtCurrentStop = routeCustomers.FindAll(c => c.PickupDelivery[1] == stops[i] && stops.Contains(c.PickupDelivery[0]) && stops.IndexOf(c.PickupDelivery[0]) <= i && timeWindows[i][0] >= c.DesiredTimeWindow[0]).Count;
-                        var currentLoad = customersEnterAtCurrentStop - customersLeaveAtCurrentStop;
-                        totalEnterVehicle += customersEnterAtCurrentStop;
-                        totalLeaveVehicle += customersLeaveAtCurrentStop;
-                        load = "IN:" + (customersEnterAtCurrentStop) + "; " + "OUT:" + (customersLeaveAtCurrentStop) + "";
-
-
-
-                    }
-                    if (i == stops.Count - 1)
-                    {
-                        Console.WriteLine(stops[i].Id + "(" + stopTimeWindow + load+")");
-                        break;
-                    }
-                    Console.Write(stops[i].Id + "("+stopTimeWindow+ load +") -> ");
-                
-                   
+                    var pickup = customer.PickupDelivery[0];
+                    var pickupTime = customer.DesiredTimeWindow[0];
+                    var pickupTimeIsRespected = currentTimeWindow[0] >= pickupTime;
+                    message += "Enter: " + customer.ToString() + ", Pickup: " + pickup.ToString() + ", PickupTime: " + pickupTime+", PickupTimeIsRespected: "+pickupTimeIsRespected;
+                    pickupCustomers.Add(customer);
                 }
-                Console.WriteLine("Total Customer Enters: "+totalEnterVehicle);
-                Console.WriteLine("Total Customer Leave: " + totalLeaveVehicle);
-                
+
+                foreach (var customer in customersToLeave)
+                {
+                    var delivery = customer.PickupDelivery[1];
+                    var deliveryTime = customer.DesiredTimeWindow[1];
+                    var deliveryTimeIsRespected = customer.DelayTime<=0;
+                    var precedenceConstraint = pickupCustomers.Contains(customer);
+                    message += "Leave: " + customer.ToString() + ", Delivery: " +delivery.ToString() + ", DeliveryTime: " + deliveryTime+", DeliveryTimeIsRespected: "+deliveryTimeIsRespected+", PrecedenceIsRespected: "+precedenceConstraint;
+
+                }
+
+                Console.WriteLine(message);
             }
-            else
-            {
-                throw new Exception("Stops == null");
-            }
+            Console.WriteLine("Total customers: "+ServedCustomers.Count);
         }
 
 
@@ -143,6 +140,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             Customers.Remove(customer);
             if (TripIterator.Current == null) return false;
             TripIterator.Current.ServicedCustomers.Add(customer);
+            ServedCustomers.Add(customer);
             return true;
 
         }

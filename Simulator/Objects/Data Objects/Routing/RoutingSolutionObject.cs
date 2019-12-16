@@ -9,14 +9,12 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects.Data_Objects.Routing
 {
-    public class RoutingSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
+    public class
+        RoutingSolutionObject //pickup delivery with time windows solution object, contains the data to be used in the simulation such as the vehicles, stops and timeWindows
     {
 
         private Dictionary<Vehicle, Tuple<List<Stop>, List<Customer>, List<long[]>>> _vehicleSolutionDictionary;
 
-        public int VehicleNumber => _vehicleSolutionDictionary.Count;
-
-        public long TotalCustomers => GetTotalValue(_routeLoads);
 
         private readonly RoutingSolver _routingSolver;
 
@@ -24,11 +22,46 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public MetricsContainer MetricsContainer;
 
+        private long[] _routeLoads;
+
+        private long[] _routeDistancesInMeters;
+
+        private long[] _routeTimesInSeconds;
+
+        private Dictionary<Customer, int> _customerRideTimes;
+
+        private Dictionary<Customer, int> _customerDelayTimes;
+
+        private Dictionary<Customer, int> _customerWaitTimes; //only working for static routing atm
+
+        //METRICS
+        public int VehicleNumber => _vehicleSolutionDictionary.Count;
+
+        public long TotalCustomers => GetTotalValue(_routeLoads);
+        public int TotalCustomerRideTimesInSeconds
+        {
+            get
+            {
+                var totalRideTime = 0;
+                if (_customerRideTimes != null)
+                {
+
+                    foreach (var customer in _customerRideTimes)
+                    {
+                        totalRideTime += customer.Value;
+                    }
+                }
+
+                return totalRideTime;
+            }
+        }
+
         public long TotalDistanceInMeters => GetTotalValue(_routeDistancesInMeters);
 
         public long TotalTimeInSeconds => GetTotalValue(_routeTimesInSeconds);
 
         public long ObjectiveValue => _solution.ObjectiveValue();
+
         public long TotalStops
         {
             get
@@ -42,40 +75,10 @@ namespace Simulator.Objects.Data_Objects.Routing
                         totalStops += stops.Count; // this means the vehicle doesnt have a unassigned route
                     }
                 }
-               
+
                 return totalStops;
             }
         }
-
-        private long[] _routeLoads; 
-
-        private long[] _routeDistancesInMeters;
-
-        private long[] _routeTimesInSeconds;
-
-        public int TotalCustomerRideTimesInSeconds
-        {
-            get
-            {
-                var totalRideTime = 0;
-                if (_customerRideTimes != null)
-                {
-                    
-                    foreach (var customer in _customerRideTimes)
-                    {
-                        totalRideTime += customer.Value;
-                    }
-                }
-
-                return totalRideTime;
-            }
-        }
-
-        private Dictionary<Customer, int> _customerRideTimes;
-
-        private Dictionary<Customer,int> _customerDelayTimes;
-
-        private Dictionary<Customer, int> _customerWaitTimes; //only working for static routing atm
 
         public int TotalCustomerDelayTimeInSeconds
         {
@@ -117,6 +120,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 {
                     maxCustomerWaitTime = Math.Max(maxCustomerWaitTime, customerWaitTime.Value);
                 }
+
                 return maxCustomerWaitTime;
             }
         }
@@ -148,6 +152,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return maxCustomerDelay;
             }
         }
+
         public int TotalCustomersDelayed
         {
             get
@@ -173,7 +178,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                 foreach (var vehicle in _vehicleSolutionDictionary.Keys)
                 {
                     var vehicleStops = GetVehicleStops(vehicle);
-                    if (vehicleStops.Count > 2 && vehicleStops[0] != vehicleStops[1]) //this check means that the vehicle is used because there are 2 more than 2 stops
+                    if (vehicleStops.Count > 2 && vehicleStops[0] != vehicleStops[1]
+                    ) //this check means that the vehicle is used because there are 2 more than 2 stops
                     {
                         vehiclesUsed++;
                     }
@@ -182,6 +188,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return vehiclesUsed;
             }
         }
+
         public int CustomerNumber
         {
             get
@@ -198,6 +205,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         }
                     }
                 }
+
                 return _customerNumber;
             }
         }
@@ -220,11 +228,12 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return totalWaitTime;
             }
         }
+
         public int AvgCustomerDelayTimeInSeconds
         {
             get
             {
-               
+
                 var avgCustomerDelayTime = 0;
                 if (TotalCustomersDelayed > 0)
                 {
@@ -245,6 +254,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return (int) avgCustomerDelayTime;
             }
         }
+
+        public int LongestRouteDistanceInMeters => (int)_routeDistancesInMeters.Max();
+        public int LongestRouteDurationInSeconds => (int)_routeTimesInSeconds.Max();
 
         public int AvgCustomerEarlyTimeInSeconds
         {
@@ -271,7 +283,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         }
 
         private int _customerNumber = -1;
-
+        // end of metrics
 
         public RoutingSolutionObject(RoutingSolver routingSolver, Assignment solution)
         {
@@ -280,12 +292,12 @@ namespace Simulator.Objects.Data_Objects.Routing
             ComputeSolutionData(_solution);
             //SolutionToVehicleRouteMetrics(_solution);
             MetricsContainer = new MetricsContainer();
-            ComputeAllMetrics();
+            RegisterAllMetrics();
         }
 
  
 
-        public void ComputeAllMetrics()
+        public void RegisterAllMetrics()
         {
             MetricsContainer.AddMetric(nameof(TotalCustomers), (int)TotalCustomers);
             MetricsContainer.AddMetric(nameof(TotalCustomersEarlier), TotalCustomersEarlier);
@@ -295,6 +307,8 @@ namespace Simulator.Objects.Data_Objects.Routing
             MetricsContainer.AddMetric(nameof(LongestCustomerWaitTimeInSeconds),(int)LongestCustomerWaitTimeInSeconds);
             MetricsContainer.AddMetric(nameof(LongestCustomerRideTimeInSeconds),(int)LongestCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(LongestCustomerDelayTimeInSeconds),(int)LongestCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(LongestRouteDistanceInMeters),LongestRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(LongestRouteDurationInSeconds),LongestRouteDurationInSeconds);
             MetricsContainer.AddMetric(nameof(TotalDistanceInMeters),(int)TotalDistanceInMeters);
             MetricsContainer.AddMetric(nameof(TotalCustomerDelayTimeInSeconds),TotalCustomerDelayTimeInSeconds);
             MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds),TotalCustomerRideTimesInSeconds);
@@ -305,6 +319,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             MetricsContainer.AddMetric(nameof(AvgCustomerDelayTimeInSeconds),AvgCustomerDelayTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AvgCustomerEarlyTimeInSeconds),AvgCustomerEarlyTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AvgCustomerWaitTimeInSeconds),AvgCustomerWaitTimeInSeconds);
+            
 
         }
         private void ComputeSolutionData(Assignment solution)
@@ -359,7 +374,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         }
 
                         //calculate routeDistance
-                        double timeToTravel = solution.Value(timeDim.TransitVar(index));
+                        double timeToTravel = _routingSolver.DataModel.TravelTimes[_routingSolver.DataModel.Starts[i], _routingSolver.RoutingIndexManager.IndexToNode(solution.Value(_routingSolver.RoutingModel.NextVar(index)))];
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
                         routeDistance += (long)distance;
                         //add currentLoad
