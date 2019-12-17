@@ -121,8 +121,7 @@ namespace Simulator.Objects.Simulation
                     var maxHourTime = (int)hourInSeconds + (60 * 60)-1;
                     var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);
                     var pickupTimeWindow = new int[] {requestTime, maxHourTime};
-                    var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops,
-                        excludedStops, requestTime, pickupTimeWindow); //Generates a random customer
+                    var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops, excludedStops, requestTime, pickupTimeWindow,true); //Generates a random dynamic customer
                     var customerRequestEvent =
                         EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
                     this.AddEvent(customerRequestEvent);

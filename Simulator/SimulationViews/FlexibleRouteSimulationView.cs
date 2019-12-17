@@ -26,19 +26,19 @@ namespace Simulator.SimulationViews
                 //ConsoleLogger.Log("1 - Yes");
                 //ConsoleLogger.Log("2 - No");
                 //var allowDropNodes = GetIntInput(1, 2) == 1;
-            //var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(Simulation.Params.VehicleNumber,Simulation.Params.NumberInitialRequests,allowDropNodes,Simulation);
-            //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation);
+                //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation);
             var allowDropNodes = false;
             Simulation.Params.VehicleNumber = 3;
             Simulation.Params.NumberInitialRequests = 5;
             Simulation.Params.Seed = 2;
+            //var dataModel = DataModelFactory.Instance().CreateFixedDataModel(Simulation);
             var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, Simulation);
             if (dataModel != null)
                 {
                     RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
-                    dataModel.PrintPickupDeliveries();
+                    dataModel.PrintDataStructures();
                 RoutingSearchParameters searchParameters =
                     operations_research_constraint_solver.DefaultRoutingSearchParameters();
                 searchParameters.FirstSolutionStrategy =

@@ -17,9 +17,6 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int MaximumDeliveryDelayTime; //the current upper bound limit of the timeWindows for the found solution (in seconds)
 
-
-
-
         public RoutingSolver(RoutingDataModel dataModel, bool dropNodesAllowed)
         {
             DropNodesAllowed = dropNodesAllowed;
@@ -165,7 +162,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     }
                     var pickupIndex = vehicleIndex == -1 ? RoutingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][0]):RoutingModel.Start(vehicleIndex);//if is a customer inside a vehicle the pickupIndex will be the vehicle startIndex, otherwise its the customers real pickupIndex
                     var deliveryIndex = RoutingIndexManager.NodeToIndex(DataModel.PickupsDeliveries[i][1]);
-                    var rideTime = DataModel.CustomerRideTimes[i];
+                    var rideTime = DataModel.CustomersRideTimes[i];
                     var directRideTimeDuration = DataModel.TravelTimes[pickupIndex,DataModel.PickupsDeliveries[i][1]];
                     var realRideTimeDuration = rideTime+(timeDimension.CumulVar(deliveryIndex) - timeDimension.CumulVar(pickupIndex));//adds the currentRideTime of the customer and subtracts cumulative value of the ride time of the delivery index with the current one of the current index to get the real ride time duration
                     solver.Add(realRideTimeDuration < directRideTimeDuration + DataModel.MaxCustomerRideTime);//adds the constraint so that the current ride time duration does not exceed the directRideTimeDuration + maxCustomerRideTimeDuration
@@ -396,12 +393,14 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + tw1 + ";" + tw2 + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
+                            //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + tw1 + ";" + tw2 + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
+                            concatenatedString += nodeIndex + "(T:{" + tw1 + ";" + tw2 + "}; L:" + currentLoad + ") --[" + Math.Round(distance) + "m = " + timeToTravel + " secs]--> ";
 
                         }
                         if (DataModel.IndexManager.GetStop(RoutingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
                         {
-                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
+                            //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +tw1 + ";" + tw2 + "}; L:" +currentLoad + ")";
+                            concatenatedString += nodeIndex + "(T:{" +
                                                   tw1 + ";" + tw2 + "}; L:" +
                                                   currentLoad + ")";
                         }
@@ -416,9 +415,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                     currentLoad = solution.Value(capacityDim.CumulVar(index));
                     if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                     {
-                        concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +
-                                              solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" +
-                                              currentLoad + ")";
+                        //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" + currentLoad + ")";
+                        concatenatedString += nodeIndex + "(T:{" + solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" + currentLoad + ")";
                     }
 
                     var startTimeVar = timeDim.CumulVar(RoutingModel.Start(i));

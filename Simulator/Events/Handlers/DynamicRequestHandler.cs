@@ -30,7 +30,7 @@ namespace Simulator.Events.Handlers
                     var solution = solver.TryGetSolution(null);
                     if (solution != null)
                     {
-                        //dataModel.PrintTimeMatrix();
+                        //dataModel.PrintTravelTimes();
                         //dataModel.PrintPickupDeliveries();
                         //dataModel.PrintTimeWindows();
                         solver.PrintSolution(solution);

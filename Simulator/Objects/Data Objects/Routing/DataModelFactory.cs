@@ -75,7 +75,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
                 var requestTime = 0;
                 var pickupTimeWindow = new int[] { requestTime, simulation.Params.SimulationTimeWindow[1] };//the customer pickup time will be between the current request time and the end of simulation time
-                var customer = CustomerFactory.Instance().CreateRandomCustomer(simulation.Context.Stops, excludedStops, requestTime, pickupTimeWindow);//Generates a random customer
+                var customer = CustomerFactory.Instance().CreateRandomCustomer(simulation.Context.Stops, excludedStops, requestTime, pickupTimeWindow,false);//Generates a random static customer
                 customersToBeServed.Add(customer);
             }
             var indexManager = new DataModelIndexManager( dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
@@ -190,16 +190,13 @@ namespace Simulator.Objects.Data_Objects.Routing
 
             var customersToBeServed = new List<Customer>();
 
-            customersToBeServed.Add(new Customer(new Stop[] { simulation.Context.Stops[1], simulation.Context.Stops[2] },new long[]{500,1200},0));
-                customersToBeServed.Add(new Customer(new Stop[] { simulation.Context.Stops[1], simulation.Context.Stops[3] }, new long[] { 600,1600 }, 0));
+            customersToBeServed.Add(new Customer(new Stop[] { simulation.Context.Stops[1], simulation.Context.Stops[2] },new long[]{600,1600},0,false));
+                customersToBeServed.Add(new Customer(new Stop[] { simulation.Context.Stops[5], simulation.Context.Stops[3] }, new long[] { 1000,2000 }, 0,false));
                 //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[5], TransportationNetwork.Stops[4] }, new long[] { 800,3500 }, 0));
                 //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[8], TransportationNetwork.Stops[9] }, new long[] {3000, 5000 }, 0));
 
             var indexManager = new DataModelIndexManager(dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
             var routingDataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
-            routingDataModel.PrintTimeMatrix();
-            routingDataModel.PrintPickupDeliveries();
-            routingDataModel.PrintTimeWindows();
             return routingDataModel;
         }
     }

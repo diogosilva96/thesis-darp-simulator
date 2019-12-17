@@ -57,7 +57,7 @@ namespace Simulator.Objects
                         Console.WriteLine("Alg: " + algData[0] + " ; AllowdropNodes:" + algData[1] + " ; Feasible: " +
                                           algData[2] + " ; SearchTime: " + algData[3] + " ; ComputationTime:" +
                                           algData[4] + " ; ObjValue: " + algData[5] + " ; MaximumAllowedDeliveryDelay: " +
-                                          algData[6] + " ; TotalServedCustomers: " + algData[7] + " ; TotalDistance: " +
+                                          algData[6] + " ; TotalServedRequests: " + algData[7] + " ; TotalDistance: " +
                                           algData[8] + " ; TotalTime: " + algData[9] + " ; VehiclesUsed: " +
                                           algData[10]+ " ; Dataset: "+algData[11]);
                 }
@@ -82,7 +82,7 @@ namespace Simulator.Objects
                 {
                     dataToBeRecorded = dataList;
                     recorder = algorithmStructRecorder;
-                    string firstLine = "AlgId, AllowdropNodes,Feasible,SearchTime,ComputationTime,ObjValue,MaximumAllowedDeliveryDelay,TotalServedCustomers,TotalDistance,TotalTime, VehiclesUsed, DatasetId";
+                    string firstLine = "AlgId, AllowdropNodes,Feasible,SearchTime,ComputationTime,ObjValue,MaximumAllowedDeliveryDelay,TotalServedRequests,TotalDistance,TotalTime, VehiclesUsed, DatasetId";
                     recorder.Record(firstLine);
                 }
                 else

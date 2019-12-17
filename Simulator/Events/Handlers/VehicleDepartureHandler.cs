@@ -32,8 +32,8 @@ namespace Simulator.Events.Handlers
                     {
                         departEvent.Vehicle.IsIdle = false;
                         var t = TimeSpan.FromSeconds(departTime);
-                        departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled =
-                            departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled + distance;
+                        departEvent.Vehicle.TripIterator.Current.TotalDistanceTraveled += distance;
+                        departEvent.Vehicle.TotalDistanceTraveled += distance;
                         _consoleLogger.Log(departEvent.Vehicle.ToString() + "started traveling to " +
                                           departEvent.Vehicle.NextStop + " (Distance: " + Math.Round(distance) + " meters) at " + t + ".");
                     }

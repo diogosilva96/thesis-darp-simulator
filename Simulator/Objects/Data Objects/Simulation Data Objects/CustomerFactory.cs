@@ -27,7 +27,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Data_Objects
             }
             return _instance;
         }
-        public Customer CreateRandomCustomer(List<Stop> stopsList, List<Stop> excludedStops, int requestTime, int[] pickupTimeWindow)
+        public Customer CreateRandomCustomer(List<Stop> stopsList, List<Stop> excludedStops, int requestTime, int[] pickupTimeWindow,bool isDynamic)
         {
             var rng = RandomNumberGenerator.Random;
             var pickup = stopsList[rng.Next(0, stopsList.Count)];
@@ -54,7 +54,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Data_Objects
 
             var pickupDelivery = new[] { pickup, delivery };
             var desiredTimeWindow = new[] { (long)pickupTime, (long)deliveryTime };
-            var customer = new Customer(pickupDelivery,desiredTimeWindow,requestTime);
+            var customer = new Customer(pickupDelivery,desiredTimeWindow,requestTime,isDynamic);
             return customer;
         }
     }

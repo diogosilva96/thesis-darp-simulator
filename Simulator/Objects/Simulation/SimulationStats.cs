@@ -119,7 +119,7 @@ namespace Simulator.Objects.Simulation
 
                     }
 
-                    var vehicleServiceStatistics = new ServiceStatistics(allRouteVehicles);
+                    var vehicleServiceStatistics = new VehicleStatistics(allRouteVehicles);
                     var overallStatsPrintableList = vehicleServiceStatistics.GetOverallStatsPrintableList();
                     //var perServiceStatsPrintableList = vehicleServiceStatistics.GetPerServiceStatsPrintableList();               
                     //foreach (var perServiceStats in perServiceStatsPrintableList)

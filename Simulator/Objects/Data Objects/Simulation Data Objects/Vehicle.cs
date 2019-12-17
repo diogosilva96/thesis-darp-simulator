@@ -43,6 +43,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public bool IsIdle;
 
+        public double TotalDistanceTraveled;
         public List<Stop> VisitedStops { get; set; }
 
         public List<long[]> StopsTimeWindows { get; set; }
@@ -52,6 +53,17 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
         public Stop CurrentStop => TripIterator?.Current?.StopsIterator?.CurrentStop;
 
         public Stop NextStop => TripIterator?.Current?.StopsIterator?.NextStop;
+
+        public int StartTime => StopsTimeWindows != null && StopsTimeWindows.Count >0 ? (int)StopsTimeWindows[0][0]: 0;
+
+        public int EndTime => StopsTimeWindows != null && StopsTimeWindows.Count > 0 ? (int) StopsTimeWindows[StopsTimeWindows.Count - 1][1] : 0;
+
+        public int TotalDeniedRequests => TotalRequests - TotalServedRequests;
+
+        public int TotalServedRequests => ServedCustomers.Count;
+        public int RouteDuration => EndTime - StartTime;
+
+        public int TotalRequests { get; set; }
 
         public void Initialize(int speed, int capacity)
         {
@@ -64,11 +76,14 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
             ServedCustomers = new List<Customer>();
             StopsTimeWindows = new List<long[]>();
             IsIdle = true;
+            TotalDistanceTraveled = 0;
+            TotalRequests = 0;
         }
         public bool AddCustomer(Customer customer)
         {
+            TotalRequests++;
             if (customer == null) throw new ArgumentNullException();
-
+            
             if (TripIterator.Current != null) TripIterator.Current.TotalRequests++;
             if (IsFull) return false;
             if (Customers.Contains(customer)) return false;

@@ -26,18 +26,23 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public long DelayTime => RealTimeWindow[1] - DesiredTimeWindow[1];
 
+        public bool IsDynamic;
+
         public Customer(Stop[] pickupDelivery, int requestTime)
         {
             PickupDelivery = pickupDelivery;
             RequestTime = requestTime;
+            IsDynamic = false;
             Init();
          
         }
 
 
-        public Customer(Stop[] pickupDelivery, long[] desiredTimeWindow, int requestTime)
+        public Customer(Stop[] pickupDelivery, long[] desiredTimeWindow, int requestTime, bool isDynamic)
         {
+            RequestTime = requestTime;
             PickupDelivery = pickupDelivery;
+            IsDynamic = isDynamic;
             DesiredTimeWindow = desiredTimeWindow;
             Init();
         }

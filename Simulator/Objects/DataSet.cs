@@ -127,7 +127,7 @@ namespace Simulator.Objects
 
                 var pickupDelivery = new Stop[] {Stops[pickupIndex], Stops[deliveryIndex]};
                 var timeWindows = new long[] {TimeWindows[pickupIndex, 0], TimeWindows[deliveryIndex, 1]};
-                var customer = new Customer(pickupDelivery, timeWindows, 0);
+                var customer = new Customer(pickupDelivery, timeWindows, 0,false);
                 Customers.Add(customer);
             }
         }

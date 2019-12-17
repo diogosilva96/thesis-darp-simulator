@@ -18,8 +18,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         private Dictionary<Vehicle,int[]> _vehicleStartEndsDictionary; //vehicleStartEndDictionary, value => [0] = start index [1] = end index
 
 
-        public DataModelIndexManager(List<Vehicle> vehicles,
-            List<Customer> customers, List<long> startDepotsArrivalTimes)
+        public DataModelIndexManager(List<Vehicle> vehicles, List<Customer> customers, List<long> startDepotsArrivalTimes)
         {
             Vehicles = vehicles;
             Customers = customers;

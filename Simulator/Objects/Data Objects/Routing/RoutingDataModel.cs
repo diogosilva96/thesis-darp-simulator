@@ -34,7 +34,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int[] CustomersVehicle; // array that contains each customers vehicle index (for the customers that are already inside a veihcle), each cell has the vehicle index and each array index indicates the customer
 
-        public long[] CustomerRideTimes; //matrix that contains the customer ride times, for the already in vehicle customers
+        public long[] CustomersRideTimes; //matrix that contains the customer ride times, for the already in vehicle customers
         public bool ForceCumulToZero
         {
             get
@@ -81,7 +81,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             TimeWindows = IndexManager.GetTimeWindows();
             Demands = IndexManager.GetDemands();
             CustomersVehicle = IndexManager.GetCustomersVehicle();
-            CustomerRideTimes = IndexManager.GetCustomersRideTime();
+            CustomersRideTimes = IndexManager.GetCustomersRideTime();
         }
 
         public override string ToString()
@@ -89,7 +89,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             return "[" + GetType().Name + "] ";
         }
 
-        public void PrintTimeMatrix()
+        public void PrintTravelTimes()
         {
 
             Console.WriteLine(ToString() + "TravelTimes:");
@@ -131,41 +131,96 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public void PrintPickupDeliveries()
         {
-            Console.WriteLine(this.ToString() + "Pickups and Deliveries with Time Windows for the expected Customers(total: " + IndexManager.Customers.Count + "):");
-            foreach (var customer in IndexManager.Customers)
+            Console.WriteLine(this.ToString()+ " PickupDeliveries: ");
+
+            for (int i = 0; i < PickupsDeliveries.GetLength(0);i++)
             {
-                if (!customer.IsInVehicle)
-                {
-                    customer.PrintPickupDelivery();
-                }
-                else
-                {
-                    var vehicle = IndexManager.Vehicles.Find(v => v.Customers.Contains(customer));
-                    Console.Write("Already in vehicle "+vehicle.Id+ " - ");
-                    customer.PrintPickupDelivery();
-                }
+                Console.WriteLine(i +" - ("+PickupsDeliveries[i][0]+", "+PickupsDeliveries[i][1]+")");
             }
-           
-            Console.WriteLine("---------------------------------------------------------------");
         }
 
+        public void PrintDemands()
+        {
+            Console.WriteLine(this.ToString() + "Demands: ");
+            for (int i = 0; i < Demands.GetLength(0); i++)
+            {
+                Console.WriteLine(+i+" - "+Demands[i]);
+            }
 
+        }
+
+        public void PrintDataStructures()
+        {
+            PrintStarts();
+            PrintEnds();
+            PrintVehicleCapacities();
+            PrintPickupDeliveries();
+            PrintTravelTimes();
+            PrintTimeWindows();
+            PrintDemands();
+            PrintCustomersRideTimes();
+            PrintCustomersVehicle();
+        }
+
+        public void PrintCustomersVehicle()
+        {
+            Console.WriteLine(this.ToString()+"CustomersVehicle: ");
+            for (int i = 0; i < CustomersVehicle.GetLength(0); i++)
+            {
+                Console.WriteLine(i + " - " + CustomersVehicle[i]);
+            }
+        }
+
+        public void PrintCustomersRideTimes()
+        {
+            Console.WriteLine(this.ToString() + "CustomersRideTimes: ");
+            for (int i = 0; i < CustomersRideTimes.GetLength(0); i++)
+            {
+                Console.WriteLine( i + " - " + CustomersRideTimes[i]);
+            }
+        }
+        public void PrintStarts()
+        {
+            Console.WriteLine(this.ToString() + "Starts: ");
+            for (int i = 0; i < Starts.GetLength(0); i++)
+            {
+                Console.WriteLine(i + " - " + Starts[i]);
+            }
+        }
+
+        public void PrintEnds()
+        {
+            Console.WriteLine(this.ToString() + "Ends: ");
+            for (int i = 0; i < Ends.GetLength(0); i++)
+            {
+                Console.WriteLine(i + " - " + Ends[i]);
+            }
+        }
+
+        public void PrintVehicleCapacities()
+        {
+            Console.WriteLine(this.ToString() + "VehicleCapacities: ");
+            for (int i = 0; i < VehicleCapacities.GetLength(0); i++)
+            {
+                Console.WriteLine(i + " - " + VehicleCapacities[i]);
+            }
+        }
         public void PrintTimeWindows() //For debug purposes
         {
             Console.WriteLine(this.ToString() + "Time Windows:");
             for (int i = 0; i < TimeWindows.GetLength(0); i++)
             {
-                Console.Write(IndexManager.GetStop(i) + "{");
+                Console.Write(i + " - T(");
                 for (int j = 0; j < TimeWindows.GetLength(1); j++)
                 {
                     if (j == 0)
                     {
-                        Console.Write(TimeWindows[i, j] + ",");
+                        Console.Write(TimeWindows[i, j] + ", ");
                     }
                     else
                     {
 
-                        Console.WriteLine(TimeWindows[i, j] + "}");
+                        Console.WriteLine(TimeWindows[i, j] + ")");
                     }
                 }
             }
