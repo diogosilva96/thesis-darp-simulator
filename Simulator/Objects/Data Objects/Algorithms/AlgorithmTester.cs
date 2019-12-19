@@ -22,6 +22,8 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         private bool _hasBeenTested;
         private RoutingSolutionObject SolutionObject => Solver.GetSolutionObject(Solution);
 
+        public Dictionary<string, int> Metrics => SolutionObject.MetricsContainer.GetMetricsDictionary();
+
 
         protected AlgorithmTester()
         {
@@ -54,7 +56,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             string splitter = ",";
             string message = nameof(Name) + splitter + nameof(AllowDropNodes) + splitter +
                              nameof(SearchTimeLimitInSeconds) + splitter + nameof(ComputationTimeInSeconds) + splitter + nameof(MaxUpperBoundInMinutes);
-            foreach (var metric in SolutionObject.MetricsContainer.GetMetricsDictionary())
+            foreach (var metric in Metrics)
             {
                 message += splitter + metric.Key;
             }

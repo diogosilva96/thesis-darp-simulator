@@ -23,64 +23,70 @@ namespace Simulator.SimulationViews
             var vehicleNumber = 20;
             var count = 0;
             var customerNumber = 50;
+            var algTestersMetrics = new AlgorithmTestersMetrics();
+            //Simulation.Params.VehicleNumber = vehicleNumber;
+            //Simulation.Params.NumberInitialRequests = customerNumber;
+            //bool allowDropNodes = false;
+            //RandomNumberGenerator.Seed = 2;
+            //List<Vehicle> vehicles = new List<Vehicle>();
+            //var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, Simulation);
+            //var printableList = dataModel.GetSettingsPrintableList();
+            //ConsoleLogger.Log(printableList);
+            //dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
+            //var searchTime = 20;
+            //AlgorithmContainer algorithmContainer = new AlgorithmContainer();
+            //    var algorithm = algorithmContainer.SearchAlgorithms[2];
+
+            //    var algorithmsTester = new SearchAlgorithmTester(algorithm, searchTime);
+            //    algorithmsTester.Test(dataModel, allowDropNodes);
+            //    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
+            //    if (count == 0)
+            //    {
+
+            //        logs base message type style
+            //        algorithmsLogger.Log(algorithmsTester.GetCSVMessageStyle());
+            //    }
+            //    algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
+            //    RoutingSolutionObject routingSolutionObject = null;
+            //    routingSolutionObject = algorithmsTester.Solver.GetSolutionObject(algorithmsTester.Solution);
+            //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
+            //    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
-            Simulation.Params.NumberInitialRequests = customerNumber;
-                bool allowDropNodes = false;
-                RandomNumberGenerator.Seed = 2;
-                List<Vehicle> vehicles = new List<Vehicle>();
-                var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, Simulation);
-                var printableList = dataModel.GetSettingsPrintableList();
-                ConsoleLogger.Log(printableList);
-                dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                var searchTime = 20;
-                AlgorithmContainer algorithmContainer = new AlgorithmContainer();
-                    var algorithm = algorithmContainer.SearchAlgorithms[2];
-
-                    var algorithmsTester = new SearchAlgorithmTester(algorithm, searchTime);
-                    algorithmsTester.Test(dataModel, allowDropNodes);
-                    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
-                    if (count == 0)
+            for (int customersNumber = 50; customersNumber <= 50; customersNumber = customersNumber + 50)
+            {
+                for (int i = 0; i < 2; i++) // tests 10 different data models
+                {
+                   
+                    Simulation.Params.NumberInitialRequests = customerNumber;
+                    bool allowDropNodes = false;
+                    RandomNumberGenerator.GenerateNewRandomSeed();
+                    var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel( allowDropNodes, Simulation);
+                    var printableList = dataModel.GetSettingsPrintableList();
+                    ConsoleLogger.Log(printableList);
+                    dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
+                    for (int searchTime = 5; searchTime <= 10; searchTime = searchTime + 5) //test different same datamodel with different search times
                     {
+                        AlgorithmContainer algorithmContainer = new AlgorithmContainer();
+                        foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
+                        {
+                            var algorithmTester = new SearchAlgorithmTester(searchAlgorithm, searchTime);
+                            algorithmTester.Test(dataModel, allowDropNodes);
+                            ConsoleLogger.Log(algorithmTester.GetResultPrintableList());
 
-                        //logs base message type style
-                        algorithmsLogger.Log(algorithmsTester.GetCSVMessageStyle());
+                            if (count == 0)
+                            {
+                                //logs base message type style
+                                algorithmsLogger.Log(algorithmTester.GetCSVMessageStyle());
+                            }
+                            algTestersMetrics.AddTestedAlgorithm(algorithmTester);
+                            algorithmsLogger.Log(algorithmTester.GetCSVResultsMessage());
+                            count++;
+                        }
                     }
-                    algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
-                    RoutingSolutionObject routingSolutionObject = null;
-                    routingSolutionObject = algorithmsTester.Solver.GetSolutionObject(algorithmsTester.Solution);
-                    Simulation.Params.NumberDynamicRequestsPerHour = 0;
-                    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
-            //for (int customersNumber = 50; customersNumber <= 150; customersNumber = customersNumber + 50)
-            //{
-            //        for (int i = 0; i < 10; i++) // tests 10 different data models
-            //        {
-
-            //            bool allowDropNodes = false;
-            //            RandomNumberGenerator.GenerateNewRandomSeed();
-            //            var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(vehicleNumber, customersNumber, allowDropNodes, Simulation);
-            //            var printableList = dataModel.GetSettingsPrintableList();
-            //            ConsoleLogger.Log(printableList);
-            //            dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-            //        for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
-            //            {
-            //                AlgorithmContainer algorithmContainer = new AlgorithmContainer();
-            //                foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
-            //                {
-            //                    var algorithmsTester = new SearchAlgorithmTester(searchAlgorithm,searchTime);
-            //                    algorithmsTester.Test(dataModel,allowDropNodes);
-            //                    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
-
-            //                    if (count == 0)
-            //                    {
-            //                        //logs base message type style
-            //                        algorithmsLogger.Log(algorithmsTester.GetCSVMessageStyle());
-            //                    }
-            //                    algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
-            //                    count++;
-            //                }
-            //            }
-            //        }
-            //}
+                }
+            }
+            algTestersMetrics.SaveOverallMetrics();
+            algTestersMetrics.PrintMetrics();
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)
