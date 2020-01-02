@@ -22,7 +22,6 @@ namespace Simulator.SimulationViews
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
             var count = 0;
-            var customerNumber = 50;
             var algTestersMetrics = new AlgorithmTestersMetrics();
             //Simulation.Params.VehicleNumber = vehicleNumber;
             //Simulation.Params.NumberInitialRequests = customerNumber;
@@ -57,14 +56,14 @@ namespace Simulator.SimulationViews
                 for (int i = 0; i < 2; i++) // tests 10 different data models
                 {
                    
-                    Simulation.Params.NumberInitialRequests = customerNumber;
+                    Simulation.Params.NumberInitialRequests = customersNumber;
                     bool allowDropNodes = false;
                     RandomNumberGenerator.GenerateNewRandomSeed();
                     var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel( allowDropNodes, Simulation);
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
                     dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                    for (int searchTime = 5; searchTime <= 10; searchTime = searchTime + 5) //test different same datamodel with different search times
+                    for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
                     {
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
@@ -85,8 +84,7 @@ namespace Simulator.SimulationViews
                     }
                 }
             }
-            algTestersMetrics.SaveOverallMetrics();
-            algTestersMetrics.PrintMetrics();
+            algTestersMetrics.SaveMetrics();
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)
