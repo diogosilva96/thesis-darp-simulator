@@ -18,11 +18,13 @@ namespace Simulator.SimulationViews
 
         public override void PrintView()
         {
+            var metricsPath =
+                Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithmMetrics.csv"));
             var algorithmsLogger = new Logger.Logger(new FileRecorder(Path.Combine(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath, @"algorithms.csv"))));
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
             var count = 0;
-            var algTestersMetrics = new AlgorithmTestersMetrics();
+            var algTestersMetrics = new AlgorithmTesterMetrics();
             //Simulation.Params.VehicleNumber = vehicleNumber;
             //Simulation.Params.NumberInitialRequests = customerNumber;
             //bool allowDropNodes = false;
@@ -51,7 +53,7 @@ namespace Simulator.SimulationViews
             //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
             //    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
-            for (int customersNumber = 50; customersNumber <= 50; customersNumber = customersNumber + 50)
+            for (int customersNumber = 25; customersNumber <= 50; customersNumber = customersNumber + 25)
             {
                 for (int i = 0; i < 2; i++) // tests 10 different data models
                 {
@@ -63,7 +65,7 @@ namespace Simulator.SimulationViews
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
                     dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                    for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
+                    for (int searchTime = 5; searchTime <= 10; searchTime = searchTime + 5) //test different same datamodel with different search times
                     {
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
@@ -84,7 +86,7 @@ namespace Simulator.SimulationViews
                     }
                 }
             }
-            algTestersMetrics.SaveMetrics();
+            algTestersMetrics.SaveMetrics(metricsPath);
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)
