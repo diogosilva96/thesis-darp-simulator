@@ -111,7 +111,9 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 }
                 foreach (var testedAlgorithms in testedAlgorithmsForCurrentSearchTimeAndName)
                     {                    
-                        currentMetricDictionary.Value.Add("DataModel",testedAlgorithms.DataModel.Id);
+                        currentMetricDictionary.Value.Add("DataModelId",testedAlgorithms.DataModel.Id);
+                        currentMetricDictionary.Value.Add("AllowDropNodes",testedAlgorithms.AllowDropNodes ? 1:0);
+                        currentMetricDictionary.Value.Add("ComputationTime", testedAlgorithms.ComputationTimeInSeconds);
                         foreach (var metric in testedAlgorithms.Metrics) //totalMetrics
                         {
                             var metricName = "total" + metric.Key;
