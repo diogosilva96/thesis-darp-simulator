@@ -110,10 +110,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                     testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta =>ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
                 }
                 foreach (var testedAlgorithms in testedAlgorithmsForCurrentSearchTimeAndName)
-                    {                    
-                        currentMetricDictionary.Value.Add("DataModelId",testedAlgorithms.DataModel.Id);
-                        currentMetricDictionary.Value.Add("AllowDropNodes",testedAlgorithms.AllowDropNodes ? 1:0);
-                        currentMetricDictionary.Value.Add("ComputationTime", testedAlgorithms.ComputationTimeInSeconds);
+                {
                         foreach (var metric in testedAlgorithms.Metrics) //totalMetrics
                         {
                             var metricName = "total" + metric.Key;
@@ -124,15 +121,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
                             currentMetricDictionary.Value[metricName] += metric.Value;
                         }
-                    }
+                }
 
-                    var numMetricsToBeAverage = currentMetricDictionary.Value.Count;
-                    if (firstLineIndexToPrint == 0)
-                    {
+                var numMetricsToBeAverage = currentMetricDictionary.Value.Count;
+                if (firstLineIndexToPrint == 0)
+                {
                         firstLineIndexToPrint = numMetricsToBeAverage;
-                    }
-
-                    var totalTests =
+                }
+                var totalTests =
                         testedAlgorithmsForCurrentSearchTimeAndName
                             .Count; //total of tests for current alg name and searchtime
                     currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
