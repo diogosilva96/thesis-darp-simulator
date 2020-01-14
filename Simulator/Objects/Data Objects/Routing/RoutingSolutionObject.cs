@@ -110,8 +110,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 return totalCustomers++;
             }
         }
-
-        public int LongestCustomerWaitTimeInSeconds
+        public int MaximumCustomerWaitTimeInSeconds
         {
             get
             {
@@ -125,7 +124,48 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int LongestCustomerRideTimeInSeconds
+        public int MinimumCustomerRideTimeInSeconds
+        {
+            get
+            {
+                var minCustomerRideTime = 0;
+                foreach (var customerRideTimes in _customerRideTimes)
+                {
+                    minCustomerRideTime = Math.Min(minCustomerRideTime, customerRideTimes.Value);
+                }
+
+                return minCustomerRideTime;
+            }
+        }
+
+        public int MinimumCustomerDelayTimeInSeconds
+        {
+            get
+            {
+                var minCustomerDelay = 0;
+                foreach (var customerDelay in _customerDelayTimes)
+                {
+                    minCustomerDelay = Math.Min(minCustomerDelay, customerDelay.Value);
+                }
+
+                return minCustomerDelay;
+            }
+        }
+        public int MinimumCustomerWaitTimeInSeconds
+        {
+            get
+            {
+                var minCustomerWaitTime = 0;
+                foreach (var customerWaitTime in _customerWaitTimes)
+                {
+                    minCustomerWaitTime = Math.Min(minCustomerWaitTime, customerWaitTime.Value);
+                }
+
+                return minCustomerWaitTime;
+            }
+        }
+
+        public int MaximumCustomerRideTimeInSeconds
         {
             get
             {
@@ -139,7 +179,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int LongestCustomerDelayTimeInSeconds
+        public int MaximumCustomerDelayTimeInSeconds
         {
             get
             {
@@ -255,8 +295,12 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int LongestRouteDistanceInMeters => (int)_routeDistancesInMeters.Max();
-        public int LongestRouteDurationInSeconds => (int)_routeTimesInSeconds.Max();
+        public int MaximumRouteDistanceInMeters => (int)_routeDistancesInMeters.Max();
+        public int MaximumRouteDurationInSeconds => (int)_routeTimesInSeconds.Max();
+
+        public int MinimumRouteDurationInSeconds => (int) _routeTimesInSeconds.Min();
+
+        public int MinimumRouteDistanceInMeters => (int) _routeDistancesInMeters.Min();
 
         public int AvgCustomerEarlyTimeInSeconds
         {
@@ -304,11 +348,16 @@ namespace Simulator.Objects.Data_Objects.Routing
             MetricsContainer.AddMetric(nameof(TotalCustomersDelayed), TotalCustomersDelayed);
             MetricsContainer.AddMetric(nameof(TotalVehiclesUsed), TotalVehiclesUsed);
             MetricsContainer.AddMetric(nameof(ObjectiveValue),(int)ObjectiveValue);
-            MetricsContainer.AddMetric(nameof(LongestCustomerWaitTimeInSeconds),(int)LongestCustomerWaitTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(LongestCustomerRideTimeInSeconds),(int)LongestCustomerRideTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(LongestCustomerDelayTimeInSeconds),(int)LongestCustomerDelayTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(LongestRouteDistanceInMeters),LongestRouteDistanceInMeters);
-            MetricsContainer.AddMetric(nameof(LongestRouteDurationInSeconds),LongestRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumCustomerWaitTimeInSeconds),(int)MaximumCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumCustomerRideTimeInSeconds),(int)MaximumCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumCustomerDelayTimeInSeconds),(int)MaximumCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDistanceInMeters),MaximumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDurationInSeconds),MaximumRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumCustomerWaitTimeInSeconds), (int)MinimumCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumCustomerRideTimeInSeconds), (int)MinimumCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumCustomerDelayTimeInSeconds), (int)MinimumCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDistanceInMeters), MinimumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDurationInSeconds), MinimumRouteDurationInSeconds);
             MetricsContainer.AddMetric(nameof(TotalDistanceInMeters),(int)TotalDistanceInMeters);
             MetricsContainer.AddMetric(nameof(TotalCustomerDelayTimeInSeconds),TotalCustomerDelayTimeInSeconds);
             MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds),TotalCustomerRideTimesInSeconds);

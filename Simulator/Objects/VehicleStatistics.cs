@@ -91,7 +91,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double LongestCustomerRideTimeInSeconds
+        public double MaximumCustomerRideTimeInSeconds
         {
             get
             {
@@ -99,6 +99,22 @@ namespace Simulator.Objects
                 try
                 {
                     return _vehicles.Max(v => v.ServedCustomers.Max(c => c.RideTime));
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public double MinimumCustomerRideTimeInSeconds
+        {
+            get
+            {
+
+                try
+                {
+                    return _vehicles.Min(v => v.ServedCustomers.Max(c => c.RideTime));
                 }
                 catch (Exception)
                 {
@@ -201,7 +217,8 @@ namespace Simulator.Objects
                 return total;
             }
         }
-        public double LongestRouteDurationInSeconds
+
+        public double MaximumRouteDurationInSeconds
         {
             get
             {
@@ -216,7 +233,37 @@ namespace Simulator.Objects
             }
         }
 
-        public double LongestRouteDistanceInMeters
+        public double MinimumRouteDurationInSeconds
+        {
+            get
+            {
+                try
+                {
+                    return _vehicles.Min(s => s.RouteDuration);
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public double MinimumRouteDistanceInMeters
+        {
+            get
+            {
+                try
+                {
+                    return _vehicles.Min(s => s.TotalDistanceTraveled);
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public double MaximumRouteDistanceInMeters
         {
             get
             {
@@ -292,18 +339,21 @@ namespace Simulator.Objects
             MetricsContainer.AddMetric(nameof(TotalDynamicServedCustomers),(int)TotalDynamicServedCustomers);
             MetricsContainer.AddMetric(nameof(TotalCustomerWaitTimesInSeconds),(int)TotalCustomerWaitTimesInSeconds);
             MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds), (int) TotalCustomerRideTimesInSeconds);
-            MetricsContainer.AddMetric(nameof(LongestRouteDurationInSeconds), (int)LongestRouteDurationInSeconds);
-            MetricsContainer.AddMetric(nameof(LongestRouteDistanceInMeters),(int)LongestRouteDistanceInMeters);
-            MetricsContainer.AddMetric(nameof(LongestCustomerRideTimeInSeconds),(int)LongestCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDurationInSeconds), (int)MaximumRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDistanceInMeters),(int)MaximumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MaximumCustomerRideTimeInSeconds),(int)MaximumCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDurationInSeconds), (int)MinimumRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDistanceInMeters), (int)MinimumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MinimumCustomerRideTimeInSeconds), (int)MinimumCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageRouteDurationInSeconds),(int)AverageRouteDurationInSeconds);
             MetricsContainer.AddMetric(nameof(AverageNumberRequests), (int) AverageNumberRequests);
             MetricsContainer.AddMetric(nameof(AverageNumberServicedRequests), (int) AverageNumberServicedRequests);
             MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests), (int) AverageNumberDeniedRequests);
             MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio), (int) AverageServicedRequestsRatio);
             MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio), (int) AverageNumberDeniedRequests);
-            MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), (int) AverageDistanceTraveledInMeters);
+            MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), (int)AverageDistanceTraveledInMeters);
             MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds), (int)AverageCustomerRideTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), (int) AverageCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), (int)AverageCustomerWaitTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerDelayTimeInSeconds),(int)AverageCustomerDelayTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerEarlyTimeInSeconds),(int)AverageCustomerEarlyTimeInSeconds);
         }

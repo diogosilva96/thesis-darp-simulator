@@ -53,19 +53,20 @@ namespace Simulator.SimulationViews
             //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
             //    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
-            for (int customersNumber = 25; customersNumber <= 125; customersNumber = customersNumber + 25)
+            for (int customersNumber = 100; customersNumber >= 25; customersNumber = customersNumber - 25)
             {
+                Simulation.Params.NumberInitialRequests = customersNumber;
                 for (int i = 0; i < 10; i++) // tests 10 different data models
                 {
                    
-                    Simulation.Params.NumberInitialRequests = customersNumber;
+                    
                     bool allowDropNodes = false;
                     RandomNumberGenerator.GenerateNewRandomSeed();
                     var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, Simulation);
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
                     dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                    for (int searchTime = 5; searchTime <= 10; searchTime = searchTime + 5) //test different same datamodel with different search times
+                    for (int searchTime = 20; searchTime <= 60; searchTime = searchTime + 20) //test different same datamodel with different search times
                     {
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)

@@ -12,12 +12,12 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public List<AlgorithmTester> TestedAlgorithms;
         public Dictionary<Tuple<string,string,string>, Dictionary<string, double>> MetricsDictionary;//dict with key search time,algorithm name, num customers, contains a dictionary with a metric and its respective value
 
-        private int firstLineIndexToPrint;
+
         public AlgorithmTesterMetrics()
         {
             MetricsDictionary = new Dictionary<Tuple<string,string,string>, Dictionary<string, double>>();
             TestedAlgorithms = new List<AlgorithmTester>();
-            firstLineIndexToPrint = 0;
+
         }
 
 
@@ -113,7 +113,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 {
                         foreach (var metric in testedAlgorithms.Metrics) //totalMetrics
                         {
-                            var metricName = "total" + metric.Key;
+                            var metricName = "Total" + metric.Key;
                             if (!currentMetricDictionary.Value.ContainsKey(metricName))
                             {
                                 currentMetricDictionary.Value.Add(metricName, 0);
@@ -123,23 +123,19 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                         }
                 }
 
-                var numMetricsToBeAverage = currentMetricDictionary.Value.Count;
-                if (firstLineIndexToPrint == 0)
-                {
-                        firstLineIndexToPrint = numMetricsToBeAverage;
-                }
+                var numMetricsToBeAveraged = currentMetricDictionary.Value.Count;
                 var totalTests =
                         testedAlgorithmsForCurrentSearchTimeAndName
                             .Count; //total of tests for current alg name and searchtime
                     currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
-                    for (int j = 0; j < numMetricsToBeAverage; j++)
+                    for (int j = 0; j < numMetricsToBeAveraged; j++)
                     {
                         if (totalTests > 0)
                         {
                             var currentMetric = currentMetricDictionary.Value.ElementAt(j);
                             var currentMetricName = currentMetric.Key;
                             var currentMetricValue = currentMetric.Value;
-                            var averageMetricName = "average" + currentMetricName;
+                            var averageMetricName = "Average" + currentMetricName;
                             if (!currentMetricDictionary.Value.ContainsKey(averageMetricName))
                             {
                                 currentMetricDictionary.Value.Add(averageMetricName, 0);
@@ -151,7 +147,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
 
                     }
 
-                }
+            }
             
 
         }
@@ -194,12 +190,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 var count = 0;
                 foreach (var metricDict in searchTimeMetricsDict.Value)
                 {
-                    if (count >= firstLineIndexToPrint)
-                    {
+                    
                         Console.WriteLine(metricDict.Key + ":" + metricDict.Value);
-                    }
 
-                    count++;
+                        count++;
                 }
                 
             }
