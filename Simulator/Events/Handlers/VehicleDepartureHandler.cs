@@ -54,11 +54,11 @@ namespace Simulator.Events.Handlers
 
                         if (distance == 0)
                         {
-                            distance = DistanceCalculator.CalculateHaversineDistance(currentStop.Latitude,
+                            distance = Calculator.CalculateHaversineDistance(currentStop.Latitude,
                                 currentStop.Longitude, nextStop.Latitude, nextStop.Longitude);
                         }
 
-                        var travelTime = DistanceCalculator.DistanceToTravelTime(departEvent.Vehicle.Speed,
+                        var travelTime = Calculator.DistanceToTravelTime(departEvent.Vehicle.Speed,
                             distance); //Gets the time it takes to travel from the currentStop to the nextStop
                         var nextArrivalTime = Convert.ToInt32(departTime + travelTime); //computes the arrival time for the next arrive event
                         departEvent.Vehicle.TripIterator.Current.StopsIterator

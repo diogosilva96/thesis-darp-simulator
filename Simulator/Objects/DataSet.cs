@@ -46,12 +46,12 @@ namespace Simulator.Objects
             {
                 foreach (var stopD in Stops)
                 {
-                    var euclideanDistance = DistanceCalculator.CalculateEuclideanDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude)*1000;//distance in meters
-                    var havDistance = DistanceCalculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
+                    var euclideanDistance = Calculator.CalculateEuclideanDistance(stopO.Latitude,stopO.Longitude,stopD.Latitude,stopD.Longitude)*1000;//distance in meters
+                    var havDistance = Calculator.CalculateHaversineDistance(stopO.Latitude, stopO.Longitude,
                         stopD.Latitude, stopD.Longitude);
                     var speed = 40;
-                    var eucTravelTime = DistanceCalculator.DistanceToTravelTime(speed, euclideanDistance);
-                    var havTravelTime = DistanceCalculator.DistanceToTravelTime(speed,havDistance);
+                    var eucTravelTime = Calculator.DistanceToTravelTime(speed, euclideanDistance);
+                    var havTravelTime = Calculator.DistanceToTravelTime(speed,havDistance);
                     Console.WriteLine(stopO.Id +" -> "+stopD.Id+ " - euclideanDistance: "+ euclideanDistance+"; haversineDistance:"+havDistance+"; speed = "+speed+ " ; eucTT: "+eucTravelTime+ " ; havTT: "+havTravelTime);
                     Console.WriteLine();
                 }

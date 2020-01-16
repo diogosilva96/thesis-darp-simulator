@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Simulator.Objects
 {
-    public static class DistanceCalculator  
+    public static class Calculator  
     {
         public static double CalculateHaversineDistance(double lat1, double lon1, double lat2, double lon2)//calculates the distance between two points using haversine formula(calculates the shortest distance between two latlong points over the earth surface - using as the crow-flies distance(ignoring hills, etc))
         {
@@ -39,6 +40,15 @@ namespace Simulator.Objects
             distance = timeToTravelInSeconds * speedInMetersPerSecond;
             return distance;
 
+        }
+
+        public static double GetMedian(List<double> values)
+        {
+            values.Sort(); //sorts the list
+            var numValues = values.Count; //size of the list
+            int midPos = numValues / 2; //gets the middle position of the list
+            double median = (numValues % 2 != 0) ? (double)values[midPos] : ((double)values[midPos] + (double)values[midPos - 1]) / 2; //check if size is list size / 2 gives an integer number or not and returns median value
+            return median;
         }
 
         public static double CalculateEuclideanDistance(double x1, double y1, double x2, double y2)

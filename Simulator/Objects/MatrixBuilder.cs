@@ -30,7 +30,7 @@ namespace Simulator.Objects
                     else
                     {
                         
-                        distance = (long)DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
+                        distance = (long)Calculator.CalculateHaversineDistance(stops[i].Latitude, stops[i].Longitude,
                             stops[j].Latitude, stops[j].Longitude);
                       
                     }
@@ -63,13 +63,13 @@ namespace Simulator.Objects
                             {
                                 if (useHaversineDistanceFormula) //uses haversine distance formula
                                 {
-                                    distance = (long) DistanceCalculator.CalculateHaversineDistance(stops[i].Latitude,
+                                    distance = (long) Calculator.CalculateHaversineDistance(stops[i].Latitude,
                                         stops[i].Longitude,
                                         stops[j].Latitude, stops[j].Longitude);
                                 }
                                 else //uses euclidean distance formula
                                 {
-                                    distance = (long) DistanceCalculator.CalculateEuclideanDistance(stops[i].Latitude,
+                                    distance = (long) Calculator.CalculateEuclideanDistance(stops[i].Latitude,
                                         stops[i].Longitude, stops[j].Latitude, stops[j].Longitude);
                                 }
                             }
@@ -79,7 +79,7 @@ namespace Simulator.Objects
                             }
                         }
 
-                        var timeInSeconds = (long) DistanceCalculator.DistanceToTravelTime(speedInKmHour, distance);
+                        var timeInSeconds = (long) Calculator.DistanceToTravelTime(speedInKmHour, distance);
                         //timeMatrix[i, j] = (long)TimeSpan.FromSeconds(timeInSeconds).TotalMinutes; // time in minutes
                         timeMatrix[i, j] = (long) timeInSeconds;
                     }

@@ -38,23 +38,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         public int VehicleNumber => _vehicleSolutionDictionary.Count;
 
         public long TotalCustomers => GetTotalValue(_routeLoads);
-        public int TotalCustomerRideTimesInSeconds
-        {
-            get
-            {
-                var totalRideTime = 0;
-                if (_customerRideTimes != null)
-                {
-
-                    foreach (var customer in _customerRideTimes)
-                    {
-                        totalRideTime += customer.Value;
-                    }
-                }
-
-                return totalRideTime;
-            }
-        }
+        public int TotalCustomerRideTimesInSeconds => _customerRideTimes.Values.Sum();
 
         public long TotalDistanceInMeters => GetTotalValue(_routeDistancesInMeters);
 
@@ -80,21 +64,9 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int TotalCustomerDelayTimeInSeconds
-        {
-            get
-            {
-                var totalDelayTime = 0;
-                foreach (var customer in _customerDelayTimes)
-                {
-                    totalDelayTime += customer.Value;
-                }
+        public int TotalCustomerDelayTimeInSeconds => _customerDelayTimes.Values.Sum();
 
-                return totalDelayTime;
-            }
-        }
-
-        public int TotalCustomersEarlier
+        public int TotalCustomersEarly
         {
             get
             {
@@ -254,20 +226,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
         public int AvgCustomerWaitTimeInSeconds => (TotalCustomersWaitTimeInSeconds / CustomerNumber);
 
-        public int TotalCustomersWaitTimeInSeconds
-        {
-            get
-            {
-                var totalWaitTime = 0;
-                foreach (var customerWaitTime in _customerWaitTimes)
-                {
-
-                    totalWaitTime += customerWaitTime.Value;
-                }
-
-                return totalWaitTime;
-            }
-        }
+        public int TotalCustomersWaitTimeInSeconds => _customerWaitTimes.Values.Sum();
 
         public int AvgCustomerDelayTimeInSeconds
         {
@@ -318,7 +277,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             totalEarlyTimes += customerDelayTime.Value;
                         }
 
-                        avgCustomerEarlyTime = (int) (Math.Abs(totalEarlyTimes) / TotalCustomersDelayed);
+                        avgCustomerEarlyTime = (int) (Math.Abs(totalEarlyTimes) / TotalCustomersEarly);
                     }
                 }
 
@@ -344,7 +303,7 @@ namespace Simulator.Objects.Data_Objects.Routing
         public void RegisterAllMetrics()
         {
             MetricsContainer.AddMetric(nameof(TotalCustomers), (int)TotalCustomers);
-            MetricsContainer.AddMetric(nameof(TotalCustomersEarlier), TotalCustomersEarlier);
+            MetricsContainer.AddMetric(nameof(TotalCustomersEarly), TotalCustomersEarly);
             MetricsContainer.AddMetric(nameof(TotalCustomersDelayed), TotalCustomersDelayed);
             MetricsContainer.AddMetric(nameof(TotalVehiclesUsed), TotalVehiclesUsed);
             MetricsContainer.AddMetric(nameof(ObjectiveValue),(int)ObjectiveValue);
@@ -424,7 +383,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
                         //calculate routeDistance
                         double timeToTravel = _routingSolver.DataModel.TravelTimes[_routingSolver.DataModel.Starts[i], _routingSolver.RoutingIndexManager.IndexToNode(solution.Value(_routingSolver.RoutingModel.NextVar(index)))];
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
+                        var distance = Calculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
                         routeDistance += (long)distance;
                         //add currentLoad
                         routeLoad += solution.Value(capacityDim.TransitVar(index)) > 0 ? solution.Value(capacityDim.TransitVar(index)) : 0; //adds the load if it is greater than 0

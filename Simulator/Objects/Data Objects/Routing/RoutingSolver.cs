@@ -390,7 +390,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         routeTransitTime += solution.Value(timeTransitVar);
                         currentLoad = solution.Value(capacityCumulVar) + solution.Value(capacityTransitVar);
                         
-                        var distance = DistanceCalculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
+                        var distance = Calculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
                             //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + tw1 + ";" + tw2 + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
@@ -421,11 +421,11 @@ namespace Simulator.Objects.Data_Objects.Routing
 
                     var startTimeVar = timeDim.CumulVar(RoutingModel.Start(i));
                     printableList.Add(concatenatedString);
-                    //long routeDistance = (long)DistanceCalculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), DataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
+                    //long routeDistance = (long)Calculator.TravelTimeToDistance((int)solution.Min(endPickupDeliveryVar), DataModel.VehicleSpeed); //Gets the route distance which is the actual cumulative value of the distance dimension at the last stop of the route
                     var routeTime = solution.Max(endTimeVar) - solution.Min(startTimeVar);
                     printableList.Add("Route Total Time: "+ TimeSpan.FromSeconds(routeTime).TotalMinutes + " minutes");
                     printableList.Add("Route Distance: "+ routeDistance+" meters");
-                    printableList.Add("Route distance (using cumul var):"+ DistanceCalculator.TravelTimeToDistance((int)solution.Min(endTimeVar), DataModel.IndexManager.Vehicles[i].Speed));//NEED TO CHANGE
+                    printableList.Add("Route distance (using cumul var):"+ Calculator.TravelTimeToDistance((int)solution.Min(endTimeVar), DataModel.IndexManager.Vehicles[i].Speed));//NEED TO CHANGE
                     printableList.Add("Route Total Load:" + totalLoad);
                     printableList.Add("Route customers served: " + solutionObject.GetVehicleCustomers(solutionObject.IndexToVehicle(i)).Count);
                     printableList.Add("Route Total Transit Time: "+routeTransitTime);

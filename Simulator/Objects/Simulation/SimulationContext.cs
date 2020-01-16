@@ -36,7 +36,7 @@ namespace Simulator.Objects.Simulation
                     {
                         foreach (var stopDestination in Stops)
                         {
-                            var distance = DistanceCalculator.CalculateHaversineDistance(stopSource.Latitude,
+                            var distance = Calculator.CalculateHaversineDistance(stopSource.Latitude,
                                 stopSource.Longitude,
                                 stopDestination.Latitude, stopDestination.Longitude);
                             var tuple = Tuple.Create(stopSource, stopDestination);

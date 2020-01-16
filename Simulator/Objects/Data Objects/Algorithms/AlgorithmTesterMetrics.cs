@@ -32,9 +32,9 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             var searchTimes = new List<string>();
             var algorithmNames = new List<string>();
             var customerNumbers = new List<string>();
-            searchTimes.Add("all");
-            algorithmNames.Add("all");
-            customerNumbers.Add("all");
+            //searchTimes.Add("all");
+            //algorithmNames.Add("all");
+            //customerNumbers.Add("all");
             foreach (var testedAlgorithm in TestedAlgorithms)
             {
                 if (!searchTimes.Contains(testedAlgorithm.SearchTimeLimitInSeconds.ToString()))
@@ -78,40 +78,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 var algName = currentMetricDictionary.Key.Item1;
                 
 
-                List<AlgorithmTester> testedAlgorithmsForCurrentSearchTimeAndName = null;
-                if (algName== "all" && searchTime != "all" && customerNumber == "all") // algName = all && searchtime != all && customerNumber == all
+                List<AlgorithmTester> algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = null;
+                algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = TestedAlgorithms.FindAll(ta => ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
+                var auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName = new Dictionary<string,List<double>>();
+                var totalTests = algorithmsWithCurrentSearchTimeAndCustomerNumberAndName.Count; //total of tests for current alg name and searchtime
+                currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
+                foreach (var testedAlgorithm in algorithmsWithCurrentSearchTimeAndCustomerNumberAndName)
                 {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta => ta.SearchTimeLimitInSeconds == int.Parse(searchTime));
-                } else if (algName != "all" && searchTime == "all" && customerNumber == "all") //algName != all && searchTime = all && customerNumber == all
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta => ta.Name == algName);
-                }
-                else if (searchTime == "all" && algName == "all" && customerNumber == "all") //algName = all && searchTime = all && customerNumber == all
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms;
-                }
-                else if (searchTime != "all" && algName != "all" && customerNumber == "all")
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta =>ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime));
-                }
-                else if (algName == "all" && searchTime != "all" && customerNumber != "all") // algName = all && searchtime != all && customerNumber != all
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta => ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
-                } else if (algName != "all" && searchTime == "all" && customerNumber != "all") //algName != all && searchTime = all && customerNumber == all
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta => ta.Name == algName && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
-                }
-                else if (searchTime == "all" && algName == "all" && customerNumber != "all") //algName = all && searchTime = all && customerNumber == all
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll( ta => ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
-                }
-                else if (searchTime != "all" && algName != "all" && customerNumber != "all")
-                {
-                    testedAlgorithmsForCurrentSearchTimeAndName = TestedAlgorithms.FindAll(ta =>ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
-                }
-                foreach (var testedAlgorithms in testedAlgorithmsForCurrentSearchTimeAndName)
-                {
-                        foreach (var metric in testedAlgorithms.Metrics) //totalMetrics
+                        foreach (var metric in testedAlgorithm.Metrics) //totalMetrics
                         {
                             var metricName = "Total" + metric.Key;
                             if (!currentMetricDictionary.Value.ContainsKey(metricName))
@@ -119,33 +93,39 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                                 currentMetricDictionary.Value.Add(metricName, 0);
                             }
 
-                            currentMetricDictionary.Value[metricName] += metric.Value;
+                            if (!auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName.ContainsKey(metric.Key))
+                            {
+                                var metricList = new List<double>();
+                                auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName.Add(metric.Key,metricList);
+                            }
+                            auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName[metric.Key].Add(metric.Value);//adds the metric to the metrics list
+                            currentMetricDictionary.Value[metricName] += metric.Value; //this metric does not need to be added (just to check if values are ok)
                         }
                 }
 
-                var numMetricsToBeAveraged = currentMetricDictionary.Value.Count;
-                var totalTests =
-                        testedAlgorithmsForCurrentSearchTimeAndName
-                            .Count; //total of tests for current alg name and searchtime
-                    currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
-                    for (int j = 0; j < numMetricsToBeAveraged; j++)
+                foreach (var auxMetric in auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName)
+                {
+                    var metricName = auxMetric.Key;
+                    var metricValues = auxMetric.Value;
+                    var averageMetricName = "Average" + metricName;
+                    var medianMetricName = "Median" + metricName;
+                    //average calc
+                    var averageMetricValue = (double)(auxMetric.Value.Sum() / auxMetric.Value.Count);//computes average for current metric
+                    //median calc
+                    var medianMetricValue = Calculator.GetMedian(metricValues);
+                    if (!currentMetricDictionary.Value.ContainsKey(averageMetricName))
                     {
-                        if (totalTests > 0)
-                        {
-                            var currentMetric = currentMetricDictionary.Value.ElementAt(j);
-                            var currentMetricName = currentMetric.Key;
-                            var currentMetricValue = currentMetric.Value;
-                            var averageMetricName = "Average" + currentMetricName;
-                            if (!currentMetricDictionary.Value.ContainsKey(averageMetricName))
-                            {
-                                currentMetricDictionary.Value.Add(averageMetricName, 0);
-                            }
-
-                            currentMetricDictionary.Value[averageMetricName] =
-                                (double) (currentMetricValue / totalTests); //computes average
-                        }
-
+                        currentMetricDictionary.Value.Add(averageMetricName,0);
                     }
+                    if (!currentMetricDictionary.Value.ContainsKey(medianMetricName))
+                    {
+                        currentMetricDictionary.Value.Add(medianMetricName, 0);
+                    }
+
+                    currentMetricDictionary.Value[averageMetricName] = averageMetricValue; //adds average to dict
+                    currentMetricDictionary.Value[medianMetricName] = medianMetricValue; //adds median to dict
+
+                }
 
             }
             
