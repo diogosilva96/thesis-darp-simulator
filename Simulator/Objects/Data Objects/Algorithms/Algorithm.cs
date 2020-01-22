@@ -6,7 +6,7 @@ using Simulator.Objects.Data_Objects.Routing;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
-    public abstract class AlgorithmTester
+    public abstract class Algorithm
     {
         public string Name;
         public double ComputationTimeInSeconds; //in seconds
@@ -25,7 +25,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         public Dictionary<string, int> Metrics => SolutionObject.MetricsContainer.GetMetricsDictionary();
 
 
-        protected AlgorithmTester()
+        protected Algorithm()
         {
 
             SolutionIsFeasible = false;

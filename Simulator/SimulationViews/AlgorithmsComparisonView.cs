@@ -24,7 +24,7 @@ namespace Simulator.SimulationViews
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
             var count = 0;
-            var algTestersMetrics = new AlgorithmTesterMetrics();
+            var algTestersMetrics = new AlgorithmMetrics();
             //Simulation.Params.VehicleNumber = vehicleNumber;
             //Simulation.Params.NumberInitialRequests = customerNumber;
             //bool allowDropNodes = false;
@@ -38,7 +38,7 @@ namespace Simulator.SimulationViews
             //AlgorithmContainer algorithmContainer = new AlgorithmContainer();
             //    var algorithm = algorithmContainer.SearchAlgorithms[2];
 
-            //    var algorithmsTester = new SearchAlgorithmTester(algorithm, searchTime);
+            //    var algorithmsTester = new SearchAlgorithm(algorithm, searchTime);
             //    algorithmsTester.Test(dataModel, allowDropNodes);
             //    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
             //    if (count == 0)
@@ -53,7 +53,7 @@ namespace Simulator.SimulationViews
             //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
             //    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
-            for (int customersNumber = 100; customersNumber >= 25; customersNumber = customersNumber - 25)
+            for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
             {
                 Simulation.Params.NumberInitialRequests = customersNumber;
                 for (int i = 0; i < 10; i++) // tests 10 different data models
@@ -71,7 +71,7 @@ namespace Simulator.SimulationViews
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
                         {
-                            var algorithmTester = new SearchAlgorithmTester(searchAlgorithm, searchTime);
+                            var algorithmTester = new SearchAlgorithm(searchAlgorithm, searchTime);
                             algorithmTester.Test(dataModel, allowDropNodes);
                             ConsoleLogger.Log(algorithmTester.GetResultPrintableList());
 
@@ -80,7 +80,7 @@ namespace Simulator.SimulationViews
                                 //logs base message type style
                                 algorithmsLogger.Log(algorithmTester.GetCSVMessageStyle());
                             }
-                            algTestersMetrics.AddTestedAlgorithm(algorithmTester);
+                            algTestersMetrics.AddAlgorithm(algorithmTester);
                             algorithmsLogger.Log(algorithmTester.GetCSVResultsMessage());
                             count++;
                         }

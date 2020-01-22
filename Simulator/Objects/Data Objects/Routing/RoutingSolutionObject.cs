@@ -382,8 +382,8 @@ namespace Simulator.Objects.Data_Objects.Routing
                         }
 
                         //calculate routeDistance
-                        double timeToTravel = _routingSolver.DataModel.TravelTimes[_routingSolver.DataModel.Starts[i], _routingSolver.RoutingIndexManager.IndexToNode(solution.Value(_routingSolver.RoutingModel.NextVar(index)))];
-                        var distance = Calculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed);
+                        double timeToTravel = _routingSolver.DataModel.TravelTimes[_routingSolver.RoutingIndexManager.IndexToNode(index), _routingSolver.RoutingIndexManager.IndexToNode(solution.Value(_routingSolver.RoutingModel.NextVar(index)))];
+                        var distance = (int)timeToTravel != 0 ? Calculator.TravelTimeToDistance((int)timeToTravel, _routingSolver.DataModel.IndexManager.Vehicles[i].Speed):0;
                         routeDistance += (long)distance;
                         //add currentLoad
                         routeLoad += solution.Value(capacityDim.TransitVar(index)) > 0 ? solution.Value(capacityDim.TransitVar(index)) : 0; //adds the load if it is greater than 0

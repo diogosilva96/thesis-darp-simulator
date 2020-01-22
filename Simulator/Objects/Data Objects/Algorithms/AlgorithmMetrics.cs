@@ -7,23 +7,23 @@ using Simulator.Logger;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
-    class AlgorithmTesterMetrics
+    class AlgorithmMetrics
     {
-        public List<AlgorithmTester> TestedAlgorithms;
+        public List<Algorithm> AlgorithmsTested;
         public Dictionary<Tuple<string,string,string>, Dictionary<string, double>> MetricsDictionary;//dict with key search time,algorithm name, num customers, contains a dictionary with a metric and its respective value
 
 
-        public AlgorithmTesterMetrics()
+        public AlgorithmMetrics()
         {
             MetricsDictionary = new Dictionary<Tuple<string,string,string>, Dictionary<string, double>>();
-            TestedAlgorithms = new List<AlgorithmTester>();
+            AlgorithmsTested = new List<Algorithm>();
 
         }
 
 
-        public void AddTestedAlgorithm(AlgorithmTester testedAlgorithm)
+        public void AddAlgorithm(Algorithm testedAlgorithm)
         {
-            TestedAlgorithms.Add(testedAlgorithm);
+            AlgorithmsTested.Add(testedAlgorithm);
         }
 
 
@@ -35,7 +35,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             //searchTimes.Add("all");
             //algorithmNames.Add("all");
             //customerNumbers.Add("all");
-            foreach (var testedAlgorithm in TestedAlgorithms)
+            foreach (var testedAlgorithm in AlgorithmsTested)
             {
                 if (!searchTimes.Contains(testedAlgorithm.SearchTimeLimitInSeconds.ToString()))
                 {
@@ -78,8 +78,8 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 var algName = currentMetricDictionary.Key.Item1;
                 
 
-                List<AlgorithmTester> algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = null;
-                algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = TestedAlgorithms.FindAll(ta => ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
+                List<Algorithm> algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = null;
+                algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = AlgorithmsTested.FindAll(ta => ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
                 var auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName = new Dictionary<string,List<double>>();
                 var totalTests = algorithmsWithCurrentSearchTimeAndCustomerNumberAndName.Count; //total of tests for current alg name and searchtime
                 currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);

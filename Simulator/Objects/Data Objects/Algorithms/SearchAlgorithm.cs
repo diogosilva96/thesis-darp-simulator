@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Google.OrTools.ConstraintSolver;
 using Google.Protobuf.WellKnownTypes;
@@ -7,23 +8,24 @@ using Simulator.Objects.Data_Objects.Routing;
 
 namespace Simulator.Objects.Data_Objects.Algorithms
 {
-    class FirstSolutionAlgorithmTester:AlgorithmTester
+    class SearchAlgorithm:Algorithm
     {
-        public FirstSolutionAlgorithmTester(FirstSolutionStrategy.Types.Value algorithmValue) 
+        public SearchAlgorithm(LocalSearchMetaheuristic.Types.Value algorithmValue,int searchTimeLimitInSecondsInSeconds)
         {
             AlgorithmValue = algorithmValue;
-            Type = "First Solution Algorithm";
+            SearchTimeLimitInSeconds = searchTimeLimitInSecondsInSeconds;
+            Type = "Search Algorithm";
             Name = algorithmValue.ToString();
         }
 
         public override Assignment GetSolution()
         {
             Assignment solution = null;
-            if (AlgorithmValue is FirstSolutionStrategy.Types.Value firstSolutionAlgorithm)
+            if (AlgorithmValue is LocalSearchMetaheuristic.Types.Value localSearchAlgorithm)
             {
                 RoutingSearchParameters searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
-                searchParameters.FirstSolutionStrategy = firstSolutionAlgorithm;
-                //searchParameters.TimeLimit = new Duration { Seconds = SearchTimeLimitInSeconds };
+                searchParameters.LocalSearchMetaheuristic= localSearchAlgorithm;
+                searchParameters.TimeLimit = new Duration {Seconds = SearchTimeLimitInSeconds};
                 solution = Solver.TryGetSolution(searchParameters);
             }
             else
