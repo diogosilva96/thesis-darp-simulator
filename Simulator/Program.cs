@@ -13,6 +13,7 @@ using MathNet.Numerics;
 using MathNet.Numerics.Random;
 using Simulator.EventAppender__COR_Pattern_;
 using Simulator.Events;
+using Simulator.Logger;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
@@ -25,6 +26,7 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
+            
             SimulationContext simulationContext = new SimulationContext();
             SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5,15,20);
             AbstractSimulation sim = new Simulation(simulationParams,simulationContext);

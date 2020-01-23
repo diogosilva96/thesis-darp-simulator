@@ -425,8 +425,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                                 if (routeStopsIndex.Contains(pickupDelivery[0]) && routeStopsIndex.Contains(pickupDelivery[1]) &&  routePickupIndex <= routeDeliveryIndex)
                                 {
                                     
-                                    var customerRideTime = auxiliaryTimeWindows[routeDeliveryIndex][1] - auxiliaryTimeWindows[routePickupIndex][0];//customer ride time = tw[deliveryIndex][1] - tw[pickupIndex][0]
+                                    var customerRideTime = auxiliaryTimeWindows[routeDeliveryIndex][0] - auxiliaryTimeWindows[routePickupIndex][0];//customer ride time = tw[deliveryIndex][0] - tw[pickupIndex][0]
                                     var customer = _routingSolver.DataModel.IndexManager.GetCustomer(customerIndex);
+                                    
                                     if (!customerRideTimes.ContainsKey(customer))
                                     {
                                         customerRideTimes.Add(customer, (int)customerRideTime);
@@ -434,11 +435,13 @@ namespace Simulator.Objects.Data_Objects.Routing
                                     }
 
                                     var customerDelayTime = auxiliaryTimeWindows[routeDeliveryIndex][0] - customer.DesiredTimeWindow[1];
+                                   
                                     if (!customerDelayTimes.ContainsKey(customer))
                                     {
                                         customerDelayTimes.Add(customer,(int) customerDelayTime);
                                     }
-                                 
+                                    //Console.WriteLine("Customer " + customer.Id + " ride time :" + customerRideTime + " delay time: " + customerDelayTime);//debug
+
                                 }
                             }
                         }

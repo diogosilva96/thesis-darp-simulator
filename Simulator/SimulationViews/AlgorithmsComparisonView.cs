@@ -24,7 +24,7 @@ namespace Simulator.SimulationViews
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
             var count = 0;
-            var algTestersMetrics = new AlgorithmMetrics();
+            var algorithmsMetrics = new AlgorithmMetrics();
             //Simulation.Params.VehicleNumber = vehicleNumber;
             //Simulation.Params.NumberInitialRequests = customerNumber;
             //bool allowDropNodes = false;
@@ -71,23 +71,25 @@ namespace Simulator.SimulationViews
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
                         {
-                            var algorithmTester = new SearchAlgorithm(searchAlgorithm, searchTime);
-                            algorithmTester.Test(dataModel, allowDropNodes);
-                            ConsoleLogger.Log(algorithmTester.GetResultPrintableList());
+                            var algorithm = new SearchAlgorithm(searchAlgorithm, searchTime);
+                            algorithm.Test(dataModel, allowDropNodes);
+                            ConsoleLogger.Log(algorithm.GetResultPrintableList());
 
                             if (count == 0)
                             {
                                 //logs base message type style
-                                algorithmsLogger.Log(algorithmTester.GetCSVMessageStyle());
+                                algorithmsLogger.Log(algorithm.GetCSVMessageStyle());
                             }
-                            algTestersMetrics.AddAlgorithm(algorithmTester);
-                            algorithmsLogger.Log(algorithmTester.GetCSVResultsMessage());
+                            algorithmsMetrics.AddAlgorithm(algorithm);
+                            algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
                             count++;
                         }
                     }
                 }
             }
-            algTestersMetrics.SaveMetrics(metricsPath);
+
+            algorithmsMetrics.SaveMetrics(metricsPath);
+        
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)
