@@ -59,7 +59,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double TotalCustomersDelayed => TotalCustomers - TotalCustomerServicedEarlierOrOnTime;
+        public double TotalCustomersDelayed => TotalCustomers - TotalCustomerDeliveredOnTime;
 
         public double TotalDynamicServedCustomers
         {
@@ -170,7 +170,7 @@ namespace Simulator.Objects
                     }
                 }
 
-                return (long)(totalEarlyTime / TotalCustomerServicedEarlierOrOnTime);
+                return (long)(totalEarlyTime / TotalCustomerDeliveredOnTime);
             }
         }
         public double AverageDistanceTraveledInMeters
@@ -188,7 +188,7 @@ namespace Simulator.Objects
             }
         }
 
-        public int TotalCustomerServicedEarlierOrOnTime
+        public int TotalCustomerDeliveredOnTime
         {
             get
             {
@@ -200,6 +200,22 @@ namespace Simulator.Objects
                 }
 
                 return total;
+            }
+        }
+
+        public double CustomersDeliveredOnTimeRatio
+        {
+            get
+            {
+                var totalCustomersOnTime = 0;
+                foreach (var vehicle in _vehicles)
+                {
+                    var numCustomers = vehicle.ServedCustomers.FindAll(c => c.DelayTime <= 0).Count;
+                    totalCustomersOnTime += numCustomers;
+                }
+
+                double ratio = ((double)totalCustomersOnTime / (double)TotalCustomers);
+                return ratio;
             }
         }
 
@@ -332,30 +348,30 @@ namespace Simulator.Objects
 
         private void ComputeOverallMetrics()
         {
-            MetricsContainer.AddMetric(nameof(TotalDistanceTraveledInMeters),(int)TotalDistanceTraveledInMeters);
+            MetricsContainer.AddMetric(nameof(TotalDistanceTraveledInMeters),TotalDistanceTraveledInMeters);
             MetricsContainer.AddMetric(nameof(TotalCustomers),TotalCustomers);
-            MetricsContainer.AddMetric(nameof(TotalCustomerServicedEarlierOrOnTime),TotalCustomerServicedEarlierOrOnTime);
-            MetricsContainer.AddMetric(nameof(TotalCustomersDelayed), (int)(TotalCustomersDelayed));
-            MetricsContainer.AddMetric(nameof(TotalDynamicServedCustomers),(int)TotalDynamicServedCustomers);
-            MetricsContainer.AddMetric(nameof(TotalCustomerWaitTimesInSeconds),(int)TotalCustomerWaitTimesInSeconds);
-            MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds), (int) TotalCustomerRideTimesInSeconds);
-            MetricsContainer.AddMetric(nameof(MaximumRouteDurationInSeconds), (int)MaximumRouteDurationInSeconds);
-            MetricsContainer.AddMetric(nameof(MaximumRouteDistanceInMeters),(int)MaximumRouteDistanceInMeters);
-            MetricsContainer.AddMetric(nameof(MaximumCustomerRideTimeInSeconds),(int)MaximumCustomerRideTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(MinimumRouteDurationInSeconds), (int)MinimumRouteDurationInSeconds);
-            MetricsContainer.AddMetric(nameof(MinimumRouteDistanceInMeters), (int)MinimumRouteDistanceInMeters);
-            MetricsContainer.AddMetric(nameof(MinimumCustomerRideTimeInSeconds), (int)MinimumCustomerRideTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageRouteDurationInSeconds),(int)AverageRouteDurationInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageNumberRequests), (int) AverageNumberRequests);
-            MetricsContainer.AddMetric(nameof(AverageNumberServicedRequests), (int) AverageNumberServicedRequests);
-            MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests), (int) AverageNumberDeniedRequests);
-            MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio), (int) AverageServicedRequestsRatio);
-            MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio), (int) AverageNumberDeniedRequests);
-            MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), (int)AverageDistanceTraveledInMeters);
-            MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds), (int)AverageCustomerRideTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), (int)AverageCustomerWaitTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageCustomerDelayTimeInSeconds),(int)AverageCustomerDelayTimeInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageCustomerEarlyTimeInSeconds),(int)AverageCustomerEarlyTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalCustomerDeliveredOnTime),TotalCustomerDeliveredOnTime);
+            MetricsContainer.AddMetric(nameof(CustomersDeliveredOnTimeRatio),CustomersDeliveredOnTimeRatio);
+            MetricsContainer.AddMetric(nameof(TotalDynamicServedCustomers),TotalDynamicServedCustomers);
+            MetricsContainer.AddMetric(nameof(TotalCustomerWaitTimesInSeconds),TotalCustomerWaitTimesInSeconds);
+            MetricsContainer.AddMetric(nameof(TotalCustomerRideTimesInSeconds),  TotalCustomerRideTimesInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDurationInSeconds), MaximumRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MaximumRouteDistanceInMeters),MaximumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MaximumCustomerRideTimeInSeconds),MaximumCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDurationInSeconds), MinimumRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(MinimumRouteDistanceInMeters), MinimumRouteDistanceInMeters);
+            MetricsContainer.AddMetric(nameof(MinimumCustomerRideTimeInSeconds), MinimumCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageRouteDurationInSeconds),AverageRouteDurationInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageNumberRequests),  AverageNumberRequests);
+            MetricsContainer.AddMetric(nameof(AverageNumberServicedRequests),  AverageNumberServicedRequests);
+            MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests),  AverageNumberDeniedRequests);
+            MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio),  AverageServicedRequestsRatio);
+            MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio),  AverageNumberDeniedRequests);
+            MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), AverageDistanceTraveledInMeters);
+            MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds), AverageCustomerRideTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), AverageCustomerWaitTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerDelayTimeInSeconds),AverageCustomerDelayTimeInSeconds);
+            MetricsContainer.AddMetric(nameof(AverageCustomerEarlyTimeInSeconds),AverageCustomerEarlyTimeInSeconds);
         }
         public List<string> GetOverallStatsPrintableList()
         {

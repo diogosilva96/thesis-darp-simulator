@@ -22,7 +22,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
         private bool _hasBeenTested;
         private RoutingSolutionObject SolutionObject => Solver.GetSolutionObject(Solution);
 
-        public Dictionary<string, int> Metrics => SolutionObject.MetricsContainer.GetMetricsDictionary();
+        public Dictionary<string, double> Metrics => SolutionObject.MetricsContainer.GetMetricsDictionary();
 
 
         protected Algorithm()

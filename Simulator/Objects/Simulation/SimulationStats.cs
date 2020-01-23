@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Simulator.Logger;
 using Simulator.Objects.Data_Objects;
 
@@ -19,6 +20,8 @@ namespace Simulator.Objects.Simulation
         public int TotalEventsHandled;
 
         public int ValidationsCounter;
+
+        public int TotalSimulationTime => _simulation.Events.Max(e => e.Time)-_simulation.Events.Min(e=>e.Time);
 
 
         public SimulationStats(Simulation simulation)
@@ -68,8 +71,8 @@ namespace Simulator.Objects.Simulation
                             _simulation.Context.VehicleFleet.FindAll(v => v.TripIterator != null).Count);
             toPrintList.Add("Average Dynamic requests per hour: " + TotalDynamicRequests /
                             TimeSpan.FromSeconds(_simulation.Params.TotalSimulationTime).TotalHours);
-            toPrintList.Add("Total simulation time: " +
-                            TimeSpan.FromSeconds(_simulation.Params.TotalSimulationTime).TotalHours + " hours.");
+            toPrintList.Add("Total simulated time: " +
+                            TimeSpan.FromSeconds(TotalSimulationTime).TotalHours + " hours.");
             toPrintList.Add("Total Dynamic Requests Served: " + TotalServedDynamicRequests + " out of " +
                             TotalDynamicRequests);
             var percentServedRequests = (int)(((double)TotalServedDynamicRequests / TotalDynamicRequests) * 100);

@@ -51,7 +51,7 @@ namespace Simulator.SimulationViews
             //    RoutingSolutionObject routingSolutionObject = null;
             //    routingSolutionObject = algorithmsTester.Solver.GetSolutionObject(algorithmsTester.Solution);
             //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
-            //    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
+            //    Simulation.InitializeVehicleFlexibleRoute(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
             for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
             {

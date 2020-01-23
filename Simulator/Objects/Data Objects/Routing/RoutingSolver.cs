@@ -393,14 +393,12 @@ namespace Simulator.Objects.Data_Objects.Routing
                         var distance = Calculator.TravelTimeToDistance((int)timeToTravel,DataModel.IndexManager.Vehicles[i].Speed);
                         if (DataModel.IndexManager.GetStop(nodeIndex) != null)
                         {
-                            //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + tw1 + ";" + tw2 + "}; L:" +currentLoad+") --[" + Math.Round(distance) + "m = "+ timeToTravel+ " secs]--> ";
-                            concatenatedString += nodeIndex + "(T:{" + tw1 + ";" + tw2 + "}; L:" + currentLoad + ") --[" + Math.Round(distance) + "m = " + timeToTravel + " secs]--> ";
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + "(T:{" + tw1 + ";" + tw2 + "}; L:" + currentLoad + ") --[" + Math.Round(distance) + "m = " + timeToTravel + " secs]--> ";
 
                         }
                         if (DataModel.IndexManager.GetStop(RoutingIndexManager.IndexToNode(index)) == null) //if the next stop is null finish printing
-                        {
-                            //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" +tw1 + ";" + tw2 + "}; L:" +currentLoad + ")";
-                            concatenatedString += nodeIndex + "(T:{" +
+                        {                 
+                            concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + "(T:{" +
                                                   tw1 + ";" + tw2 + "}; L:" +
                                                   currentLoad + ")";
                         }
@@ -413,10 +411,9 @@ namespace Simulator.Objects.Data_Objects.Routing
                     Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)));
                     var endTimeVar = timeDim.CumulVar(index);
                     currentLoad = solution.Value(capacityDim.CumulVar(index));
-                    if (DataModel.IndexManager.GetStop(nodeIndex) != null)
-                    {
-                        //concatenatedString += DataModel.IndexManager.GetStop(nodeIndex).Id + "(T:{" + solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" + currentLoad + ")";
-                        concatenatedString += nodeIndex + "(T:{" + solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" + currentLoad + ")";
+                    if (DataModel.IndexManager.GetStop(nodeIndex) != null)//if current stop (last stop of current route) is not null
+                    {                        
+                        concatenatedString += DataModel.IndexManager.GetStop(nodeIndex) + "(T:{" + solution.Min(endTimeVar) + ";" + solution.Max(endTimeVar) + "}; L:" + currentLoad + ")";
                     }
 
                     var startTimeVar = timeDim.CumulVar(RoutingModel.Start(i));
@@ -465,7 +462,7 @@ namespace Simulator.Objects.Data_Objects.Routing
 
             if (solution != null)
             {
-               
+
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("| PDTW Solver Solution Printer |");
                 Console.WriteLine("--------------------------------");
@@ -478,6 +475,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 {
                     Console.WriteLine(stringToBePrinted);
                 }
+                Console.WriteLine("--------------------------------");
             }
             else
             {

@@ -61,7 +61,7 @@ namespace Simulator.Objects.Simulation
         }
 
         
-        public void AppendVehicleArriveEvent(Vehicle vehicle)
+        public void InitializeVehicleFirstArriveEvent(Vehicle vehicle,int time)
         {
             
                 if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
@@ -73,12 +73,21 @@ namespace Simulator.Objects.Simulation
                     }
 
                     if (vehicle.TripIterator.Current != null)
-                    {
-                        var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, vehicle.TripIterator.Current.StartTime); //Generates the first event for every vehicle (arrival at the first stop of the route)
+                    {                      
+                    var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, time); //Generates the first event for every vehicle (arrival at the first stop of the route)
                         Events.Add(arriveEvt);
                     }
                 }
                 SortEvents();
+        }
+
+        public void InitializeDepartEvent(Vehicle vehicle, int time)
+        {
+            if (vehicle.TripIterator.Current != null)
+            {
+                var departEvt = EventGenerator.GenerateVehicleDepartEvent(vehicle, time);
+                    Events.Add(departEvt);
+            }
         }
         public override void MainLoop()
         {
@@ -100,7 +109,7 @@ namespace Simulator.Objects.Simulation
             ValidationsLogger = new Logger.Logger(validationsRecorder);
             if (Params.NumberDynamicRequestsPerHour > 0)
             {
-                AppendDynamicRequestEvents();
+                AddDynamicRequestEvents();
             }
             Params.VehicleNumber = Context.VehicleFleet.Count;
             Params.PrintParams();
@@ -109,7 +118,7 @@ namespace Simulator.Objects.Simulation
             Stats = new SimulationStats(this);//initializes Stats
         }
 
-        public void AppendDynamicRequestEvents()
+        public void AddDynamicRequestEvents()
         {
             List<Stop> excludedStops = new List<Stop>();
             excludedStops.Add(Context.Depot);
@@ -129,40 +138,38 @@ namespace Simulator.Objects.Simulation
             }
             SortEvents();
         }
-        public void AssignVehicleFlexibleTrips(RoutingSolutionObject routingSolutionObject,int time)
+        public void InitializeVehicleFlexibleRoute(Vehicle solutionVehicle,List<Stop> solutionVehicleStops,List<Customer> solutionVehicleCustomers,List<long[]>solutionTimeWindows)
         {
-            if (routingSolutionObject != null)
+            if (!Context.VehicleFleet.Contains(solutionVehicle))
             {
-                //Adds the flexible trip vehicles to the vehicleFleet
-                for (int j = 0; j < routingSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
-                {
-                    var solutionVehicle = routingSolutionObject.IndexToVehicle(j);
-                    var solutionVehicleStops = routingSolutionObject.GetVehicleStops(solutionVehicle);
-                    if (solutionVehicleStops.Count >= 2 && solutionVehicleStops[0] != solutionVehicleStops[1])
+                solutionVehicle.StartStop = Context.Depot;
+                solutionVehicle.EndStop = Context.Depot;
+                Context.VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
+            }
+
+            //Adds the flexible trip to the solutionVehicle
+
+            if (solutionVehicleStops.Count >= 2 && solutionVehicleStops[0] != solutionVehicleStops[1]) //if solutionRoute is a valid one
                     {
-                        var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
-                        trip.StartTime =
-                            time + (int) routingSolutionObject
-                                .GetVehicleTimeWindows(solutionVehicle)[0][0]; //start time, might need to change!
-                        trip.Route = Context.Routes.Find(r => r.Id == 1000); //flexible route Id
-                        trip.Stops = solutionVehicleStops;
-                        trip.ExpectedCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
-                        trip.ScheduledTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
-                        solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
-                        solutionVehicle.StartStop = Context.Depot;
-                        solutionVehicle.EndStop = Context.Depot;
-                        AppendVehicleArriveEvent(solutionVehicle);
+                        if (solutionVehicle.TripIterator?.Current == null) //initializes vehicle trip and route, if the trip has not yet been initalized
+                        {
+                            var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
+                            trip.StartTime = (int) solutionTimeWindows[0][0]+1; //start time, might need to change!
+                            trip.Route = Context.Routes.Find(r => r.Id == 1000); //flexible route Id
+                            trip.Stops = solutionVehicleStops;
+                            trip.ExpectedCustomers = solutionVehicleCustomers;
+                            trip.ScheduledTimeWindows = solutionTimeWindows;
+                            solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
+                            InitializeVehicleFirstArriveEvent(solutionVehicle, trip.StartTime);
+                            Console.WriteLine("Vehicle " + solutionVehicle.Id + " route was successfully assigned!");
+                        }
                     }
-                    Context.VehicleFleet.Add(solutionVehicle); //adds the vehicle to the vehicle fleet
-                }
-            }
-            else
-            {
-                throw new ArgumentNullException("Routing solution object is null");
-            }
+
+            
+                
         }
 
-        public void AssignAllConventionalTripsToVehicles() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
+        public void InitializeVehiclesConvetionalRoutes() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
         {
             foreach (var route in Context.Routes)
             {

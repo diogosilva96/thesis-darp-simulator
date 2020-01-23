@@ -17,7 +17,7 @@ namespace Simulator.Events.Handlers
             {
                 Log(evt);
                 evt.AlreadyHandled = true;
-                _consoleLogger.Log("New request:" + customerRequestEvent.Customer + " - " + customerRequestEvent.Customer.PickupDelivery[0] + " -> " + customerRequestEvent.Customer.PickupDelivery[1] + ", TimeWindows: {" + customerRequestEvent.Customer.DesiredTimeWindow[0] + "," + customerRequestEvent.Customer.DesiredTimeWindow[1] + "} at " + TimeSpan.FromSeconds(evt.Time).ToString());
+                _consoleLogger.Log("New Customer (dynamic) request:" + customerRequestEvent.Customer + " - " + customerRequestEvent.Customer.PickupDelivery[0] + " -> " + customerRequestEvent.Customer.PickupDelivery[1] + ", TimeWindows: {" + customerRequestEvent.Customer.DesiredTimeWindow[0] + "," + customerRequestEvent.Customer.DesiredTimeWindow[1] + "} at " + TimeSpan.FromSeconds(evt.Time).ToString());
 
                 //Check if request can be served, if so the 
                 Simulation.Stats.TotalDynamicRequests++;
@@ -35,13 +35,13 @@ namespace Simulator.Events.Handlers
                         //dataModel.PrintTimeWindows();
                         solver.PrintSolution(solution);
                         Simulation.Stats.TotalServedDynamicRequests++;
-                        _consoleLogger.Log(newCustomer.ToString() + " was inserted into a vehicle service at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
+                        _consoleLogger.Log(newCustomer.ToString() + " request was inserted into a vehicle route at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
 
                         solutionObject = solver.GetSolutionObject(solution);
                     }
                     else
                     {
-                        _consoleLogger.Log(newCustomer.ToString() + " was not possible to be served at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
+                        _consoleLogger.Log(newCustomer.ToString() + " will not be able to be served by any of the available vehicles at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
                     }
                 }
 
@@ -54,13 +54,13 @@ namespace Simulator.Events.Handlers
                     {
                         var solutionRoute = solutionObject.GetVehicleStops(vehicle);
                         var solutionTimeWindows = solutionObject.GetVehicleTimeWindows(vehicle);
-                        var solutionCustomers = solutionObject.GetVehicleCustomers(vehicle);
-                        if (vehicle.VisitedStops.Count > 1 && vehicle.CurrentStop == Simulation.Context.Depot)
+                        var solutionCustomers = solutionObject.GetVehicleCustomers(vehicle);               
+                        if (solutionRoute.Count >= 2 && solutionRoute[0] != solutionRoute[1])//check if current vehicle route is valid
                         {
-                            Console.WriteLine("a");
-                        }
-                        if (solutionRoute.Count >= 2 && solutionRoute[0] != solutionRoute[1])
-                        {
+                            if (vehicle.VisitedStops.Count > 1 && vehicle.CurrentStop == Simulation.Context.Depot)
+                            {
+                                Console.WriteLine("Vehicle " + vehicle.Id + " already performed a route and is currently idle at depot.");//debug
+                            }
                             if (vehicle.TripIterator?.Current != null)
                             {
                                 var currentStopIndex = vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
@@ -78,13 +78,12 @@ namespace Simulator.Events.Handlers
                                 //inserts the already visited stops at the beginning of the solutionRoute list
                                 for (int e = visitedStops.Count - 1; e >= 0; e--)
                                 {
-
                                     solutionRoute.Insert(0, visitedStops[e]);
                                     solutionTimeWindows.Insert(0, visitedTimeWindows[e]);
                                 }
 
                                 vehicle.TripIterator.Current.AssignStops(solutionRoute, solutionTimeWindows, currentStopIndex);
-                                vehicle.TripIterator.Current.ExpectedCustomers = customers.FindAll(c => !c.IsInVehicle); //the expected customers for the current vehicle are the ones that are not in that vehicle
+                                vehicle.TripIterator.Current.ExpectedCustomers = customers.FindAll(c=> !c.IsInVehicle);//the expected customers for the current vehicle are the ones that are not in that vehicle
 
                                 var vehicleEvents = Simulation.Events.FindAll(e => (e is VehicleStopEvent vse && vse.Vehicle == vehicle && e.Time >= evt.Time) || (e is CustomerVehicleEvent cve && cve.Vehicle == vehicle && e.Time >= evt.Time)).OrderBy(e => e.Time).ThenBy(e => e.Category).ToList(); //gets all next vehicle depart or arrive events
                                 if (vehicleEvents.Count > 0)
@@ -134,25 +133,22 @@ namespace Simulator.Events.Handlers
                                 }
                                 else
                                 {
-                                    //if vehicle events is 0 it means the vehicle has no more generated events for it, need to generate a new event for the vehicle
-                                    //vehicle.TripIterator.Current.IsDone = false;
-                                    //Simulation.AppendVehicleArriveEvent(vehicle);
+                                    //if vehicle events is 0 it means the vehicle has no more generated events for it, need to generate a new depart event for the vehicle
+                                    vehicle.TripIterator.Current.IsDone = false;//current trip is no longer completed
+                                    var currentDepartureTime = (int) solutionTimeWindows[currentStopIndex][1];
+                                    if (currentDepartureTime == evt.Time)//if departure time is the same time as the event being handled adds 1 to its time
+                                    {
+                                        currentDepartureTime++;
+                                    }
+                                    Simulation.InitializeDepartEvent(vehicle,currentDepartureTime);
+                                    //Simulation.InitializeVehicleFirstArriveEvent(vehicle,currentArriveTime);
                                 }
 
                             }
                             else
                             {
-                                //trip assignment for vehicles that are not currently serving
-                                var trip = new Trip(20000 + vehicle.Id, "Flexible trip " + vehicle.Id);
-                                trip.StartTime =
-                                    (int) solutionObject.GetVehicleTimeWindows(vehicle)[0][0] +
-                                    1; //start time, might need to change!
-                                trip.Route = Simulation.Context.Routes.Find(r => r.Id == 1000); //flexible route Id
-                                trip.Stops = solutionRoute;
-                                trip.ExpectedCustomers = solutionCustomers;
-                                trip.ScheduledTimeWindows = solutionTimeWindows;
-                                vehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
-                                Simulation.AppendVehicleArriveEvent(vehicle);
+                                //trip assignment for vehicles that are have not yet performed a route                                                
+                                Simulation.InitializeVehicleFlexibleRoute(vehicle, solutionRoute, solutionCustomers, solutionTimeWindows);
                             }
                         }
                     }

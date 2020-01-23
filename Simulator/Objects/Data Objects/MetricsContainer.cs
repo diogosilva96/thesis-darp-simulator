@@ -6,14 +6,14 @@ namespace Simulator.Objects.Data_Objects
 {
     public class MetricsContainer
     {
-        private Dictionary<string, int> _metricValueDictionary;
+        private Dictionary<string, double> _metricValueDictionary;
 
         public MetricsContainer()
         {
-            _metricValueDictionary = new Dictionary<string, int>();
+            _metricValueDictionary = new Dictionary<string, double>();
         }
 
-        public void AddMetric(string metricName, int metricValue)
+        public void AddMetric(string metricName, double metricValue)
         {
             if (!_metricValueDictionary.ContainsKey(metricName))
             {
@@ -21,7 +21,7 @@ namespace Simulator.Objects.Data_Objects
             }
         }
 
-        public Dictionary<string, int> GetMetricsDictionary()
+        public Dictionary<string, double> GetMetricsDictionary()
         {
             return _metricValueDictionary;
         }
@@ -34,7 +34,7 @@ namespace Simulator.Objects.Data_Objects
             }
         }
 
-        public string MetricToString(KeyValuePair<string, int> metricValue)
+        public string MetricToString(KeyValuePair<string, double> metricValue)
         {
             string message = metricValue.Key + ": " + metricValue.Value;
             return message;

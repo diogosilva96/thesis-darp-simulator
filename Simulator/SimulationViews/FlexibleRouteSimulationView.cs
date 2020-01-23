@@ -52,9 +52,20 @@ namespace Simulator.SimulationViews
                     {
                         routingSolver.PrintSolution(timeWindowSolution);
                         routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
-                    }
-                    Simulation.AssignVehicleFlexibleTrips(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
+                        for (int j = 0; j < routingSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
+                        {
+                            var solutionVehicle = routingSolutionObject.IndexToVehicle(j);
+                            var solutionVehicleStops = routingSolutionObject.GetVehicleStops(solutionVehicle);
+                            var solutionTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
+                            var solutionVehicleCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
+                            Simulation.InitializeVehicleFlexibleRoute(solutionVehicle, solutionVehicleStops, solutionVehicleCustomers, solutionTimeWindows);
+                        }
+
                 }
+
+
+
+            }
         }
 
         public FlexibleRouteSimulationView(Simulation simulation) : base(simulation)
