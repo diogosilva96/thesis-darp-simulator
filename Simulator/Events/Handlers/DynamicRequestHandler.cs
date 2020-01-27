@@ -140,7 +140,8 @@ namespace Simulator.Events.Handlers
                                     {
                                         currentDepartureTime++;
                                     }
-                                    Simulation.InitializeDepartEvent(vehicle,currentDepartureTime);
+                                    var departEvt = Simulation.EventGenerator.GenerateVehicleDepartEvent(vehicle, currentDepartureTime);
+                                    Simulation.Events.Add(departEvt);
                                     //Simulation.InitializeVehicleFirstArriveEvent(vehicle,currentArriveTime);
                                 }
 

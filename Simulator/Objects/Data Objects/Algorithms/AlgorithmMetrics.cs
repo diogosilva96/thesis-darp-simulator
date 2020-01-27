@@ -82,7 +82,10 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 algorithmsWithCurrentSearchTimeAndCustomerNumberAndName = AlgorithmsTested.FindAll(ta => ta.Name == algName && ta.SearchTimeLimitInSeconds == int.Parse(searchTime) && ta.DataModel.IndexManager.Customers.Count == int.Parse(customerNumber));
                 var auxMetricDictionaryWithCurrentSearchTimeAndCustomerNumberAndName = new Dictionary<string,List<double>>();
                 var totalTests = algorithmsWithCurrentSearchTimeAndCustomerNumberAndName.Count; //total of tests for current alg name and searchtime
-                currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
+                if (!currentMetricDictionary.Value.ContainsKey(nameof(totalTests)))
+                {
+                    currentMetricDictionary.Value.Add(nameof(totalTests), totalTests);
+                }
                 foreach (var testedAlgorithm in algorithmsWithCurrentSearchTimeAndCustomerNumberAndName)
                 {
                         foreach (var metric in testedAlgorithm.Metrics) //totalMetrics

@@ -10,7 +10,7 @@ namespace Simulator.Objects.Simulation
     {
         public List<Event> Events;
 
-        protected EventGenerator EventGenerator;
+        public EventGenerator EventGenerator;
 
         protected int TotalEventsHandled;
 

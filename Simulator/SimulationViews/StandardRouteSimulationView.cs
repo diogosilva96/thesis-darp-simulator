@@ -18,7 +18,7 @@ namespace Simulator.SimulationViews
                 startTimeHour = GetIntInput(0, 24);
                 ConsoleLogger.Log("Insert the end hour of the simulation.");
                 endTimeHour = GetIntInput(startTimeHour, 24);
-                Simulation.InitializeVehiclesConvetionalRoutes();
+                Simulation.InitializeVehiclesConventionalRoutes();
         }
 
         public StandardRouteSimulationView(Simulation simulation) : base(simulation)

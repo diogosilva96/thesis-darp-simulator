@@ -25,33 +25,6 @@ namespace Simulator.SimulationViews
             var vehicleNumber = 20;
             var count = 0;
             var algorithmsMetrics = new AlgorithmMetrics();
-            //Simulation.Params.VehicleNumber = vehicleNumber;
-            //Simulation.Params.NumberInitialRequests = customerNumber;
-            //bool allowDropNodes = false;
-            //RandomNumberGenerator.Seed = 2;
-            //List<Vehicle> vehicles = new List<Vehicle>();
-            //var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, Simulation);
-            //var printableList = dataModel.GetSettingsPrintableList();
-            //ConsoleLogger.Log(printableList);
-            //dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-            //var searchTime = 20;
-            //AlgorithmContainer algorithmContainer = new AlgorithmContainer();
-            //    var algorithm = algorithmContainer.SearchAlgorithms[2];
-
-            //    var algorithmsTester = new SearchAlgorithm(algorithm, searchTime);
-            //    algorithmsTester.Test(dataModel, allowDropNodes);
-            //    ConsoleLogger.Log(algorithmsTester.GetResultPrintableList());
-            //    if (count == 0)
-            //    {
-
-            //        logs base message type style
-            //        algorithmsLogger.Log(algorithmsTester.GetCSVMessageStyle());
-            //    }
-            //    algorithmsLogger.Log(algorithmsTester.GetCSVResultsMessage());
-            //    RoutingSolutionObject routingSolutionObject = null;
-            //    routingSolutionObject = algorithmsTester.Solver.GetSolutionObject(algorithmsTester.Solution);
-            //    Simulation.Params.NumberDynamicRequestsPerHour = 0;
-            //    Simulation.InitializeVehicleFlexibleRoute(routingSolutionObject, Simulation.Params.SimulationTimeWindow[0]);
             Simulation.Params.VehicleNumber = vehicleNumber;
             for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
             {
@@ -89,7 +62,6 @@ namespace Simulator.SimulationViews
             }
 
             algorithmsMetrics.SaveMetrics(metricsPath);
-        
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)

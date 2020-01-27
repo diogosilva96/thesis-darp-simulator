@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Google.OrTools.ConstraintSolver;
+using Google.Protobuf.WellKnownTypes;
 using Simulator.Events;
 using Simulator.Events.Handlers;
 using Simulator.Logger;
@@ -37,7 +39,7 @@ namespace Simulator.Objects.Simulation
         public void InitEventHandlers()
         {
             //var dynamicRequestCheckHandler = new RequestGenerationCheckHandler(this);
-            
+
             var arrivalHandler = new VehicleArrivalHandler(this);
             FirstEventHandler = arrivalHandler;
             //dynamicRequestCheckHandler.Successor = arrivalHandler;
@@ -49,54 +51,65 @@ namespace Simulator.Objects.Simulation
             customerLeaveHandler.Successor = customerEnterHandler;
             var customerRequestHandler = new DynamicRequestHandler(this);
             customerEnterHandler.Successor = customerRequestHandler;
-           
+
         }
+
         public void Init()
         {
             Params.InitParams(); //inits the params that need to be updates (seed and loggerPaths)
-            Params.Seed = 1;//debug
             Events.Clear(); //clears all events 
             Context.VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
-            
+
         }
 
-        
-        public void InitializeVehicleFirstArriveEvent(Vehicle vehicle,int time)
-        {
-            
-                if (vehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
-                {
-                    if (vehicle.TripIterator.Current == null)
-                    {
-                        vehicle.TripIterator.Reset();
-                        vehicle.TripIterator.MoveNext(); //initializes the serviceIterator
-                    }
 
-                    if (vehicle.TripIterator.Current != null)
-                    {                      
-                    var arriveEvt = EventGenerator.GenerateVehicleArriveEvent(vehicle, time); //Generates the first event for every vehicle (arrival at the first stop of the route)
-                        Events.Add(arriveEvt);
-                    }
-                }
-                SortEvents();
-        }
-
-        public void InitializeDepartEvent(Vehicle vehicle, int time)
-        {
-            if (vehicle.TripIterator.Current != null)
-            {
-                var departEvt = EventGenerator.GenerateVehicleDepartEvent(vehicle, time);
-                    Events.Add(departEvt);
-            }
-        }
         public override void MainLoop()
         {
             while (true)
             {
                 Init(); //initializes simulation variables
-                SimulationViews.ViewFactory.Instance().Create(0,this).PrintView();
+                SimulationViews.ViewFactory.Instance().Create(0, this).PrintView();
                 Simulate();
 
+            }
+        }
+
+        public void InitializeFlexibleSimulation(bool allowDropNodes)
+        {
+            var dataModel = DataModelFactory.Instance().CreateInitialSimulationDataModel(allowDropNodes, this);
+            if (dataModel != null)
+            {
+                RoutingSolver routingSolver = new RoutingSolver(dataModel, false);
+                var printableList = dataModel.GetSettingsPrintableList();
+                foreach (var tobePrinted in printableList)
+                {
+                    Console.WriteLine(tobePrinted);
+                }
+                dataModel.PrintDataStructures();
+                RoutingSearchParameters searchParameters =
+                    operations_research_constraint_solver.DefaultRoutingSearchParameters();
+                searchParameters.FirstSolutionStrategy =
+                    FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
+                searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing;
+                searchParameters.TimeLimit = new Duration { Seconds = 10 };
+                var timeWindowSolution = routingSolver.TryGetSolution(searchParameters);
+                RoutingSolutionObject routingSolutionObject = null;
+                if (timeWindowSolution != null)
+                {
+
+                    routingSolver.PrintSolution(timeWindowSolution);
+
+                    routingSolutionObject = routingSolver.GetSolutionObject(timeWindowSolution);
+                    for (int j = 0; j < routingSolutionObject.VehicleNumber; j++) //Initializes the flexible trips
+                    {
+                        var solutionVehicle = routingSolutionObject.IndexToVehicle(j);
+                        var solutionVehicleStops = routingSolutionObject.GetVehicleStops(solutionVehicle);
+                        var solutionTimeWindows = routingSolutionObject.GetVehicleTimeWindows(solutionVehicle);
+                        var solutionVehicleCustomers = routingSolutionObject.GetVehicleCustomers(solutionVehicle);
+                        InitializeVehicleFlexibleRoute(solutionVehicle, solutionVehicleStops, solutionVehicleCustomers, solutionTimeWindows);
+                    }
+
+                }
             }
         }
 
@@ -109,16 +122,17 @@ namespace Simulator.Objects.Simulation
             ValidationsLogger = new Logger.Logger(validationsRecorder);
             if (Params.NumberDynamicRequestsPerHour > 0)
             {
-                AddDynamicRequestEvents();
+                AddAllDynamicRequestEvents();
             }
             Params.VehicleNumber = Context.VehicleFleet.Count;
             Params.PrintParams();
             var paramsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"params.txt");
             Params.SaveParams(paramsPath);
             Stats = new SimulationStats(this);//initializes Stats
+            SortEvents();
         }
 
-        public void AddDynamicRequestEvents()
+        public void AddAllDynamicRequestEvents()
         {
             List<Stop> excludedStops = new List<Stop>();
             excludedStops.Add(Context.Depot);
@@ -131,12 +145,10 @@ namespace Simulator.Objects.Simulation
                     var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);
                     var pickupTimeWindow = new int[] {requestTime, maxHourTime};
                     var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops, excludedStops, requestTime, pickupTimeWindow,true); //Generates a random dynamic customer
-                    var customerRequestEvent =
-                        EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
-                    this.AddEvent(customerRequestEvent);
+                    var customerRequestEvent = EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
+                    AddEvent(customerRequestEvent);
                 }
             }
-            SortEvents();
         }
         public void InitializeVehicleFlexibleRoute(Vehicle solutionVehicle,List<Stop> solutionVehicleStops,List<Customer> solutionVehicleCustomers,List<long[]>solutionTimeWindows)
         {
@@ -150,7 +162,7 @@ namespace Simulator.Objects.Simulation
             //Adds the flexible trip to the solutionVehicle
 
             if (solutionVehicleStops.Count >= 2 && solutionVehicleStops[0] != solutionVehicleStops[1]) //if solutionRoute is a valid one
-                    {
+            {
                         if (solutionVehicle.TripIterator?.Current == null) //initializes vehicle trip and route, if the trip has not yet been initalized
                         {
                             var trip = new Trip(20000 + solutionVehicle.Id, "Flexible trip " + solutionVehicle.Id);
@@ -160,16 +172,31 @@ namespace Simulator.Objects.Simulation
                             trip.ExpectedCustomers = solutionVehicleCustomers;
                             trip.ScheduledTimeWindows = solutionTimeWindows;
                             solutionVehicle.AddTrip(trip); //adds the new flexible trip to the vehicle
-                            InitializeVehicleFirstArriveEvent(solutionVehicle, trip.StartTime);
+                            if (solutionVehicle.ServiceTrips.Count > 0) //if the vehicle has services to be done
+                            {
+                                if (solutionVehicle.TripIterator.Current == null)
+                                {
+                                    solutionVehicle.TripIterator.Reset();
+                                    solutionVehicle.TripIterator.MoveNext(); //initializes the serviceIterator
+                                }
+
+                                if (solutionVehicle.TripIterator.Current != null)
+                                {
+                                    var arriveEvt =
+                                        EventGenerator.GenerateVehicleArriveEvent(solutionVehicle,
+                                            trip.StartTime); //Generates the first arrive event for every vehicle that has a route assigned in the solution
+                                    Events.Add(arriveEvt);
+                                }
+                            }
                             Console.WriteLine("Vehicle " + solutionVehicle.Id + " route was successfully assigned!");
                         }
-                    }
+            }
 
             
                 
         }
 
-        public void InitializeVehiclesConvetionalRoutes() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
+        public void InitializeVehiclesConventionalRoutes() //assigns all the conventional trips to n vehicles where n = the number of trips, conventional trip is an already defined trip with fixed routes
         {
             foreach (var route in Context.Routes)
             {
