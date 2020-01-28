@@ -32,11 +32,11 @@ namespace Simulator.Objects.Simulation
         {
             Params = @params;
             Context = context;
-            InitEventHandlers();
+            InitializeEventHandlers();
 
         }
 
-        public void InitEventHandlers()
+        public void InitializeEventHandlers()
         {
             //var dynamicRequestCheckHandler = new RequestGenerationCheckHandler(this);
 
@@ -54,25 +54,8 @@ namespace Simulator.Objects.Simulation
 
         }
 
-        public void Init()
-        {
-            Params.InitParams(); //inits the params that need to be updates (seed and loggerPaths)
-            Events.Clear(); //clears all events 
-            Context.VehicleFleet.Clear(); //clears all vehicles from vehicle fleet
-
-        }
 
 
-        public override void MainLoop()
-        {
-            while (true)
-            {
-                Init(); //initializes simulation variables
-                SimulationViews.ViewFactory.Instance().Create(0, this).PrintView();
-                Simulate();
-
-            }
-        }
 
         public void InitializeFlexibleSimulation(bool allowDropNodes)
         {
@@ -111,6 +94,7 @@ namespace Simulator.Objects.Simulation
 
                 }
             }
+            Simulate();
         }
 
         public override void OnSimulationStart()
@@ -223,6 +207,7 @@ namespace Simulator.Objects.Simulation
                     }
                 }
             }
+            Simulate();
         }
 
         public override void OnSimulationEnd()

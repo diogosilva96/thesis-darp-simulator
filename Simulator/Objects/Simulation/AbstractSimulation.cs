@@ -22,9 +22,6 @@ namespace Simulator.Objects.Simulation
             EventGenerator = EventGenerator.Instance();
         }
 
-
-        public abstract void MainLoop();
-
         public abstract void OnSimulationStart();
 
         public IEventHandler FirstEventHandler;

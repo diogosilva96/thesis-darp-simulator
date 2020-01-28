@@ -16,12 +16,13 @@ namespace Simulator.Objects
                     _seed = value;
                     Random = new Random(_seed);
                 }
+           
             }
         }
 
         static RandomNumberGenerator()
         {
-            Seed = 1;
+            Seed = new Random().Next(int.MaxValue);
             GenerateNewRandomSeed();
         }
         private static int _seed;

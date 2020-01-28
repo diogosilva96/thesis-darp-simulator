@@ -45,6 +45,11 @@ namespace Simulator.Objects.Simulation
 
         }
 
+        public string GetCSVStatsMessage()
+        {
+            string message = "";
+            return message;
+        }
         public void PrintStats()
         {
             var statsPrintableList = GetStatsPrintableList();

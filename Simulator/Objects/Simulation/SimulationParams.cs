@@ -49,10 +49,11 @@ namespace Simulator.Objects.Simulation
             NumberDynamicRequestsPerHour = numberDynamicRequestsPerHour;
             MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
             MaximumAllowedDeliveryDelay = maxAllowedDeliveryDelaySeconds;
-            InitParams();
+            InitializeParams();
         }
 
-        public void InitParams() //inits a new seed and updates the LoggerPaths
+        private void InitializeParams() //inits a new
+                                        //and updates the LoggerPaths
         {
             RandomNumberGenerator.GenerateNewRandomSeed();
             UpdateLoggerPaths();
@@ -120,6 +121,7 @@ namespace Simulator.Objects.Simulation
             settingsLogger.Log(nameof(VehicleNumber)+ " : "+VehicleNumber);
             settingsLogger.Log(nameof(VehicleSpeed) + ": " + VehicleSpeed);
             settingsLogger.Log(nameof(VehicleCapacity) + ": " + VehicleCapacity);
+            settingsLogger.Log(nameof(NumberInitialRequests)+ ": "+NumberInitialRequests);
             settingsLogger.Log(nameof(NumberDynamicRequestsPerHour)+": "+NumberDynamicRequestsPerHour);
         }
     }
