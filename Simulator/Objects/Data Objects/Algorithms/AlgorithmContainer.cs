@@ -58,7 +58,7 @@ namespace Simulator.Objects.Data_Objects.Algorithms
             searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch);
             searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing);
             searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.TabuSearch);
-            searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.Automatic);
+            //searchAlgorithms.Add(LocalSearchMetaheuristic.Types.Value.Automatic); //not being used
             return searchAlgorithms;
         }
 
