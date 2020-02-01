@@ -40,10 +40,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                 int allowDropNodes = AllowDropNodes ? 1 : 0;
                 string message = Name + splitter + allowDropNodes + splitter +
                                  SearchTimeLimitInSeconds + splitter + ComputationTimeInSeconds + splitter + MaxUpperBoundInMinutes;
-                foreach (var metric in SolutionObject.MetricsContainer.GetMetricsDictionary())
+                if (SolutionObject.MetricsContainer.GetMetricsDictionary() != null)
                 {
-                    message += splitter + metric.Value;
+                    foreach (var metric in SolutionObject.MetricsContainer.GetMetricsDictionary())
+                    {
+                        message += splitter + metric.Value;
+                    }
                 }
+
                 message += splitter + DataModel.Id;
                 return message;
             }
@@ -105,10 +109,14 @@ namespace Simulator.Objects.Data_Objects.Algorithms
                     toPrintList.Add("Search time limit: " + SearchTimeLimitInSeconds + " seconds");
                 }
 
-                foreach (var metricDict in SolutionObject.MetricsContainer.GetMetricsDictionary())
+                if (SolutionIsFeasible)
                 {
-                    toPrintList.Add(SolutionObject.MetricsContainer.MetricToString(metricDict));
+                    foreach (var metricDict in SolutionObject.MetricsContainer.GetMetricsDictionary())
+                    {
+                        toPrintList.Add(SolutionObject.MetricsContainer.MetricToString(metricDict));
+                    }
                 }
+
                 toPrintList.Add("Seed: "+RandomNumberGenerator.Seed);
                 toPrintList.Add("-----------------------------");
                 return toPrintList;

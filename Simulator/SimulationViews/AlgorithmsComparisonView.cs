@@ -24,9 +24,9 @@ namespace Simulator.SimulationViews
                 var dataSetLogger = new Logger.Logger(new FileRecorder(Path.Combine(Simulation.Params.CurrentSimulationLoggerPath,@"algorithmsDataset.csv"), "DataModelId,CustomersNumber,VehicleNumber,MaxRideTimeDurationInMinutes,MaxAllowedUpperBoundLimitInMinutes,Seed"));
             var vehicleNumber = 20;
             var count = 0;
-            var algorithmsMetrics = new AlgorithmMetrics();
+            //var algorithmsMetrics = new AlgorithmMetrics();
             Simulation.Params.VehicleNumber = vehicleNumber;
-            for (int customersNumber = 50; customersNumber <= 50; customersNumber = customersNumber + 50)
+            for (int customersNumber = 25; customersNumber <= 100; customersNumber = customersNumber + 25)
             {
                 Simulation.Params.NumberInitialRequests = customersNumber;
                 for (int i = 0; i < 10; i++) // tests 10 different data models
@@ -39,7 +39,7 @@ namespace Simulator.SimulationViews
                     var printableList = dataModel.GetSettingsPrintableList();
                     ConsoleLogger.Log(printableList);
                     dataSetLogger.Log(dataModel.GetCSVSettingsMessage());
-                    for (int searchTime = 5; searchTime <= 60; searchTime = searchTime + 5) //test different same datamodel with different search times
+                    for (int searchTime = 5; searchTime <= 90; searchTime = searchTime + 5) //test different same datamodel with different search times
                     {
                         AlgorithmContainer algorithmContainer = new AlgorithmContainer();
                         foreach (var searchAlgorithm in algorithmContainer.SearchAlgorithms)
@@ -52,8 +52,7 @@ namespace Simulator.SimulationViews
                             {
                                 //logs base message type style
                                 algorithmsLogger.Log(algorithm.GetCSVMessageStyle());
-                            }
-                            algorithmsMetrics.AddAlgorithm(algorithm);
+                            }                            
                             algorithmsLogger.Log(algorithm.GetCSVResultsMessage());
                             count++;
                         }
@@ -61,7 +60,7 @@ namespace Simulator.SimulationViews
                 }
             }
 
-            algorithmsMetrics.SaveMetrics(metricsPath);
+            //algorithmsMetrics.SaveMetrics(metricsPath);
         }
 
         public AlgorithmsComparisonView(Objects.Simulation.Simulation simulation) : base(simulation)

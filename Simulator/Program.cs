@@ -28,9 +28,7 @@ namespace Simulator
         {
 
             SimulationContext simulationContext = new SimulationContext();
-            var option = 1;
-            if (option == 1)
-            {
+            var option = 2;
                 while (true)
                 {
                     if (option == 1)
@@ -81,7 +79,6 @@ namespace Simulator
 
                 Console.Read();
 
-            }
-        }
+            }      
     }
 }
