@@ -21,6 +21,8 @@ namespace Simulator.Objects.Simulation
 
         public int ValidationsCounter;
 
+        public MetricsContainer SimulationMetricsContainer;
+
         public int TotalSimulationTime => _simulation.Events.Max(e => e.Time)-_simulation.Events.Min(e=>e.Time);
 
 
@@ -33,6 +35,7 @@ namespace Simulator.Objects.Simulation
             TotalServedDynamicRequests = 0;
             TotalEventsHandled = 0;
             ValidationsCounter = 0;
+            SimulationMetricsContainer = new MetricsContainer();
         }
 
         public void SaveStats(string path)
@@ -45,19 +48,73 @@ namespace Simulator.Objects.Simulation
 
         }
 
-        public string GetCSVStatsMessage()
+        public string GetSimulationStatsCSVMessage()
         {
-            string message = "";
+            if (SimulationMetricsContainer.GetMetricsDictionary().Count == 0)
+            {
+                BuildAllSimulationMetrics();
+            }
+            string message = _simulation.Params.Seed.ToString();
+            if (SimulationMetricsContainer.GetMetricsDictionary().Count > 0)
+            {
+                foreach (var metricDict in SimulationMetricsContainer.GetMetricsDictionary())
+                {
+                    message += ", " + metricDict.Value;
+                }
+            }
+
             return message;
         }
+
+        public string GetSimulationStatsCSVFormatMessage()
+        {
+            if (SimulationMetricsContainer.GetMetricsDictionary().Count == 0)
+            {
+                BuildAllSimulationMetrics();
+            }
+            string message = "Seed";
+            if (SimulationMetricsContainer.GetMetricsDictionary().Count > 0)
+            {
+                foreach (var metricDict in SimulationMetricsContainer.GetMetricsDictionary())
+                {
+                    message += ", "+metricDict.Key;
+                }
+            }
+
+            return message;
+        }
+
         public void PrintStats()
         {
             var statsPrintableList = GetStatsPrintableList();
             _consoleLogger.Log(statsPrintableList);
         }
+
+        public void BuildAllSimulationMetrics()
+        {
+
+            SimulationMetricsContainer.AddMetric("NumberAvailableVehicles", _simulation.Context.VehicleFleet.Count);
+            SimulationMetricsContainer.AddMetric("NumberVehiclesUsed", _simulation.Context.VehicleFleet.FindAll(v => v.TripIterator != null).Count);
+            SimulationMetricsContainer.AddMetric("NumberDynamicRequestsPerHour",TotalDynamicRequests);
+            SimulationMetricsContainer.AddMetric("TotalSimulationTime",TotalSimulationTime);
+            SimulationMetricsContainer.AddMetric("TotalDynamicRequestsServed",TotalServedDynamicRequests);
+            SimulationMetricsContainer.AddMetric("TotalDynamicRequests",TotalDynamicRequests);
+            var percentServedRequests = (int)(((double)TotalServedDynamicRequests / TotalDynamicRequests) * 100);
+            SimulationMetricsContainer.AddMetric("PercentageServedDynamicRequests",percentServedRequests);
+            var allRouteVehicles = _simulation.Context.VehicleFleet.FindAll(v =>
+                v.TripIterator != null && v.TripIterator.Current != null);
+            var vehicleServiceStatistics = new VehicleStatistics(allRouteVehicles);
+            var allVehicleMetricsDictionary = vehicleServiceStatistics.MetricsContainer.GetMetricsDictionary();
+            foreach (var allVehicleMetrics in allVehicleMetricsDictionary)
+            {
+                SimulationMetricsContainer.AddMetric(allVehicleMetrics.Key,allVehicleMetrics.Value);
+            }
+                
+
+        }
         private List<string> GetStatsPrintableList()
         {
-           
+          
             var toPrintList = new List<string>();
             var alreadyHandledEvents = _simulation.Events.FindAll(e => e.AlreadyHandled);
             toPrintList.Add("Total number of events handled: " +

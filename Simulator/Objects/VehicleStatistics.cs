@@ -59,7 +59,7 @@ namespace Simulator.Objects
             }
         }
 
-        public double TotalCustomersDelayed => TotalCustomers - TotalCustomerDeliveredOnTime;
+        public double TotalCustomersDelayed => TotalCustomersServed - TotalCustomerDeliveredOnTime;
 
         public double TotalDynamicServedCustomers
         {
@@ -214,12 +214,12 @@ namespace Simulator.Objects
                     totalCustomersOnTime += numCustomers;
                 }
 
-                double ratio = ((double)totalCustomersOnTime / (double)TotalCustomers);
+                double ratio = ((double)totalCustomersOnTime / (double)TotalCustomersServed);
                 return ratio;
             }
         }
 
-        public int TotalCustomers
+        public int TotalCustomersServed
         {
             get
             {
@@ -349,7 +349,7 @@ namespace Simulator.Objects
         private void ComputeOverallMetrics()
         {
             MetricsContainer.AddMetric(nameof(TotalDistanceTraveledInMeters),TotalDistanceTraveledInMeters);
-            MetricsContainer.AddMetric(nameof(TotalCustomers),TotalCustomers);
+            MetricsContainer.AddMetric(nameof(TotalCustomersServed),TotalCustomersServed);
             MetricsContainer.AddMetric(nameof(TotalCustomerDeliveredOnTime),TotalCustomerDeliveredOnTime);
             MetricsContainer.AddMetric(nameof(CustomersDeliveredOnTimeRatio),CustomersDeliveredOnTimeRatio);
             MetricsContainer.AddMetric(nameof(TotalDynamicServedCustomers),TotalDynamicServedCustomers);

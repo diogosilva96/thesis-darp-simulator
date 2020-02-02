@@ -28,7 +28,8 @@ namespace Simulator
         {
 
             SimulationContext simulationContext = new SimulationContext();
-            var option = 2;
+            var option = 1;
+            var count = 0;
                 while (true)
                 {
                     if (option == 1)
@@ -49,23 +50,26 @@ namespace Simulator
                         var auxTime = currentTime.Split(":");
                         currentTime = auxTime[0] + auxTime[1] + auxTime[2];
                         var currentSimulationStatsFileName =
-                            Path.Combine(loggerBasePath, @"SimulationStats" + currentTime + ".txt");
+                            Path.Combine(loggerBasePath, @"SimulationStats" + currentTime + ".csv");
                         var simulationStatsRecorder = new FileRecorder(currentSimulationStatsFileName);
                         var fileLogger = new Logger.Logger(simulationStatsRecorder);
                         for (int numIterations = 0; numIterations < 10; numIterations++)
                         {
-                            for (int numDynamicCustomersHour = 5;
-                                numDynamicCustomersHour < 15;
-                                numDynamicCustomersHour++)
+                            for (int numDynamicCustomersHour = 5; numDynamicCustomersHour < 15; numDynamicCustomersHour=numDynamicCustomersHour+5)
                             {
-                                SimulationParams simulationParams =
-                                    new SimulationParams(30 * 60, 30 * 60, numDynamicCustomersHour, 15, 5);
+                                SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, numDynamicCustomersHour, 15, 5);
                                 Simulation simulation = new Simulation(simulationParams, simulationContext);
                                 simulation.InitializeFlexibleSimulation(false);
-                                var statsMessage = simulation.Stats.GetCSVStatsMessage();
+                                if (count == 0)
+                                {
+                                    fileLogger.Log(simulation.Stats.GetSimulationStatsCSVFormatMessage());
+                                }
+                                var statsMessage = simulation.Stats.GetSimulationStatsCSVMessage();
                                 fileLogger.Log(statsMessage);
+                                count++;
                             }
                         }
+                        
                     }
                     else
                     {
