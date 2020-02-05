@@ -120,8 +120,8 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                 {
                     var pickup = customer.PickupDelivery[0];
                     var pickupTime = customer.DesiredTimeWindow[0];
-                    var pickupTimeIsRespected = currentTimeWindow[0] >= pickupTime;
-                    message += "Enter: " + customer.ToString() + ", Pickup: " + pickup.ToString() + ", PickupTime: " + pickupTime+", PickupTimeIsRespected: "+pickupTimeIsRespected;
+                    var pickupTimeIsRespected = customer.RealTimeWindow[0] >= pickupTime;
+                    message += "Enter: " + customer.ToString() + ", Pickup: " + pickup.ToString() + ", PickupTime: " + pickupTime+", RealPickupTime:"+customer.RealTimeWindow[0]+", PickupTimeIsRespected: "+pickupTimeIsRespected;
                     pickupCustomers.Add(customer);
                 }
 
@@ -131,7 +131,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
                     var deliveryTime = customer.DesiredTimeWindow[1];
                     var deliveryTimeIsRespected = customer.DelayTime<=0;
                     var precedenceConstraint = pickupCustomers.Contains(customer);
-                    message += "Leave: " + customer.ToString() + ", Delivery: " +delivery.ToString() + ", DeliveryTime: " + deliveryTime+", DeliveryTimeIsRespected: "+deliveryTimeIsRespected+", PrecedenceIsRespected: "+precedenceConstraint;
+                    message += "Leave: " + customer.ToString() + ", Delivery: " +delivery.ToString() + ", DeliveryTime: " + deliveryTime+", RealDeliveryTime:"+customer.RealTimeWindow[1]+" DeliveryTimeIsRespected: "+deliveryTimeIsRespected+", PrecedenceIsRespected: "+precedenceConstraint;
 
                 }
 

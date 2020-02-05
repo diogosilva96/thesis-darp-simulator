@@ -69,13 +69,16 @@ namespace Simulator.Objects.Simulation
                     Console.WriteLine(tobePrinted);
                 }
                 dataModel.PrintDataStructures();
-                RoutingSearchParameters searchParameters =
-                    operations_research_constraint_solver.DefaultRoutingSearchParameters();
-                searchParameters.FirstSolutionStrategy =
-                    FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
-                searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.SimulatedAnnealing;
-                searchParameters.TimeLimit = new Duration { Seconds = 10 };
-                var timeWindowSolution = routingSolver.TryGetSolution(searchParameters);
+                Assignment timeWindowSolution = null;
+                    RoutingSearchParameters searchParameters =
+                        operations_research_constraint_solver.DefaultRoutingSearchParameters();
+                    searchParameters.FirstSolutionStrategy =
+                        FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
+                    searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.TabuSearch;
+                    searchParameters.TimeLimit = new Duration {Seconds = 20}; 
+                    timeWindowSolution = routingSolver.TryGetSolution(searchParameters);
+                
+
                 RoutingSolutionObject routingSolutionObject = null;
                 if (timeWindowSolution != null)
                 {
@@ -128,7 +131,7 @@ namespace Simulator.Objects.Simulation
                     var maxHourTime = (int)hourInSeconds + (60 * 60)-1;
                     var requestTime = RandomNumberGenerator.Random.Next((int)hourInSeconds, (int)maxHourTime);
                     var pickupTimeWindow = new int[] {requestTime, maxHourTime};
-                    var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops, excludedStops, requestTime, pickupTimeWindow,true); //Generates a random dynamic customer
+                    var customer = CustomerFactory.Instance().CreateRandomCustomer(Context.Stops, excludedStops, requestTime, pickupTimeWindow,true,Params.VehicleSpeed); //Generates a random dynamic customer
                     var customerRequestEvent = EventGenerator.Instance().GenerateCustomerRequestEvent(requestTime, customer); //Generates a pickup and delivery customer request (dynamic)
                     AddEvent(customerRequestEvent);
                 }
@@ -212,8 +215,18 @@ namespace Simulator.Objects.Simulation
 
         public override void OnSimulationEnd()
         {
-            var statsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"stats_logs.txt");
+            var statsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"stats_logs.txt");    
             Stats.PrintStats();
+            var dynCustomers = Context.DynamicCustomers.OrderBy(c => c.DesiredTimeWindow[0]);
+            //debug
+            foreach (var dynamicCustomer in dynCustomers)
+            {
+                var tuple = Tuple.Create(dynamicCustomer.PickupDelivery[0], dynamicCustomer.PickupDelivery[1]);
+                Context.ArcDistanceDictionary.TryGetValue(tuple, out var distance);
+                Console.WriteLine("Served: " + dynamicCustomer.AlreadyServed+" minimum distance:"+distance);
+                dynamicCustomer.PrintPickupDelivery();
+            }
+            //end of debug
             Stats.SaveStats(statsPath);
         }
     }

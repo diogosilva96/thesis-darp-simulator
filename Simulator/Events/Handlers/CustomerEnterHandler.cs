@@ -27,6 +27,7 @@ namespace Simulator.Events.Handlers
                         }
                         customerEnterEvent.Customer.RealTimeWindow[0] = evt.Time; //assigns the real enter time of the timewindow
                         customerEnterEvent.Customer.IsInVehicle = true;
+                        Simulation.Stats.TotalServedCustomers++;
                         var waitTimeStr = "";
                         if (customerEnterEvent.Customer.DesiredTimeWindow != null && customerEnterEvent.Customer.RealTimeWindow != null)
                         {

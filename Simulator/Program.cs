@@ -26,8 +26,8 @@ namespace Simulator
     {
         static void Main(string[] args)
         {
-
-            SimulationContext simulationContext = new SimulationContext();
+            var transportationNetworkDataLoader = new TransportationNetworkDataLoader(true);
+            SimulationContext simulationContext = null;
             var option = 1;
             var count = 0;
                 while (true)
@@ -53,28 +53,34 @@ namespace Simulator
                             Path.Combine(loggerBasePath, @"SimulationStats" + currentTime + ".csv");
                         var simulationStatsRecorder = new FileRecorder(currentSimulationStatsFileName);
                         var fileLogger = new Logger.Logger(simulationStatsRecorder);
-                        for (int numIterations = 0; numIterations < 10; numIterations++)
-                        {
-                            for (int numDynamicCustomersHour = 5; numDynamicCustomersHour < 15; numDynamicCustomersHour=numDynamicCustomersHour+5)
+                      
+                            for (int numDynamicCustomersHour = 20; numDynamicCustomersHour <= 60; numDynamicCustomersHour=numDynamicCustomersHour+20)
                             {
-                                SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, numDynamicCustomersHour, 15, 5);
-                                Simulation simulation = new Simulation(simulationParams, simulationContext);
-                                simulation.InitializeFlexibleSimulation(false);
-                                if (count == 0)
+                                for (int numIterations = 0; numIterations < 10; numIterations++)
                                 {
-                                    fileLogger.Log(simulation.Stats.GetSimulationStatsCSVFormatMessage());
+                                    simulationContext = new SimulationContext(transportationNetworkDataLoader);
+                                    SimulationParams simulationParams =
+                                        new SimulationParams(30 * 60, 30 * 60, numDynamicCustomersHour, 0, 5,4);
+                                    Simulation simulation = new Simulation(simulationParams, simulationContext);
+                                    simulation.InitializeFlexibleSimulation(false);
+                                    if (count == 0)
+                                    {
+                                        fileLogger.Log(simulation.Stats.GetSimulationStatsCSVFormatMessage());
+                                    }
+
+                                    var statsMessage = simulation.Stats.GetSimulationStatsCSVMessage();
+                                    fileLogger.Log(statsMessage);
+                                    count++;
                                 }
-                                var statsMessage = simulation.Stats.GetSimulationStatsCSVMessage();
-                                fileLogger.Log(statsMessage);
-                                count++;
                             }
-                        }
-                        
+
+                            break;
                     }
                     else
                     {
                         {
-                            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5, 15, 20);
+                           simulationContext = new SimulationContext(transportationNetworkDataLoader);
+                            SimulationParams simulationParams = new SimulationParams(30 * 60, 30 * 60, 5, 15, 20,4);
                             AbstractSimulation simulation = new Simulation(simulationParams, simulationContext);
                             SimulationViews.ViewFactory.Instance().Create(0, (Simulation) simulation).PrintView();
                         }

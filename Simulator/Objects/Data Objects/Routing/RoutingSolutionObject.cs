@@ -222,9 +222,9 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
         }
 
-        public int AvgCustomerRideTimeInSeconds => (TotalCustomerRideTimesInSeconds / CustomerNumber);
+        public int AvgCustomerRideTimeInSeconds => CustomerNumber > 0 ? (TotalCustomerRideTimesInSeconds / CustomerNumber):0;
 
-        public int AvgCustomerWaitTimeInSeconds => (TotalCustomersWaitTimeInSeconds / CustomerNumber);
+        public int AvgCustomerWaitTimeInSeconds => CustomerNumber > 0 ? (TotalCustomersWaitTimeInSeconds / CustomerNumber):0;
 
         public int TotalCustomersWaitTimeInSeconds => _customerWaitTimes.Values.Sum();
 
@@ -277,7 +277,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                             totalEarlyTimes += customerDelayTime.Value;
                         }
 
-                        avgCustomerEarlyTime = (int) (Math.Abs(totalEarlyTimes) / TotalCustomersEarly);
+                        avgCustomerEarlyTime = TotalCustomersEarly > 0 ? (int) (Math.Abs(totalEarlyTimes) / TotalCustomersEarly):0;
                     }
                 }
 

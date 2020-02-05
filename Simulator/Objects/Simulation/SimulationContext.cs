@@ -17,42 +17,28 @@ namespace Simulator.Objects.Simulation
             Routes = transportationNetworkDataLoader.Routes;
             Stops = transportationNetworkDataLoader.Stops;
             DemandsDataObject = transportationNetworkDataLoader.DemandsDataObject;
+            ArcDistanceDictionary = transportationNetworkDataLoader.ArcDistanceDictionary;
+            DynamicCustomers = new List<Customer>();
         }
 
+        public Dictionary<Tuple<Stop, Stop>,double> ArcDistanceDictionary;
+        public SimulationContext(TransportationNetworkDataLoader transportationNetworkDataLoader)
+        {
+            VehicleFleet = new List<Vehicle>();
+            Routes = transportationNetworkDataLoader.Routes;
+            Stops = transportationNetworkDataLoader.Stops;
+            DemandsDataObject = transportationNetworkDataLoader.DemandsDataObject;
+            DynamicCustomers = new List<Customer>();
+            ArcDistanceDictionary = transportationNetworkDataLoader.ArcDistanceDictionary;
+        }
 
         public List<Route> Routes;
 
         public List<Stop> Stops;
+
+        public List<Customer> DynamicCustomers;
         public Stop Depot => Stops.Find(s => s.Id == 2183);
-
-        public  Dictionary<Tuple<Stop, Stop>, double> ArcDictionary
-        {
-            get
-            {
-                if (_arcDictionary == null)
-                {
-                    _arcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
-                    foreach (var stopSource in Stops)
-                    {
-                        foreach (var stopDestination in Stops)
-                        {
-                            var distance = Calculator.CalculateHaversineDistance(stopSource.Latitude,
-                                stopSource.Longitude,
-                                stopDestination.Latitude, stopDestination.Longitude);
-                            var tuple = Tuple.Create(stopSource, stopDestination);
-                            if (!_arcDictionary.ContainsKey(tuple))
-                            {
-                                _arcDictionary.Add(tuple, distance);
-                            }
-                        }
-                    }
-                }
-
-                return _arcDictionary;
-            }
-        } //Dictionary with tuples of stops and its respective distances
-
-        private  Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
+            
         public DemandsDataObject DemandsDataObject;
     }
 }

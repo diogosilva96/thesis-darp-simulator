@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Simulator.Events;
 using Simulator.Events.Handlers;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
@@ -8,18 +9,20 @@ namespace Simulator.Objects.Simulation
 {
     public abstract class AbstractSimulation
     {
+        private static int nextId;
+        public int Id { get; internal set; }
+
         public List<Event> Events;
 
         public EventGenerator EventGenerator;
 
-        protected int TotalEventsHandled;
-
-
+        public bool Finished => Events.Count == Events.FindAll(e => e.AlreadyHandled).Count;
 
         protected AbstractSimulation()
         {
             Events = new List<Event>();
             EventGenerator = EventGenerator.Instance();
+            Id = Interlocked.Increment(ref nextId);
         }
 
         public abstract void OnSimulationStart();

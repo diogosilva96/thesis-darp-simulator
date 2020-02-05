@@ -25,7 +25,7 @@ namespace Simulator.Events.Handlers
                     var tuple = Tuple.Create(departEvent.Vehicle.CurrentStop, departEvent.Vehicle.NextStop);
                     var currentStopIndex = departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex;
                     departEvent.Vehicle.StopsTimeWindows[currentStopIndex][1] = departTime;
-                    Simulation.Context.ArcDictionary.TryGetValue(tuple, out var distance);
+                    Simulation.Context.ArcDistanceDictionary.TryGetValue(tuple, out var distance);
     
                     //vehicle start transversing to next stop
                     if (departEvent.Vehicle.TripIterator.Current?.StopsIterator != null && !departEvent.Vehicle.TripIterator.Current.StopsIterator.IsDone)
@@ -50,7 +50,7 @@ namespace Simulator.Events.Handlers
                     {
                         var nextStop = departEvent.Vehicle.NextStop;
                         var stopTuple = Tuple.Create(currentStop, nextStop);
-                        Simulation.Context.ArcDictionary.TryGetValue(stopTuple, out var distance);
+                        Simulation.Context.ArcDistanceDictionary.TryGetValue(stopTuple, out var distance);
 
                         if (distance == 0)
                         {

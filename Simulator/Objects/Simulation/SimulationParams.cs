@@ -16,7 +16,7 @@ namespace Simulator.Objects.Simulation
 
         public int MaximumAllowedDeliveryDelay;
 
-        public int MaximumCustomerRideTime;
+        public int MaximumRelativeCustomerRideTime;
 
         public int[] SimulationTimeWindow;
 
@@ -37,17 +37,17 @@ namespace Simulator.Objects.Simulation
         public int NumberInitialRequests;
 
 
-        public SimulationParams(int maxCustomerRideTimeSeconds,int maxAllowedDeliveryDelaySeconds,int numberDynamicRequestsPerHour, int numberInitialRequests,int numberVehicles)
+        public SimulationParams(int maxRelativeCustomerRideTimeSeconds,int maxAllowedDeliveryDelaySeconds,int numberDynamicRequestsPerHour, int numberInitialRequests,int numberVehicles,int TimeToBeSimulatedInHours)
         {
             VehicleCapacity = 20;
             VehicleSpeed = 40;
             SimulationTimeWindow = new int[2];
             SimulationTimeWindow[0] = 0;
-            SimulationTimeWindow[1] = 4 * 60 * 60; // 4hours in seconds
+            SimulationTimeWindow[1] = TimeToBeSimulatedInHours * 60 * 60;
             VehicleNumber = numberVehicles;
             NumberInitialRequests = numberInitialRequests;
             NumberDynamicRequestsPerHour = numberDynamicRequestsPerHour;
-            MaximumCustomerRideTime = maxCustomerRideTimeSeconds;
+            MaximumRelativeCustomerRideTime = maxRelativeCustomerRideTimeSeconds;
             MaximumAllowedDeliveryDelay = maxAllowedDeliveryDelaySeconds;
             InitializeParams();
         }
@@ -92,7 +92,7 @@ namespace Simulator.Objects.Simulation
             _consoleLogger.Log("Maximum Allowed UpperBound Time: " +
                                TimeSpan.FromSeconds(MaximumAllowedDeliveryDelay).TotalMinutes + " minutes");
             _consoleLogger.Log("Maximum Customer ride time: " +
-                               TimeSpan.FromSeconds(MaximumCustomerRideTime).TotalMinutes + " minutes");
+                               TimeSpan.FromSeconds(MaximumRelativeCustomerRideTime).TotalMinutes + " minutes");
             _consoleLogger.Log("Simulation Start Time: " +
                                TimeSpan.FromSeconds(SimulationTimeWindow[0]).ToString());
             _consoleLogger.Log("Simulation End Time: " +
@@ -103,8 +103,8 @@ namespace Simulator.Objects.Simulation
             _consoleLogger.Log("Vehicle capacity: " + VehicleCapacity + " seats.");
             _consoleLogger.Log("Vehicle number: "+VehicleNumber);
             _consoleLogger.Log("Dynamic Requests per hour: "+NumberDynamicRequestsPerHour);
-            _consoleLogger.Log("Press any key to Start the Simulation...");
-            Console.Read();
+            //_consoleLogger.Log("Press any key to Start the Simulation...");
+            //Console.Read();
         }
 
         public void SaveParams(string path)
@@ -115,7 +115,7 @@ namespace Simulator.Objects.Simulation
             var settingsLogger = new Logger.Logger(settingsFileRecorder);
             settingsLogger.Log(nameof(RandomNumberGenerator.Seed) + ": " + RandomNumberGenerator.Seed);
             settingsLogger.Log(nameof(MaximumAllowedDeliveryDelay) + ": " + MaximumAllowedDeliveryDelay);
-            settingsLogger.Log(nameof(MaximumCustomerRideTime) + ": " + MaximumCustomerRideTime);
+            settingsLogger.Log(nameof(MaximumRelativeCustomerRideTime) + ": " + MaximumRelativeCustomerRideTime);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[0]: " + SimulationTimeWindow[0]);
             settingsLogger.Log(nameof(SimulationTimeWindow) + "[1]: " + SimulationTimeWindow[1]);
             settingsLogger.Log(nameof(VehicleNumber)+ " : "+VehicleNumber);

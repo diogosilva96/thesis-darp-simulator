@@ -22,8 +22,8 @@ namespace Simulator.SimulationViews
                 }
                 ConsoleLogger.Log("Please insert the Maximum Allowed UpperBound Time (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumAllowedDeliveryDelay).TotalMinutes + " minutes): ");
                 Simulation.Params.MaximumAllowedDeliveryDelay = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
-                ConsoleLogger.Log("Please insert the Maximum Customer Ride Time Duration (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumCustomerRideTime).TotalMinutes + " minutes):");
-                Simulation.Params.MaximumCustomerRideTime = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
+                ConsoleLogger.Log("Please insert the Maximum Customer Ride Time Duration (Current = " + TimeSpan.FromSeconds(Simulation.Params.MaximumRelativeCustomerRideTime).TotalMinutes + " minutes):");
+                Simulation.Params.MaximumRelativeCustomerRideTime = (int)TimeSpan.FromMinutes(GetIntInput(0, int.MaxValue)).TotalSeconds;
                 int startTimeHour = 0;
                 int endTimeHour = 0;
                 ConsoleLogger.Log("Insert the start hour of the simulation:");

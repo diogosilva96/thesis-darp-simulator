@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Google.OrTools.ConstraintSolver;
+using Google.Protobuf.WellKnownTypes;
 using Simulator.Objects.Data_Objects;
 using Simulator.Objects.Data_Objects.Routing;
 using Simulator.Objects.Data_Objects.Simulation_Objects;
@@ -27,7 +29,13 @@ namespace Simulator.Events.Handlers
                 {
                     var dataModel = DataModelFactory.Instance().CreateCurrentSimulationDataModel(Simulation, newCustomer, evt.Time);
                     var solver = new RoutingSolver(dataModel, false);
-                    var solution = solver.TryGetSolution(null);
+                    RoutingSearchParameters searchParameters =
+                        operations_research_constraint_solver.DefaultRoutingSearchParameters();
+                    searchParameters.FirstSolutionStrategy =
+                        FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
+                    searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.TabuSearch;
+                    searchParameters.TimeLimit = new Duration { Seconds = 5 };//change
+                    var solution = solver.TryGetSolution(searchParameters);
                     if (solution != null)
                     {
                         //dataModel.PrintTravelTimes();
@@ -45,8 +53,13 @@ namespace Simulator.Events.Handlers
                     }
                 }
 
-                if (solutionObject != null)
+                if (!Simulation.Context.DynamicCustomers.Contains(newCustomer))
                 {
+                    Simulation.Context.DynamicCustomers.Add(newCustomer);
+                }
+
+                if (solutionObject != null)
+                {                    
                     solutionObject.MetricsContainer.PrintMetrics();
                     var vehicleFlexibleRouting = Simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting);
                     //_consoleLogger.Log("Flexible routing vehicles count: " + vehicleFlexibleRouting.Count);
@@ -59,7 +72,7 @@ namespace Simulator.Events.Handlers
                         {
                             if (vehicle.VisitedStops.Count > 1 && vehicle.CurrentStop == Simulation.Context.Depot)
                             {
-                                Console.WriteLine("Vehicle " + vehicle.Id + " already performed a route and is currently idle at depot.");//debug
+                                _consoleLogger.Log("Vehicle " + vehicle.Id + " already performed a route and is currently idle at depot.");//debug
                             }
                             if (vehicle.TripIterator?.Current != null)
                             {
@@ -93,14 +106,14 @@ namespace Simulator.Events.Handlers
                                         if (vEvent is VehicleStopEvent vehicleStopArriveEvent && vEvent.Category == 0
                                         ) //vehicle arrive stop event
                                         {
-                                            _consoleLogger.Log(vehicleStopArriveEvent.GetTraceMessage());
+                                            //_consoleLogger.Log(vehicleStopArriveEvent.GetTraceMessage());
                                         }
 
                                         if (vEvent is VehicleStopEvent vehicleStopDepartEvent && vEvent.Category == 1
                                         ) //vehicle depart stop event
                                         {
                                             var departTime = vEvent.Time;
-                                            _consoleLogger.Log(vehicleStopDepartEvent.GetTraceMessage());
+                                            //_consoleLogger.Log(vehicleStopDepartEvent.GetTraceMessage());
                                             if (vehicleStopDepartEvent.Stop == vehicle.CurrentStop)
                                             {
                                                 departTime =

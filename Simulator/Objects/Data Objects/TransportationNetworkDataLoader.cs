@@ -18,6 +18,34 @@ namespace Simulator.Objects.Data_Objects
 
         private readonly bool _urbanOnly;
 
+        public Dictionary<Tuple<Stop, Stop>, double> ArcDistanceDictionary
+        {
+            get
+            {
+                if (_arcDictionary == null)
+                {
+                    _arcDictionary = new Dictionary<Tuple<Stop, Stop>, double>();
+                    foreach (var stopSource in Stops)
+                    {
+                        foreach (var stopDestination in Stops)
+                        {
+                            var distance = Calculator.CalculateHaversineDistance(stopSource.Latitude,
+                                stopSource.Longitude,
+                                stopDestination.Latitude, stopDestination.Longitude);
+                            var tuple = Tuple.Create(stopSource, stopDestination);
+                            if (!_arcDictionary.ContainsKey(tuple))
+                            {
+                                _arcDictionary.Add(tuple, distance);
+                            }
+                        }
+                    }
+                }
+
+                return _arcDictionary;
+            }
+        } //Dictionary with tuples of stops and its respective distances
+
+        private Dictionary<Tuple<Stop, Stop>, double> _arcDictionary;
         public TransportationNetworkDataLoader(bool urbanOnly)
         {
             _urbanOnly = urbanOnly;

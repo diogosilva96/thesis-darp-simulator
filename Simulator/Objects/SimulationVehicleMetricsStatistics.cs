@@ -7,18 +7,34 @@ using Simulator.Objects.Data_Objects.Simulation_Objects;
 
 namespace Simulator.Objects
 {
-    public class VehicleStatistics // contains the metrics for a set of completed services
+    public class SimulationVehicleMetricsStatistics // contains the metrics for a set of completed services
     {
      
 
-        private readonly List<Vehicle> _vehicles;
+        private readonly List<Vehicle> _vehiclesUsed;
+
+        private Simulation.Simulation _simulation;
 
         public MetricsContainer MetricsContainer;
 
-        public VehicleStatistics(List<Vehicle> routeVehicles)
+        public SimulationVehicleMetricsStatistics(Simulation.Simulation simulation)
         {
-  
-            _vehicles = routeVehicles;
+            _simulation = simulation;
+            _vehiclesUsed = _simulation.Context.VehicleFleet.FindAll(v => v.TripIterator?.Current != null &&v.ServedCustomers.Count >0);
+            //debug;
+            List<Customer> allServedCustomers = new List<Customer>();
+            foreach (var v in _vehiclesUsed)
+            {
+                foreach (var cust in v.ServedCustomers)
+                {
+                    if (allServedCustomers.FindAll(c => c.Id == cust.Id).Count > 0)
+                    {
+                        Console.WriteLine("A");
+                    }
+                    allServedCustomers.Add(cust);
+                }
+            }
+            //end of debug
             MetricsContainer = new MetricsContainer();
             ComputeOverallMetrics();
         }
@@ -27,30 +43,50 @@ namespace Simulator.Objects
         {
             get
             {
-                return _vehicles.Average(s => s.RouteDuration);
+                return _vehiclesUsed.Average(s => s.RouteDuration);
             }
         }
 
-        public double AverageNumberRequests
+        public int TotalSimulationTime => _simulation.Stats.TotalSimulationTime;
+        public int NumberAvailableVehicles => _simulation.Context.VehicleFleet.Count;
+
+        public double NumberServedDynamicRequests => _simulation.Stats.TotalServedDynamicRequests;
+
+        public double NumberDynamicRequests => _simulation.Stats.TotalDynamicRequests;
+
+        public double DynamicRequestsServedRatio => (double)((double)_simulation.Stats.TotalServedDynamicRequests / (double)_simulation.Stats.TotalDynamicRequests);
+        public double NumberVehiclesUsed
         {
             get
             {
-                return _vehicles.Average(s => s.TotalRequests);
+                return _simulation.Context.VehicleFleet.FindAll(v => v.TripIterator != null).Count;
+
             }
         }
 
-        public double AverageNumberServicedRequests
+        public double NumberServedRequests => _simulation.Stats.TotalServedCustomers;
+
+        public double AverageNumberRequestsPerVehicleUsed
         {
-            get { return _vehicles.Average(v =>v.TotalServedRequests); }
+            get
+            {
+                return (double) (_vehiclesUsed.Sum(s => s.TotalRequests) /
+                                 NumberVehiclesUsed);
+            }
         }
 
-        public double AverageNumberDeniedRequests
+        public double AverageNumberServicedRequestsPerVehicleUsed
+        {
+            get { return (double)_vehiclesUsed.Sum(v =>v.TotalServedRequests)/NumberVehiclesUsed; }
+        }
+
+        public double AverageNumberDeniedRequestsPerVehicleUsed
         {
             get
             {
                 try
                 {
-                    return _vehicles.Average(v => v.TotalDeniedRequests);
+                    return _vehiclesUsed.Sum(v => v.TotalDeniedRequests)/NumberVehiclesUsed;
                 }
                 catch (Exception)
                 {
@@ -65,14 +101,7 @@ namespace Simulator.Objects
         {
             get
             {
-
-                var total = 0;
-                foreach (var vehicle in _vehicles)
-                {
-                    var numDynamicCustomers = vehicle.ServedCustomers.FindAll(c =>c.IsDynamic).Count; //find all dynamic customers
-                    total += numDynamicCustomers;
-                }
-                return total;
+                return _vehiclesUsed.Sum(v => v.ServedCustomers.FindAll(c => c.IsDynamic).Count); 
             }
         }
 
@@ -82,7 +111,8 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Average(v => v.ServedCustomers.Average(c => c.RideTime));
+                    var totalRideTime = (double)_vehiclesUsed.Sum(v => v.ServedCustomers.Sum(c => c.RideTime));
+                    return (double)((double)totalRideTime / (double)TotalCustomersServed);
                 }
                 catch (Exception)
                 {
@@ -98,7 +128,7 @@ namespace Simulator.Objects
 
                 try
                 {
-                    return _vehicles.Max(v => v.ServedCustomers.Max(c => c.RideTime));
+                    return _vehiclesUsed.Max(v => v.ServedCustomers.Max(c => c.RideTime));
                 }
                 catch (Exception)
                 {
@@ -114,7 +144,7 @@ namespace Simulator.Objects
 
                 try
                 {
-                    return _vehicles.Min(v => v.ServedCustomers.Max(c => c.RideTime));
+                    return _vehiclesUsed.Min(v => v.ServedCustomers.Max(c => c.RideTime));
                 }
                 catch (Exception)
                 {
@@ -129,7 +159,9 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Average(v => v.ServedCustomers.Average(c => c.WaitTime));
+                    
+                    var totalWaitTime =(double) _vehiclesUsed.Sum(v=>v.ServedCustomers.Sum(c => c.WaitTime));                
+                    return (double) ((double)totalWaitTime / (double) TotalCustomersServed);                   
                 }
                 catch (Exception)
                 {
@@ -142,17 +174,9 @@ namespace Simulator.Objects
         {
             get
             {
-                long totalDelay = 0;
-                foreach (var vehicle in _vehicles)
-                {
-                    var delayedCustomers =vehicle.ServedCustomers.FindAll(c => c.DelayTime > 0);
-                    foreach (var delayedCustomer in delayedCustomers)
-                    {
-                        totalDelay += delayedCustomer.DelayTime;
-                    }
-                }
-
-                return (long)(totalDelay / TotalCustomersDelayed);
+                var totalCustomerDelay =
+                    _vehiclesUsed.Sum(v => v.ServedCustomers.FindAll(c => c.DelayTime > 0).Sum(cust => cust.DelayTime));
+                return (long)(totalCustomerDelay / TotalCustomersDelayed);
             }
         }
 
@@ -160,16 +184,8 @@ namespace Simulator.Objects
         {
             get
             {
-                long totalEarlyTime = 0;
-                foreach (var vehicle in  _vehicles)
-                {
-                    var earlyCustomers =vehicle.ServedCustomers.FindAll(c => c.DelayTime < 0);
-                    foreach (var earlyCustomer in earlyCustomers)
-                    {
-                        totalEarlyTime += earlyCustomer.DelayTime;
-                    }
-                }
-
+                var totalEarlyTime = _vehiclesUsed.Sum(v => v.ServedCustomers.FindAll(c => c.DelayTime <= 0).Sum(cust => cust.DelayTime));
+                
                 return (long)(totalEarlyTime / TotalCustomerDeliveredOnTime);
             }
         }
@@ -179,7 +195,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Average(s => s.TotalDistanceTraveled);
+                    return _vehiclesUsed.Average(s => s.TotalDistanceTraveled);
                 }
                 catch (Exception)
                 {
@@ -192,45 +208,23 @@ namespace Simulator.Objects
         {
             get
             {
-                var total = 0;
-                foreach (var vehicle in _vehicles)
-                {
-                    var numCustomers = vehicle.ServedCustomers.FindAll(c => c.DelayTime <= 0).Count;
-                    total += numCustomers;
-                }
-
-                return total;
+                return _vehiclesUsed.Sum(v => v.ServedCustomers.FindAll(c => c.DelayTime <= 0).Count);
+                
             }
         }
 
-        public double CustomersDeliveredOnTimeRatio
+        public int TotalCustomersDeliveredDelayed
         {
-            get
-            {
-                var totalCustomersOnTime = 0;
-                foreach (var vehicle in _vehicles)
-                {
-                    var numCustomers = vehicle.ServedCustomers.FindAll(c => c.DelayTime <= 0).Count;
-                    totalCustomersOnTime += numCustomers;
-                }
-
-                double ratio = ((double)totalCustomersOnTime / (double)TotalCustomersServed);
-                return ratio;
-            }
+            get { return _vehiclesUsed.Sum(v => v.ServedCustomers.FindAll(c => c.DelayTime > 0).Count); }
         }
+
+        public double CustomersDeliveredOnTimeRatio => (double)((double)TotalCustomerDeliveredOnTime / (double)TotalCustomersServed);
 
         public int TotalCustomersServed
         {
             get
             {
-                var total = 0;
-                foreach (var vehicle in _vehicles)
-                {
-                    var numCustomers = vehicle.ServedCustomers.Count;
-                    total += numCustomers;
-                }
-
-                return total;
+                return _vehiclesUsed.Sum(v => v.ServedCustomers.Count); ;
             }
         }
 
@@ -240,7 +234,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Max(s => s.RouteDuration);
+                    return _vehiclesUsed.Max(s => s.RouteDuration);
                 }
                 catch (Exception)
                 {
@@ -255,7 +249,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Min(s => s.RouteDuration);
+                    return _vehiclesUsed.Min(s => s.RouteDuration);
                 }
                 catch (Exception)
                 {
@@ -270,7 +264,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Min(s => s.TotalDistanceTraveled);
+                    return _vehiclesUsed.Min(s => s.TotalDistanceTraveled);
                 }
                 catch (Exception)
                 {
@@ -285,7 +279,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Max(s => s.TotalDistanceTraveled);
+                    return _vehiclesUsed.Max(s => s.TotalDistanceTraveled);
                 }
                 catch (Exception)
                 {
@@ -300,7 +294,7 @@ namespace Simulator.Objects
             {
                 try
                 {
-                    return _vehicles.Sum(s => s.TotalDistanceTraveled);
+                    return _vehiclesUsed.Sum(s => s.TotalDistanceTraveled);
                 }
                 catch (Exception)
                 {
@@ -314,7 +308,7 @@ namespace Simulator.Objects
             get
             {
                 var waitTimes = 0;
-                    foreach (var vehicle in _vehicles)
+                    foreach (var vehicle in _vehiclesUsed)
                     {
                         foreach (var customer in vehicle.ServedCustomers)
                         {
@@ -330,7 +324,7 @@ namespace Simulator.Objects
             get
             {
                 var rideTimes = 0;
-                foreach (var vehicle in _vehicles)
+                foreach (var vehicle in _vehiclesUsed)
                 {
                     foreach (var customer in vehicle.ServedCustomers)
                     {
@@ -342,15 +336,19 @@ namespace Simulator.Objects
             }
         }
 
-        public double AverageServicedRequestsRatio => AverageNumberServicedRequests / AverageNumberRequests;
-
-        public double AverageDeniedRequestsRatio => 1 - AverageServicedRequestsRatio;
-
         private void ComputeOverallMetrics()
         {
+            MetricsContainer.AddMetric(nameof(NumberAvailableVehicles),NumberAvailableVehicles);
+            MetricsContainer.AddMetric(nameof(NumberVehiclesUsed),NumberVehiclesUsed);
+            MetricsContainer.AddMetric(nameof(NumberDynamicRequests),NumberDynamicRequests);
+            MetricsContainer.AddMetric(nameof(NumberServedRequests),NumberServedRequests);
+            MetricsContainer.AddMetric(nameof(NumberServedDynamicRequests),NumberServedDynamicRequests);
+            MetricsContainer.AddMetric(nameof(TotalSimulationTime),TotalSimulationTime);
+            MetricsContainer.AddMetric(nameof(DynamicRequestsServedRatio), DynamicRequestsServedRatio);
             MetricsContainer.AddMetric(nameof(TotalDistanceTraveledInMeters),TotalDistanceTraveledInMeters);
             MetricsContainer.AddMetric(nameof(TotalCustomersServed),TotalCustomersServed);
             MetricsContainer.AddMetric(nameof(TotalCustomerDeliveredOnTime),TotalCustomerDeliveredOnTime);
+            MetricsContainer.AddMetric(nameof(TotalCustomersDeliveredDelayed),TotalCustomersDeliveredDelayed);
             MetricsContainer.AddMetric(nameof(CustomersDeliveredOnTimeRatio),CustomersDeliveredOnTimeRatio);
             MetricsContainer.AddMetric(nameof(TotalDynamicServedCustomers),TotalDynamicServedCustomers);
             MetricsContainer.AddMetric(nameof(TotalCustomerWaitTimesInSeconds),TotalCustomerWaitTimesInSeconds);
@@ -362,11 +360,9 @@ namespace Simulator.Objects
             MetricsContainer.AddMetric(nameof(MinimumRouteDistanceInMeters), MinimumRouteDistanceInMeters);
             MetricsContainer.AddMetric(nameof(MinimumCustomerRideTimeInSeconds), MinimumCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageRouteDurationInSeconds),AverageRouteDurationInSeconds);
-            MetricsContainer.AddMetric(nameof(AverageNumberRequests),  AverageNumberRequests);
-            MetricsContainer.AddMetric(nameof(AverageNumberServicedRequests),  AverageNumberServicedRequests);
-            MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequests),  AverageNumberDeniedRequests);
-            MetricsContainer.AddMetric(nameof(AverageServicedRequestsRatio),  AverageServicedRequestsRatio);
-            MetricsContainer.AddMetric(nameof(AverageDeniedRequestsRatio),  AverageNumberDeniedRequests);
+            MetricsContainer.AddMetric(nameof(AverageNumberRequestsPerVehicleUsed),  AverageNumberRequestsPerVehicleUsed);
+            MetricsContainer.AddMetric(nameof(AverageNumberServicedRequestsPerVehicleUsed),  AverageNumberServicedRequestsPerVehicleUsed);
+            MetricsContainer.AddMetric(nameof(AverageNumberDeniedRequestsPerVehicleUsed),  AverageNumberDeniedRequestsPerVehicleUsed);           
             MetricsContainer.AddMetric(nameof(AverageDistanceTraveledInMeters), AverageDistanceTraveledInMeters);
             MetricsContainer.AddMetric(nameof(AverageCustomerRideTimeInSeconds), AverageCustomerRideTimeInSeconds);
             MetricsContainer.AddMetric(nameof(AverageCustomerWaitTimeInSeconds), AverageCustomerWaitTimeInSeconds);
@@ -377,7 +373,7 @@ namespace Simulator.Objects
         {
             var toPrintList = new List<string>();
 
-            toPrintList.Add("Overall statistics for "+_vehicles.Count+" vehicles:");
+            toPrintList.Add("Overall statistics for "+_vehiclesUsed.Count+" vehicles:");
             foreach (var metricValue in MetricsContainer.GetMetricsDictionary())
             {
              toPrintList.Add(MetricsContainer.MetricToString(metricValue));   

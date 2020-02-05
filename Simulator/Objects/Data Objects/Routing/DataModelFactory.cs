@@ -75,12 +75,12 @@ namespace Simulator.Objects.Data_Objects.Routing
             {
                 var requestTime = 0;
                 var pickupTimeWindow = new int[] { requestTime, simulation.Params.SimulationTimeWindow[1] };//the customer pickup time will be between the current request time and the end of simulation time
-                var customer = CustomerFactory.Instance().CreateRandomCustomer(simulation.Context.Stops, excludedStops, requestTime, pickupTimeWindow,false);//Generates a random static customer
+                var customer = CustomerFactory.Instance().CreateRandomCustomer(simulation.Context.Stops, excludedStops, requestTime, pickupTimeWindow,false,simulation.Params.VehicleSpeed);//Generates a random static customer
                 customersToBeServed.Add(customer);
             }
             var indexManager = new DataModelIndexManager( dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
 
-            var routingDataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
+            var routingDataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumRelativeCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
             var solver = new RoutingSolver(routingDataModel, allowDropNodes);
             RoutingSearchParameters searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
             searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.Automatic;
@@ -107,7 +107,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     List<Customer> expectedCustomers = new List<Customer>(vehicle.TripIterator.Current.ExpectedCustomers);
                     foreach (var customer in expectedCustomers)
                     {
-                        if (!allExpectedCustomers.Contains(customer))
+                        if (!allExpectedCustomers.Contains(customer) && !customer.AlreadyServed)
                         {
                             allExpectedCustomers.Add(customer);
                         }
@@ -115,13 +115,15 @@ namespace Simulator.Objects.Data_Objects.Routing
                     List<Customer> currentCustomers = vehicle.Customers;
                     foreach (var currentCustomer in currentCustomers)
                     {
-                        if (!allExpectedCustomers.Contains(currentCustomer))
-                        {
-                            allExpectedCustomers.Add(currentCustomer);
-                        }
+                      
+                            if (!allExpectedCustomers.Contains(currentCustomer) && !currentCustomer.AlreadyServed)
+                            {
+                                
+                                allExpectedCustomers.Add(currentCustomer);
+                            }
                     }
 
-
+                    //debug
                     foreach (var customer in allExpectedCustomers)
                     {
                         if (customer.IsInVehicle)
@@ -130,16 +132,14 @@ namespace Simulator.Objects.Data_Objects.Routing
                             Console.WriteLine(" Customer " + customer.Id + " is already inside vehicle" + v.Id + ": Already visited: " + customer.PickupDelivery[0] +
                                               ", Need to visit:" + customer.PickupDelivery[1]);
                         }
-                    }
-                    expectedCustomers.Add(newCustomer); //adds the new dynamic customer
-                    if (!allExpectedCustomers.Contains(newCustomer))
-                    {
-                        allExpectedCustomers.Add(newCustomer);
-                    }
-                }
-
+                    }     
+                    //end of debug                    
+                }    
             }
-
+            if (!allExpectedCustomers.Contains(newCustomer))
+            {
+                allExpectedCustomers.Add(newCustomer);
+            }
             //--------------------------------------------------------------------------------------------------------------------------
             //Calculation of startDepotArrivalTime, if there is any moving vehicle, otherwise startDepotArrivalTime will be the current event Time
             var movingVehicles = simulation.Context.VehicleFleet.FindAll(v => !v.IsIdle && v.FlexibleRouting);
@@ -150,7 +150,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             }
             if (movingVehicles.Count > 0)//if there is a moving vehicle calculates the baseArrivalTime
             {
-                Console.WriteLine("Moving vehicles total:" + movingVehicles.Count);
+                
                 foreach (var movingVehicle in movingVehicles)
                 {
                     var vehicleArrivalEvents = simulation.Events.FindAll(e =>
@@ -171,7 +171,7 @@ namespace Simulator.Objects.Data_Objects.Routing
             //end of calculation of startDepotsArrivalTime
             //--------------------------------------------------------------------------------------------------------------------------
             var indexManager = new DataModelIndexManager(dataModelVehicles, allExpectedCustomers, startDepotArrivalTimesList);
-            var dataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
+            var dataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumRelativeCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
             return dataModel;
         }
 
@@ -196,7 +196,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 //customersToBeServed.Add(new Customer(new Stop[] { TransportationNetwork.Stops[8], TransportationNetwork.Stops[9] }, new long[] {3000, 5000 }, 0));
 
             var indexManager = new DataModelIndexManager(dataModelVehicles, customersToBeServed, startDepotsArrivalTime);
-            var routingDataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
+            var routingDataModel = new RoutingDataModel(indexManager, simulation.Params.MaximumRelativeCustomerRideTime, simulation.Params.MaximumAllowedDeliveryDelay);
             return routingDataModel;
         }
     }
