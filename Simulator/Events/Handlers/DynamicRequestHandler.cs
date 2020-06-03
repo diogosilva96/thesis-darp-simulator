@@ -20,7 +20,6 @@ namespace Simulator.Events.Handlers
                 Log(evt);
                 evt.AlreadyHandled = true;
                 _consoleLogger.Log("New Customer (dynamic) request:" + customerRequestEvent.Customer + " - " + customerRequestEvent.Customer.PickupDelivery[0] + " -> " + customerRequestEvent.Customer.PickupDelivery[1] + ", TimeWindows: {" + customerRequestEvent.Customer.DesiredTimeWindow[0] + "," + customerRequestEvent.Customer.DesiredTimeWindow[1] + "} at " + TimeSpan.FromSeconds(evt.Time).ToString());
-
                 //Check if request can be served, if so the 
                 Simulation.Stats.TotalDynamicRequests++;
                 var newCustomer = customerRequestEvent.Customer;
@@ -35,13 +34,12 @@ namespace Simulator.Events.Handlers
                         FirstSolutionStrategy.Types.Value.ParallelCheapestInsertion;
                     searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.TabuSearch;
                     searchParameters.TimeLimit = new Duration { Seconds = 5 };//change
+                    _consoleLogger.Log("Generating new Routing Solution...");
                     var solution = solver.TryGetSolution(searchParameters);
                     if (solution != null)
                     {
-                        //dataModel.PrintTravelTimes();
-                        //dataModel.PrintPickupDeliveries();
-                        //dataModel.PrintTimeWindows();
-                        solver.PrintSolution(solution);
+
+                        //solver.PrintSolution(solution);
                         Simulation.Stats.TotalServedDynamicRequests++;
                         _consoleLogger.Log(newCustomer.ToString() + " request was inserted into a vehicle route at " + TimeSpan.FromSeconds(customerRequestEvent.Time).ToString());
 
@@ -60,9 +58,8 @@ namespace Simulator.Events.Handlers
 
                 if (solutionObject != null)
                 {                    
-                    solutionObject.MetricsContainer.PrintMetrics();
+                    //solutionObject.MetricsContainer.PrintMetrics();
                     var vehicleFlexibleRouting = Simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting);
-                    //_consoleLogger.Log("Flexible routing vehicles count: " + vehicleFlexibleRouting.Count);
                     foreach (var vehicle in vehicleFlexibleRouting)
                     {
                         var solutionRoute = solutionObject.GetVehicleStops(vehicle);
@@ -113,14 +110,14 @@ namespace Simulator.Events.Handlers
                                         ) //vehicle depart stop event
                                         {
                                             var departTime = vEvent.Time;
-                                            //_consoleLogger.Log(vehicleStopDepartEvent.GetTraceMessage());
+     
                                             if (vehicleStopDepartEvent.Stop == vehicle.CurrentStop)
                                             {
                                                 departTime =
                                                     (int) vehicle.TripIterator.Current.ScheduledTimeWindows[
                                                         vehicle.TripIterator.Current.StopsIterator.CurrentIndex][1] +
                                                     2; //recalculates new event depart time;
-                                                _consoleLogger.Log("New event depart: " + departTime);
+                                               
 
                                                 vEvent.Time = departTime;
                                             }
@@ -137,7 +134,7 @@ namespace Simulator.Events.Handlers
                                                 ) //if the event time is greater than the depart time removes those events, otherwise maintain the enter and leave events for current stop
                                                 {
                                                     Simulation.Events.Remove(enterOrLeaveEvt);
-                                                    //_consoleLogger.Log("Enter Leave event removed (depart time:"+departTime+"; evt time:"+enterOrLeaveEvt.Time+"): "+enterOrLeaveEvt.GetTraceMessage());
+                                                   
                                                 }
 
                                             }
@@ -155,7 +152,6 @@ namespace Simulator.Events.Handlers
                                     }
                                     var departEvt = Simulation.EventGenerator.GenerateVehicleDepartEvent(vehicle, currentDepartureTime);
                                     Simulation.Events.Add(departEvt);
-                                    //Simulation.InitializeVehicleFirstArriveEvent(vehicle,currentArriveTime);
                                 }
 
                             }

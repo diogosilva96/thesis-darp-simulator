@@ -17,8 +17,10 @@ namespace Simulator.SimulationViews
         public override void PrintView()
         {
 
-            ConsoleLogger.Log("Please insert the number of customers to be served: ");
+            ConsoleLogger.Log("Please insert the number of initially known (static) customers to be served: ");
             Simulation.Params.NumberInitialRequests = GetIntInput(1, int.MaxValue);
+            ConsoleLogger.Log("Please insert the number of dynamic customers generated per hour: ");
+            Simulation.Params.NumberDynamicRequestsPerHour = GetIntInput(1, int.MaxValue);
             ConsoleLogger.Log("Please insert the number of available vehicles: ");
             Simulation.Params.VehicleNumber  = GetIntInput(1, Simulation.Params.NumberInitialRequests);
             ConsoleLogger.Log("Allow drop nodes?");

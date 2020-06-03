@@ -22,8 +22,7 @@ namespace Simulator.Events.Handlers
                     arriveEvent.Vehicle.IsIdle = true;
                     if (arriveEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex == 0) //check if the trip has started
                     {
-                        arriveEvent.Vehicle.TripIterator.Current.Start(arrivalTime);
-                        _consoleLogger.Log(" ");
+                        arriveEvent.Vehicle.TripIterator.Current.Start(arrivalTime);                        
                         _consoleLogger.Log(arriveEvent.Vehicle.ToString() + arriveEvent.Vehicle.TripIterator.Current + " STARTED at " +
                                           TimeSpan.FromSeconds(arrivalTime) + ".");
 

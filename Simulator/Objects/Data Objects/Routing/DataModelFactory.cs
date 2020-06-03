@@ -129,8 +129,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         if (customer.IsInVehicle)
                         {
                             var v = simulation.Context.VehicleFleet.Find(veh => veh.Customers.Contains(customer));
-                            Console.WriteLine(" Customer " + customer.Id + " is already inside vehicle" + v.Id + ": Already visited: " + customer.PickupDelivery[0] +
-                                              ", Need to visit:" + customer.PickupDelivery[1]);
+                            //Console.WriteLine(" Customer " + customer.Id + " is already inside vehicle" + v.Id + ": Already visited: " + customer.PickupDelivery[0] +", Need to visit:" + customer.PickupDelivery[1]);
                         }
                     }     
                     //end of debug                    

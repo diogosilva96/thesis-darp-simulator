@@ -128,12 +128,6 @@ namespace Simulator.Objects.Simulation
             toPrintList.Add("-------------------------------------");
             toPrintList.Add("|   Overall Simulation statistics   |");
             toPrintList.Add("-------------------------------------");
-            foreach (var vehicle in _simulation.Context.VehicleFleet.FindAll(v => v.FlexibleRouting))
-            {
-
-                vehicle.PrintRoute();
-            }
-
             foreach (var route in _simulation.Context.Routes)
             {
 

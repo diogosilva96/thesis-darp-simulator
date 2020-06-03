@@ -165,8 +165,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                     var currentTime = StartDepotArrivalTimes[vehicleIndex];
                     var customer = GetCustomer(customerIndex);
                     var rideTime = currentTime - customer.RealTimeWindow[0];
-                    customersRideTime[customerIndex] = rideTime;
-                    Console.WriteLine(customer.ToString()+ " current Ride time: "+rideTime);
+                    customersRideTime[customerIndex] = rideTime;                    
                 }
             }
 

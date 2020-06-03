@@ -68,7 +68,7 @@ namespace Simulator.Objects.Simulation
                 {
                     Console.WriteLine(tobePrinted);
                 }
-                dataModel.PrintDataStructures();
+                //dataModel.PrintDataStructures();
                 Assignment timeWindowSolution = null;
                     RoutingSearchParameters searchParameters =
                         operations_research_constraint_solver.DefaultRoutingSearchParameters();
@@ -215,17 +215,22 @@ namespace Simulator.Objects.Simulation
 
         public override void OnSimulationEnd()
         {
-            var statsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"stats_logs.txt");    
+            var statsPath = Path.Combine(Params.CurrentSimulationLoggerPath, @"stats_logs.txt");
+            foreach (var vehicle in Context.VehicleFleet.FindAll(v => v.FlexibleRouting))
+            {
+
+                vehicle.PrintRoute();//prints each vehicle route
+            }
             Stats.PrintStats();
             var dynCustomers = Context.DynamicCustomers.OrderBy(c => c.DesiredTimeWindow[0]);
             //debug
-            foreach (var dynamicCustomer in dynCustomers)
-            {
-                var tuple = Tuple.Create(dynamicCustomer.PickupDelivery[0], dynamicCustomer.PickupDelivery[1]);
-                Context.ArcDistanceDictionary.TryGetValue(tuple, out var distance);
-                Console.WriteLine("Served: " + dynamicCustomer.AlreadyServed+" minimum distance:"+distance);
-                dynamicCustomer.PrintPickupDelivery();
-            }
+            //foreach (var dynamicCustomer in dynCustomers)
+            //{
+            //    var tuple = Tuple.Create(dynamicCustomer.PickupDelivery[0], dynamicCustomer.PickupDelivery[1]);
+            //    Context.ArcDistanceDictionary.TryGetValue(tuple, out var distance);
+            //    Console.WriteLine("Served: " + dynamicCustomer.AlreadyServed+" minimum distance:"+distance);
+            //    dynamicCustomer.PrintPickupDelivery();
+            //}
             //end of debug
             Stats.SaveStats(statsPath);
         }

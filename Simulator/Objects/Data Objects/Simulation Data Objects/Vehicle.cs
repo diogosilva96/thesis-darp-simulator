@@ -107,6 +107,7 @@ namespace Simulator.Objects.Data_Objects.Simulation_Objects
 
         public void PrintRoute() //debug purposes
         {
+            Console.WriteLine("-----------------------------------------");
             Console.WriteLine("Route for "+this.ToString());
             List<Customer> pickupCustomers = new List<Customer>();
             for (int i= 0;i<VisitedStops.Count;i++)

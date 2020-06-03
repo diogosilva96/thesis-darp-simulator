@@ -408,7 +408,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                         index = solution.Value(RoutingModel.NextVar(index));
                     }
                     nodeIndex = RoutingIndexManager.IndexToNode(index);
-                    Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)));
+                    //Console.WriteLine(DataModel.IndexManager.GetStop(nodeIndex) + " / Time Dimension - Cumul:(" + solution.Min(timeDim.CumulVar(index)) + "," + solution.Max(timeDim.CumulVar(index)) + ") / Capacity Dimension - Cumul:" + solution.Value(capacityDim.CumulVar(index)));
                     var endTimeVar = timeDim.CumulVar(index);
                     currentLoad = solution.Value(capacityDim.CumulVar(index));
                     if (DataModel.IndexManager.GetStop(nodeIndex) != null)//if current stop (last stop of current route) is not null
@@ -471,6 +471,7 @@ namespace Simulator.Objects.Data_Objects.Routing
                 Console.WriteLine("Maximum Upper Bound limit:" + TimeSpan.FromSeconds(MaximumDeliveryDelayTime).TotalMinutes + " minutes");
                 Console.WriteLine("Maximum Customer Ride Time Duration: "+TimeSpan.FromSeconds(DataModel.MaxCustomerRideTime).TotalMinutes + " minutes");
                 var printableList = GetSolutionPrintableList(solution);
+                Console.WriteLine("Solution:");
                 foreach (var stringToBePrinted in printableList)
                 {
                     Console.WriteLine(stringToBePrinted);

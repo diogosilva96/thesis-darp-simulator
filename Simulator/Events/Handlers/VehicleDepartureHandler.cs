@@ -72,8 +72,7 @@ namespace Simulator.Events.Handlers
                                 departEvent.Vehicle.TripIterator.Current.ScheduledTimeWindows[
                                     departEvent.Vehicle.TripIterator.Current.StopsIterator.CurrentIndex][0];
 
-                            _consoleLogger.Log("Event arrival time:" + nextArrivalTime +
-                                              ", Scheduled arrival time:" + scheduledArrivalTime);
+                            //_consoleLogger.Log("Event arrival time:" + nextArrivalTime +", Scheduled arrival time:" + scheduledArrivalTime);
                         }
                     }
 
