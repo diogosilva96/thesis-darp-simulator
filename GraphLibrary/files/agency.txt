@@ -1,3 +1,0 @@
-agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url
-1,HF - Urbano,http://www.horariosdofunchal.pt/,Europe/Lisbon,pt,+351291705555,http://www.horariosdofunchal.pt/index.php?option=com_content&task=view&id=65&Itemid=247
-5,HF - Interurbano,http://www.horariosdofunchal.pt/index.php?option=com_payshop&task=payshop&inter=1&Itemid=386,Europe/Lisbon,pt,+351291705555,http://www.horariosdofunchal.pt/index.php?option=com_content&task=view&id=53&Itemid=252
