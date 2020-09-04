@@ -6,6 +6,6 @@ Routing problem features:
   - Pickup and Delivery
   - Maximum Travel Time constraint for each client
   - Vehicle Capacity Constraints
-  - Vehicle Number Constraint
-  - Start and End Depot constraint for each vehicle
+  - Vehicle Number Constraints
+  - Start and End Depot constraints for each vehicle
   
